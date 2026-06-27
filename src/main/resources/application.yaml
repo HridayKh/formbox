@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: formbox
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    url: ${FORM_DB_URL}
+    username: ${FORM_DB_USER}
+    password: ${FORM_DB_PASS}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: true
+    show-sql: false
+
+  thymeleaf:
+    cache: true
+  web:
+    resources:
+      chain:
+        cache: true
+    error:
+      whitelabel:
+        enabled: false
+  main:
+    lazy-initialization: false
+supabase:
+  url: ${SUPABASE_URL}
+  publishabe-key: ${SUPABASE_PUBLISHABLE_KEY}
+  secret-key: ${SUPABASE_SECRET_KEY}
+  jwks-url: ${SUPABASE_JWKS_URL}
