@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Dashboard</title>
+</head>
+<body>
+<h1>Welcome to your Dashboard</h1>
+<div id="profile-data">Loading your profile...</div>
+
+<script>
+    // Fetch user data from the server-side /me endpoint
+    fetch('/me')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('profile-data').innerHTML = `<p>Email: ${data.email}</p><p>User ID: ${data.id}</p>${data}`;
+            console.log(data);
+        })
+        .catch(err => console.error('Error fetching profile:', err));
+</script>
+</body>
+</html>
