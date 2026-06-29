@@ -5,14 +5,16 @@
     <title>Title</title>
 </head>
 <body>
-<h1 th:text="${ab}"></h1>
+<a></a>
 <script>
     const hash = window.location.hash.substring(1);
-    fetch('/api/auth/handle-redirect', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: hash
-    }).then(() => window.location.href = "/dashboard");
+    if (hash) {
+        fetch('/api/auth/handle-redirect', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: hash
+        }).then(() => window.location.href = "/dashboard");
+    }
 </script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 spring:
   application:
-    name: formbox
+    name: "formbox"
   threads:
     virtual:
       enabled: true
@@ -25,6 +25,7 @@ spring:
         enabled: false
   main:
     lazy-initialization: false
+
 supabase:
   url: ${SUPABASE_URL}
   publishable-key: ${SUPABASE_PUBLISHABLE_KEY}
@@ -32,3 +33,7 @@ supabase:
   jwks-url: ${SUPABASE_JWKS_URL}
 resend:
   api-key: ${RESEND_API_KEY}
+polar:
+  access-token: ${POLAR_API_KEY_DEV}
+  api-url: "https://sandbox-api.polar.sh/v1" # https://api.polar.sh/v1
+  webhook-secret: ${POLAR_WEBHOOK_DEV}

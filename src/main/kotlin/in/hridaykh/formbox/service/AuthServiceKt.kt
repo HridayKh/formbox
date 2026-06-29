@@ -19,7 +19,7 @@ data class LoginRequest(val email: String, val password: String)
 data class AuthResponse(val userId: String, val accessToken: String, val refreshToken: String)
 
 @Service
-class AuthService(private val supabaseProps: SupabaseProperties) {
+class AuthServiceKt(private val supabaseProps: SupabaseProperties) {
 
 	private fun createIsolatedClient() = createSupabaseClient(supabaseProps.url, supabaseProps.secretKey) {
 		install(Auth) { sessionManager = MemorySessionManager() }
