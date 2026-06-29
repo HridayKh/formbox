@@ -1,12 +1,10 @@
 package in.hridaykh.formbox.controller;
 
-import in.hridaykh.formbox.config.ViewRegistry;
 import in.hridaykh.formbox.service.PolarWebhooksService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import sh.polar.sdk.PolarWebhookVerifier;
 
@@ -17,19 +15,14 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Controller
-public class IndexController {
+public class PolarController {
 
 	private final PolarWebhooksService polarWebhooksService;
 	private final PolarWebhookVerifier polarWebhookVerifier;
 
-	public IndexController(PolarWebhooksService polarWebhooksService, PolarWebhookVerifier polarWebhookVerifier) {
+	public PolarController(PolarWebhooksService polarWebhooksService, PolarWebhookVerifier polarWebhookVerifier) {
 		this.polarWebhooksService = polarWebhooksService;
 		this.polarWebhookVerifier = polarWebhookVerifier;
-	}
-
-	@GetMapping("/")
-	public String index() {
-		return ViewRegistry.index;
 	}
 
 	@PostMapping("/polar")

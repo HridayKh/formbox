@@ -22,7 +22,11 @@ data class AuthResponse(val userId: String, val accessToken: String, val refresh
 class AuthServiceKt(private val supabaseProps: SupabaseProperties) {
 
 	private fun createIsolatedClient() = createSupabaseClient(supabaseProps.url, supabaseProps.secretKey) {
-		install(Auth) { sessionManager = MemorySessionManager() }
+		install(Auth) {
+			autoLoadFromStorage = false
+			autoSaveToStorage = false
+			alwaysAutoRefresh = false
+		}
 	}
 
 	// cbb8528e-7d8c-448a-9d52-537c5bf97dc2

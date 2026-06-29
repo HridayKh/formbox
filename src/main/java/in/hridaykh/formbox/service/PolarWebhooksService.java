@@ -13,13 +13,13 @@ import sh.polar.sdk.http.PolarHttpClient;
 import sh.polar.sdk.models.common.PolarListResponse;
 import sh.polar.sdk.models.meter.PolarCustomerMeterResponse;
 
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Service
 public class PolarWebhooksService {
 
 	private static final Logger log = LoggerFactory.getLogger(PolarWebhooksService.class);
-	private static final long FREE_TIER_LIMIT = 100L; // Fallback constant for local free tier
 
 	private final PolarHttpClient polarHttpClient;
 	private final TenantRepository tenantRepository;
@@ -36,27 +36,50 @@ public class PolarWebhooksService {
 	public void processHook(String rawBody) {
 		try {
 			JsonNode root = objectMapper.readTree(rawBody);
-			String eventType = root.path("event").asText();
+			String eventType = root.path("type").asText();
 			JsonNode dataNode = root.path("data");
 
 			log.info("Processing Polar Webhook event: {}", eventType);
 
+			String customerEmail = dataNode.path("customer").path("email").asText();
+			if (customerEmail.isEmpty() || "null".equals(customerEmail)) {
+				customerEmail = dataNode.path("user").path("email").asText();
+			}
+
+			if (customerEmail.isEmpty()) {
+				log.warn("Skipping webhook event {}: No customer email context found", eventType);
+				return;
+			}
+
 			switch (eventType) {
+				// Subscriptions lifecycle mutations
+				case "subscription.created":
+				case "subscription.active":
+				case "subscription.uncanceled":
+					handleSubscriptionActive(customerEmail, dataNode);
+					break;
+
+				case "subscription.canceled":
+					handleSubscriptionCanceled(customerEmail, dataNode);
+					break;
+
+				case "subscription.past_due":
+					handleSubscriptionPastDue(customerEmail);
+					break;
+
+				case "subscription.revoked":
+				case "benefit_grant.revoked":
+					handleSubscriptionEnded(customerEmail);
+					break;
+
+				// Fallback benefits logic
 				case "benefit_grant.created":
 				case "benefit_grant.updated":
-					handleBenefitGrant(dataNode);
-					break;
-
-				case "benefit_grant.revoked":
-					handleBenefitRevoked(dataNode);
-					break;
-
-				case "order.created":
-					handleOrderCreated(dataNode);
+					handleBenefitGrantFallback(customerEmail, dataNode);
 					break;
 
 				default:
-					log.debug("Unmanaged webhook event received: {}", eventType);
+					log.debug("Unmanaged event passed validation: {}", eventType);
 					break;
 			}
 
@@ -65,53 +88,80 @@ public class PolarWebhooksService {
 		}
 	}
 
-	private void handleBenefitGrant(JsonNode dataNode) {
-		String status = dataNode.path("status").asText();
-		String externalUserId = dataNode.path("customer").path("external_id").asText();
-
-		if (externalUserId.isEmpty() || !"granted".equals(status)) return;
-
-		UUID tenantId = UUID.fromString(externalUserId);
-
-		Tenant tenant = tenantRepository.findById(tenantId).orElseGet(() -> new Tenant(tenantId));
+	private void handleSubscriptionActive(String email, JsonNode dataNode) {
+		Tenant tenant = tenantRepository.findByEmailIgnoreCase(email)
+			.orElseThrow(() -> new IllegalStateException("Tenant missing for: " + email));
 
 		tenant.givePaidSubscription();
+
+		String endPeriodStr = dataNode.path("current_period_end").asText();
+		if (!endPeriodStr.isEmpty()) {
+			tenant.setCurrentPeriodEnd(OffsetDateTime.parse(endPeriodStr));
+		}
+
 		tenantRepository.save(tenant);
-
-		cacheService.set("user:" + externalUserId + ":tier", tenant.resolveCurrentTier());
-
-		syncUserMeterWithPolar(externalUserId);
+		syncCache(tenant);
+		log.info("Subscription marked ACTIVE for: {}", email);
 	}
 
-	private void handleBenefitRevoked(JsonNode dataNode) {
-		JsonNode customer = dataNode.path("customer");
-		String externalUserId = customer.path("external_id").asText();
+	private void handleSubscriptionCanceled(String email, JsonNode dataNode) {
+		Tenant tenant = tenantRepository.findByEmailIgnoreCase(email)
+			.orElseThrow(() -> new IllegalStateException("Tenant missing for: " + email));
 
-		if (externalUserId.isEmpty()) return;
+		OffsetDateTime periodEnd = OffsetDateTime.now();
+		String endPeriodStr = dataNode.path("current_period_end").asText();
+		if (!endPeriodStr.isEmpty()) {
+			periodEnd = OffsetDateTime.parse(endPeriodStr);
+		}
 
-		log.info("Downgrading user {} to free tier.", externalUserId);
+		// Set status to grace period so they retain premium access
+		tenant.setGracePeriodSubscription(periodEnd);
+		tenantRepository.save(tenant);
 
-		UUID tenantId = UUID.fromString(externalUserId);
-		Tenant tenant = tenantRepository.findById(tenantId).orElseGet(() -> new Tenant(tenantId));
+		syncCache(tenant);
+		log.info("Subscription marked CANCELLED_GRACE_PERIOD until {} for: {}", periodEnd, email);
+	}
+
+	private void handleSubscriptionPastDue(String email) {
+		Tenant tenant = tenantRepository.findByEmailIgnoreCase(email)
+			.orElseThrow(() -> new IllegalStateException("Tenant missing for: " + email));
+
+		tenant.setPastDueSubscription();
+		tenantRepository.save(tenant);
+
+		syncCache(tenant);
+		log.warn("Subscription marked PAST_DUE for: {}", email);
+	}
+
+	private void handleSubscriptionEnded(String email) {
+		Tenant tenant = tenantRepository.findByEmailIgnoreCase(email)
+			.orElseThrow(() -> new IllegalStateException("Tenant missing for: " + email));
 
 		tenant.giveFreeSubscription();
 		tenantRepository.save(tenant);
 
-		cacheService.set("user:" + externalUserId + ":tier", tenant.resolveCurrentTier());
-		cacheService.set("user:" + externalUserId + ":meter_balance", String.valueOf(FREE_TIER_LIMIT));
+		syncCache(tenant);
+		log.info("Subscription fully REVOKED/ENDED. Dropped to Free Tier for: {}", email);
 	}
 
-	private void handleOrderCreated(JsonNode dataNode) {
-		String billingReason = dataNode.path("billing_reason").asText();
-		JsonNode customer = dataNode.path("customer");
-		String externalUserId = customer.path("external_id").asText();
-
-		if (externalUserId.isEmpty()) return;
-
-		if ("subscription_cycle".equals(billingReason)) {
-			log.info("Subscription renewal cycle hit for user {}. Refreshing meter balance.", externalUserId);
-			syncUserMeterWithPolar(externalUserId);
+	private void handleBenefitGrantFallback(String email, JsonNode dataNode) {
+		String status = dataNode.path("status").asText();
+		if (status.isEmpty() && dataNode.has("is_granted")) {
+			status = dataNode.path("is_granted").asBoolean() ? "granted" : "pending";
 		}
+
+		if (!"granted".equals(status)) return;
+
+		Tenant tenant = tenantRepository.findByEmailIgnoreCase(email).orElse(null);
+		if (tenant != null && "free".equals(tenant.resolveCurrentTier())) {
+			tenant.givePaidSubscription();
+			tenantRepository.save(tenant);
+			syncCache(tenant);
+		}
+	}
+
+	private void syncCache(Tenant tenant) {
+		cacheService.set("user:" + tenant.getId() + ":tier", tenant.resolveCurrentTier());
 	}
 
 	public void syncUserMeterWithPolar(String externalUserId) {
@@ -122,16 +172,9 @@ public class PolarWebhooksService {
 
 			if (response != null && response.items() != null && !response.items().isEmpty()) {
 				PolarCustomerMeterResponse matchedMeter = response.items().getFirst();
-
 				Double actualPolarBalance = matchedMeter.balance();
-				log.info("Found matching user {} inside Polar. Balance: {}", externalUserId, actualPolarBalance);
-
-				// Syncing usage value straight to the fast-lookup layer
 				cacheService.set("user:" + externalUserId + ":meter_balance", String.valueOf(actualPolarBalance.longValue()));
-			} else {
-				log.warn("No active meter records found in Polar for external user ID: {}", externalUserId);
 			}
-
 		} catch (Exception e) {
 			log.error("Failed to query Polar CustomerMeters API for user: {}", externalUserId, e);
 		}

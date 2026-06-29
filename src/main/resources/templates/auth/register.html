@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Register</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+</head>
+<body>
+<main class="auth-container">
+    <h2>Create your FormBox Account</h2>
+
+    <div id="alert-container"></div>
+
+    <form hx-post="/auth/signup" hx-target="#alert-container" hx-swap="innerHTML">
+        <div>
+            <label>Username</label>
+            <input type="text" name="username" required autocomplete="username"/>
+        </div>
+        <div>
+            <label>Email Address</label>
+            <input type="email" name="email" required autocomplete="email"/>
+        </div>
+        <div>
+            <label>Password</label>
+            <input type="password" name="password" required autocomplete="new-password"/>
+        </div>
+        <button type="submit">Sign Up</button>
+    </form>
+
+    <p>Already have an account? <a href="/auth/login">Login here</a></p>
+</main>
+</body>
+</html>

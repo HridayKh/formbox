@@ -1,0 +1,81 @@
+{
+	"type": "benefit_grant.created",
+	"timestamp": "2026-06-29T10:58:17.643462Z",
+	"data": {
+		"created_at": "2026-06-29T10:58:17.547285Z",
+		"modified_at": "2026-06-29T10:58:17.619178Z",
+		"id": "17e8c46f-9830-4eba-9779-064f12ad5aae",
+		"granted_at": "2026-06-29T10:58:17.618129Z",
+		"is_granted": true,
+		"revoked_at": null,
+		"is_revoked": false,
+		"subscription_id": "4b88e2ea-1dea-4148-b21c-1ee750984ca4",
+		"order_id": null,
+		"customer_id": "acaf1b7b-ff1a-4d29-8508-9e20bc1398d6",
+		"member_id": "992bbe09-2526-4f80-af55-3d6564a9fb50",
+		"benefit_id": "0747e1ad-ac31-4db1-bbcf-4f56c8df7b5a",
+		"error": null,
+		"customer": {
+			"id": "acaf1b7b-ff1a-4d29-8508-9e20bc1398d6",
+			"created_at": "2026-06-29T10:58:13.053044Z",
+			"modified_at": "2026-06-29T10:58:16.577905Z",
+			"metadata": {},
+			"external_id": null,
+			"email": "hridaykh1234+1234@gmail.com",
+			"email_verified": false,
+			"type": "individual",
+			"name": "9999",
+			"billing_name": "9999",
+			"billing_address": {
+				"line1": null,
+				"line2": null,
+				"postal_code": null,
+				"city": null,
+				"state": null,
+				"country": "AD"
+			},
+			"tax_id": null,
+			"locale": "en",
+			"organization_id": "0328eb84-0ce0-4efb-a03d-c22aa080c227",
+			"default_payment_method_id": null,
+			"deleted_at": null,
+			"avatar_url": "https://www.gravatar.com/avatar/e7bb4e44879675423709ec31d09a030f1a33e034b93a7594de9f3105a33d31c7?d=404"
+		},
+		"member": {
+			"id": "992bbe09-2526-4f80-af55-3d6564a9fb50",
+			"created_at": "2026-06-29T10:58:13.053044Z",
+			"modified_at": null,
+			"customer_id": "acaf1b7b-ff1a-4d29-8508-9e20bc1398d6",
+			"email": "hridaykh1234+1234@gmail.com",
+			"name": "9999",
+			"external_id": null,
+			"role": "owner"
+		},
+		"benefit": {
+			"id": "0747e1ad-ac31-4db1-bbcf-4f56c8df7b5a",
+			"created_at": "2026-06-29T07:34:14.707159Z",
+			"modified_at": null,
+			"type": "meter_credit",
+			"description": "form submissions 1300",
+			"selectable": true,
+			"deletable": true,
+			"is_deleted": false,
+			"organization_id": "0328eb84-0ce0-4efb-a03d-c22aa080c227",
+			"metadata": {},
+			"visibility": "public",
+			"properties": {
+				"units": 1300,
+				"rollover": false,
+				"meter_id": "654bba33-8078-46b9-a7b8-b908b95de575"
+			},
+			"visibility_configurable": true
+		},
+		"properties": {
+			"last_credited_meter_id": "654bba33-8078-46b9-a7b8-b908b95de575",
+			"last_credited_units": 1300,
+			"last_credited_at": "2026-06-29T10:58:17.618105+00:00"
+		},
+		"previous_properties": {},
+		"user_id": "acaf1b7b-ff1a-4d29-8508-9e20bc1398d6"
+	}
+}

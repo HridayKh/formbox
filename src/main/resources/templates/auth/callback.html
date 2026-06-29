@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Verifying Session...</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+</head>
+<body>
+<div style="text-align: center; margin-top: 10%;">
+    <h3>Finalizing verification, please wait...</h3>
+
+    <button id="submit-tokens-btn"
+            hx-post="/auth/session-callback"
+            style="display:none;"></button>
+</div>
+
+<script>
+    function getHashParams() {
+        const hash = window.location.hash.substring(1);
+        const params = new URLSearchParams(hash);
+
+        return {
+            access_token: params.get("access_token"),
+            refresh_token: params.get("refresh_token"),
+            expires_in: params.get("expires_in") || 3600
+        };
+    }
+
+    // Intercept HTMX request configurations to cleanly append parameters
+    document.body.addEventListener('htmx:configRequest', (event) => {
+        if (event.detail.path === '/auth/session-callback') {
+            const tokens = getHashParams();
+            // Assign parameters safely into the outbound form data payload
+            Object.assign(event.detail.parameters, tokens);
+        }
+    });
+
+    window.addEventListener("DOMContentLoaded", () => {
+        if (window.location.hash) {
+            // Instantly trigger HTMX post call
+            document.getElementById("submit-tokens-btn").click();
+        } else {
+            window.location.href = "/auth/login";
+        }
+    });
+</script>
+</body>
+</html>

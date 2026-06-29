@@ -1,21 +1,100 @@
 <!DOCTYPE html>
-<html lang="en">
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>Dashboard</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 </head>
 <body>
-<h1>Welcome to your Dashboard</h1>
-<div id="profile-data">Loading your profile...</div>
+<header style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; border-bottom: 1px solid #ccc;">
+    <h2>Welcome back, <span th:text="${user.userMetadata['username'] ?: user.email}">User</span>!</h2>
+    <button hx-post="/auth/logout">Log Out</button>
+</header>
 
-<script>
-    // Fetch user data from the server-side /me endpoint
-    fetch('/me')
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('profile-data').innerHTML = `<p>Email: ${data.email}</p><p>User ID: ${data.id}</p>${data}`;
-            console.log(data);
-        })
-        .catch(err => console.error('Error fetching profile:', err));
-</script>
+<main style="padding: 2rem; max-width: 800px; margin: 0 auto;">
+
+    <section id="subscription-card-container"
+             style="border: 1px solid #ddd; padding: 1.5rem; border-radius: 8px; background: #fafafa; margin-bottom: 2rem;">
+
+        <div th:fragment="subscriptionCardInner">
+
+            <div th:if="${checkingPurchase and tier == 'free'}"
+                 th:hx-get="'/dashboard/billing-status?customer_session_token=' + ${param.customer_session_token}"
+                 hx-trigger="every 2s"
+                 hx-target="#subscription-card-container"
+                 hx-swap="innerHTML"
+                 style="text-align: center; padding: 1rem;">
+                <p style="font-weight: bold; color: #007bff;">🔄 Processing your payment securely via Polar...</p>
+                <p style="font-size: 0.9rem; color: #666;">Finalizing provisioning state. Please hold tight.</p>
+            </div>
+
+            <div th:if="${not checkingPurchase or tier == 'paid'}">
+                <h3>Your Subscription</h3>
+
+                <p>Current Tier:
+                    <span th:text="${tier.toUpperCase()}"
+                          th:style="${tier == 'paid' ? 'color: green; font-weight: bold;' : 'color: gray; font-weight: bold;'}">
+                            FREE
+                    </span>
+                </p>
+                <p>System Status Value: <code th:text="${tenant.subscriptionStatus}">free</code></p>
+
+                <div style="margin-top: 1.5rem;">
+
+                    <div th:if="${tenant.subscriptionStatus == 'free'}">
+                        <p>Unlock premium limits and advanced forms tracking!</p>
+                        <button hx-post="/billing/upgrade" class="btn btn-primary"
+                                style="background: #007bff; color: white; padding: 0.5rem 1rem; border: none; border-radius: 4px; cursor: pointer;">
+                            Upgrade to Paid Tier
+                        </button>
+                    </div>
+
+                    <div th:if="${tenant.subscriptionStatus == 'active'}">
+                        <p style="color: green; font-weight: bold; margin-bottom: 0.5rem;">🎉 Thank you! Your account is
+                            fully upgraded.</p>
+                        <p>Your subscription is fully managed and auto-renews via Polar.</p>
+                        <button hx-post="/billing/portal" class="btn btn-secondary"
+                                style="background: #6c757d; color: white; padding: 0.5rem 1rem; border: none; border-radius: 4px; cursor: pointer;">
+                            Manage Subscription / Downgrade
+                        </button>
+                    </div>
+
+                    <div th:if="${tenant.subscriptionStatus == 'cancelled_grace_period'}"
+                         style="border-left: 4px solid #ffc107; padding: 0.25rem 0 0.25rem 1rem; margin-top: 1rem;">
+                        <p style="color: #856404; font-weight: bold; margin: 0 0 0.5rem 0;">⚠️ Your subscription is
+                            cancelled.</p>
+                        <p style="margin: 0 0 0.5rem 0;">You will retain full premium capabilities until:
+                            <code th:text="${#temporals.format(tenant.currentPeriodEnd, 'dd MMM yyyy')}">Date</code>
+                        </p>
+                        <p style="margin: 0 0 1rem 0;">Changed your mind? Subscribe again to keep your benefits
+                            seamlessly active:</p>
+                        <button hx-post="/billing/portal" class="btn btn-success"
+                                style="background: #28a745; color: white; padding: 0.5rem 1rem; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                            Renew / Resubscribe Now
+                        </button>
+                    </div>
+
+                    <div th:if="${tenant.subscriptionStatus == 'past_due'}"
+                         style="border-left: 4px solid #dc3545; padding: 0.25rem 0 0.25rem 1rem; margin-top: 1rem;">
+                        <p style="color: #721c24; font-weight: bold; margin: 0 0 0.5rem 0;">🚨 Payment Past Due</p>
+                        <p style="margin: 0 0 1rem 0;">Polar was unable to process your recurring charge. Please update
+                            your invoice payment details.</p>
+                        <button hx-post="/billing/portal" class="btn btn-danger"
+                                style="background: #dc3545; color: white; padding: 0.5rem 1rem; border: none; border-radius: 4px; cursor: pointer;">
+                            Update Payment Information
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <section>
+        <h3>Application Workspace</h3>
+        <p>FormBox data engines are spinning.</p>
+    </section>
+
+</main>
 </body>
 </html>
