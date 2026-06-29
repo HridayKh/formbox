@@ -1,15 +1,19 @@
 package in.hridaykh.formbox.controller;
 
+import in.hridaykh.formbox.constant.PathRegistry;
+import in.hridaykh.formbox.constant.ViewRegistry;
 import in.hridaykh.formbox.service.AuthServiceKt;
 import in.hridaykh.formbox.service.LoginRequest;
 import in.hridaykh.formbox.service.SignUpRequest;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
+
 @Controller
+@RequestMapping(PathRegistry.Auth.BASE)
 public class AuthController {
 
 	private final AuthServiceKt authServiceKt;
@@ -18,115 +22,89 @@ public class AuthController {
 		this.authServiceKt = authServiceKt;
 	}
 
-	@GetMapping("/signup")
-	public String signUpPage() {
-		return "register";
-	}
-
-	@PostMapping("/signup")
-	public String handleSignup(@RequestParam String email, @RequestParam String password, @RequestParam String username) {
-		authServiceKt.signUp(new SignUpRequest(email, password, username));
-		return "redirect:/login?msg=check_email";
-	}
-
-	@PostMapping("/resend-confirmation")
-	public String resend(@RequestParam String email) {
-		authServiceKt.resendConfirmation(email);
-		return "redirect:/login?msg=sent";
-	}
-
-	@PostMapping("/api/auth/handle-redirect")
-	@ResponseBody
-	public void handleRedirect(@RequestBody String fragment, HttpServletResponse response) {
-		Cookie cookie = new Cookie("sb_token", parseToken(fragment, "access_token"));
-		cookie.setHttpOnly(true);
-		cookie.setPath("/");
-		response.addCookie(cookie);
-		Cookie refreshCookie = new Cookie("sb_refresh", parseToken(fragment, "refresh_token"));
-		refreshCookie.setHttpOnly(true);
-		refreshCookie.setSecure(true);
-		refreshCookie.setPath("/");
-		response.addCookie(refreshCookie);
-	}
-
-	@GetMapping("/login")
+	@GetMapping(PathRegistry.Auth.LOGIN)
 	public String loginPage() {
-		return "login";
+		return ViewRegistry.Auth.LOGIN;
 	}
 
-	@PostMapping("/login")
-	public String handleLogin(@RequestParam String email, @RequestParam String password, HttpServletResponse response) {
-		var auth = authServiceKt.login(new LoginRequest(email, password));
-
-		Cookie accessCookie = new Cookie("sb_token", auth.getAccessToken());
-		accessCookie.setHttpOnly(true);
-		accessCookie.setSecure(true);
-		accessCookie.setPath("/");
-		response.addCookie(accessCookie);
-
-		Cookie refreshCookie = new Cookie("sb_refresh", auth.getRefreshToken());
-		refreshCookie.setHttpOnly(true);
-		refreshCookie.setSecure(true);
-		refreshCookie.setPath("/");
-		response.addCookie(refreshCookie);
-
-		return "redirect:/dashboard";
+	@GetMapping(PathRegistry.Auth.SIGNUP)
+	public String signupPage() {
+		return ViewRegistry.Auth.REGISTER;
 	}
 
-	@GetMapping("/dashboard")
-	public String dashboard(@CookieValue(name = "sb_token", required = false) String token) {
-		if (token == null) return "redirect:/login";
-		return "dashboard";
-	}
-
-	@GetMapping("/me")
-	@ResponseBody
-	public ResponseEntity<?> getProfile(@CookieValue(name = "sb_token", required = false) String token, HttpServletResponse response) {
+	@PostMapping(PathRegistry.Auth.SIGNUP)
+	public String handleSignup(@RequestParam String email, @RequestParam String password, @RequestParam String username, HttpServletResponse response, Model model) {
 		try {
-			if (token == null) return ResponseEntity.status(401).build();
-			return ResponseEntity.ok(authServiceKt.getUserMetadata(token));
+			authServiceKt.signUp(new SignUpRequest(email, password, username));
+			response.setHeader("HX-Redirect", PathRegistry.Auth.Hx.LOGIN_CHECK_EMAIL);
+			return ViewRegistry.Auth.Fragments.EMPTY;
 		} catch (Exception e) {
-			Cookie cookie = new Cookie("sb_token", null);
-			cookie.setMaxAge(0);
-			response.addCookie(cookie);
-			return ResponseEntity.status(401).body("Session expired");
+			response.setStatus(400);
+			model.addAttribute("error", "Signup failed. Please try again.");
+			return ViewRegistry.Auth.Fragments.ERROR_ALERT;
 		}
 	}
 
-	@GetMapping("/logout")
+	@PostMapping(PathRegistry.Auth.LOGIN)
+	public String handleLogin(@RequestParam String email, @RequestParam String password, HttpServletResponse response, Model model) {
+		try {
+			var auth = authServiceKt.login(new LoginRequest(email, password));
+
+			setAuthCookie(response, "sb_token", auth.getAccessToken(), 3600);
+			setAuthCookie(response, "sb_refresh", auth.getRefreshToken(), 604800);
+
+			response.setHeader("HX-Redirect", PathRegistry.Auth.Hx.DASHBOARD);
+			return ViewRegistry.Auth.Fragments.EMPTY;
+		} catch (Exception e) {
+			response.setStatus(401);
+			model.addAttribute("error", "Invalid email or password.");
+			return ViewRegistry.Auth.Fragments.ERROR_ALERT;
+		}
+	}
+
+	@PostMapping(PathRegistry.Auth.LOGOUT)
 	public String logout(HttpServletResponse response, @CookieValue(name = "sb_token", required = false) String accessToken, @CookieValue(name = "sb_refresh", required = false) String refreshToken) {
 
-		// 1. If we have the tokens, tell Supabase to invalidate them
 		if (accessToken != null && refreshToken != null) {
 			try {
 				authServiceKt.logout(accessToken, refreshToken);
-			} catch (Exception e) {
-				// Log the error but proceed with clearing cookies anyway
+			} catch (Exception ignored) {
 			}
 		}
 
-		// 2. Clear both cookies
-		Cookie accessCookie = new Cookie("sb_token", null);
-		accessCookie.setMaxAge(0);
-		accessCookie.setPath("/");
-		response.addCookie(accessCookie);
+		setAuthCookie(response, "sb_token", null, 0);
+		setAuthCookie(response, "sb_refresh", null, 0);
 
-		Cookie refreshCookie = new Cookie("sb_refresh", null);
-		refreshCookie.setMaxAge(0);
-		refreshCookie.setPath("/");
-		response.addCookie(refreshCookie);
-
-		return "redirect:/login?msg=logged_out";
+		response.setHeader("HX-Redirect", PathRegistry.Auth.Hx.LOGIN_LOGGED_OUT);
+		return ViewRegistry.Auth.Fragments.EMPTY;
 	}
 
-	private String parseToken(String fragment, String key) {
-		// Splits the string by '&' then by '=' to find the value for the key
-		for (String part : fragment.split("&")) {
-			String[] pair = part.split("=");
-			if (pair.length == 2 && pair[0].equals(key)) {
-				return pair[1];
-			}
-		}
-		return null;
+	@PostMapping(PathRegistry.Auth.RESEND_CONFIRMATION)
+	public String resend(@RequestParam String email, Model model) {
+		authServiceKt.resendConfirmation(email);
+		model.addAttribute("message", "Confirmation email resent successfully!");
+		return ViewRegistry.Auth.Fragments.SUCCESS_ALERT;
+	}
+
+	@PostMapping(PathRegistry.Auth.SESSION_CALLBACK)
+	@ResponseBody
+	public void handleSessionCallback(@RequestParam("access_token") String accessToken, @RequestParam("refresh_token") String refreshToken, @RequestParam("expires_in") int expiresIn, HttpServletResponse response) {
+		setAuthCookie(response, "sb_token", accessToken, expiresIn);
+		setAuthCookie(response, "sb_refresh", refreshToken, 604800);
+		response.setHeader("HX-Redirect", PathRegistry.Auth.Hx.DASHBOARD);
+	}
+
+	@GetMapping(PathRegistry.Auth.CALLBACK)
+	public String sessionCallback() {
+		return ViewRegistry.Auth.CALLBACK;
+	}
+
+	private void setAuthCookie(HttpServletResponse response, String name, String value, int maxAge) {
+		Cookie cookie = new Cookie(name, value);
+		cookie.setHttpOnly(true);
+		cookie.setSecure(true);
+		cookie.setPath("/");
+		cookie.setMaxAge(maxAge);
+		response.addCookie(cookie);
 	}
 }

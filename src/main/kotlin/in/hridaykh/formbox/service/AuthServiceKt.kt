@@ -3,7 +3,6 @@ package `in`.hridaykh.formbox.service
 import `in`.hridaykh.formbox.config.SupabaseProperties
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.auth.Auth
-import io.github.jan.supabase.auth.MemorySessionManager
 import io.github.jan.supabase.auth.OtpType
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
@@ -22,7 +21,11 @@ data class AuthResponse(val userId: String, val accessToken: String, val refresh
 class AuthServiceKt(private val supabaseProps: SupabaseProperties) {
 
 	private fun createIsolatedClient() = createSupabaseClient(supabaseProps.url, supabaseProps.secretKey) {
-		install(Auth) { sessionManager = MemorySessionManager() }
+		install(Auth) {
+			autoLoadFromStorage = false
+			autoSaveToStorage = false
+			alwaysAutoRefresh = false
+		}
 	}
 
 	// cbb8528e-7d8c-448a-9d52-537c5bf97dc2
@@ -47,7 +50,7 @@ class AuthServiceKt(private val supabaseProps: SupabaseProperties) {
 	fun resendConfirmation(email: String) = runBlocking {
 		val client = createIsolatedClient()
 		try {
-			client.auth.resendEmail(OtpType.Email.MAGIC_LINK, email)
+			client.auth.resendEmail(OtpType.Email.SIGNUP, email)
 		} finally {
 			client.close()
 		}

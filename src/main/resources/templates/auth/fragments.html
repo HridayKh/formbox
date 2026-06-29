@@ -1,0 +1,19 @@
+<div th:fragment="empty-frag"></div>
+
+<div th:fragment="error-alert" class="alert alert-danger" role="alert" th:text="${error}">
+    An error occurred.
+</div>
+
+<div th:fragment="success-alert" class="alert alert-success" role="alert" th:text="${message}">
+    Success!
+</div>
+
+<div th:fragment="resend-form" class="resend-container">
+    <form hx-post="/auth/resend-confirmation" hx-target="#alert-container" hx-swap="innerHTML">
+        <p>Didn't get the link?</p>
+        <label>
+            <input type="email" name="email" placeholder="Enter email to resend" required/>
+        </label>
+        <button type="submit">Resend Confirmation</button>
+    </form>
+</div>
