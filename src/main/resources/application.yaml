@@ -37,3 +37,6 @@ polar:
   access-token: ${POLAR_API_KEY_DEV}
   api-url: "https://sandbox-api.polar.sh/v1" # https://api.polar.sh/v1
   webhook-secret: ${POLAR_WEBHOOK_DEV}
+polar-ids:
+  paid-product-id: ${POLAR_PAID_PROD_ID_DEV}
+  submission-meter-id: ${POLAR_SUBMISSION_METER_ID_DEV}

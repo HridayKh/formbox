@@ -12,8 +12,13 @@ public class InMemCache implements ICacheService {
 	private final Map<String, String> storage = new ConcurrentHashMap<>();
 
 	@Override
-	public void set(String key, String value) {
+	public void set(String key, String value, long ttlSeconds) {
 		storage.put(key, value);
+	}
+
+	@Override
+	public void set(String key, String value) {
+		set(key, value, 3600);
 	}
 
 	@Override

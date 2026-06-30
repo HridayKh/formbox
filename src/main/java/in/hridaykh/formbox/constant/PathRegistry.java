@@ -14,10 +14,11 @@ public interface PathRegistry {
 		String CALLBACK = "/callback";
 
 		interface Redirects {
-			String TO_LOGIN_UNAUTHORIZED = "redirect:" + BASE + LOGIN + "?msg=unauthorized";
+			String TO_LOGIN_UNAUTHORIZED = "redirect:" + Hx.LOGIN_UNAUTHORIZED;
 		}
 
 		interface Hx {
+			String LOGIN_UNAUTHORIZED = BASE + LOGIN + "?msg=unauthorized";
 			String LOGIN_CHECK_EMAIL = BASE + LOGIN + "?msg=check_email";
 			String LOGIN_LOGGED_OUT = BASE + LOGIN + "?msg=logged_out";
 			String DASHBOARD = PathRegistry.DASHBOARD;

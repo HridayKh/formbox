@@ -5,6 +5,7 @@ import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.OtpType
 import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.jwt.JwtPayload
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.auth.user.UserInfo
 import io.github.jan.supabase.auth.user.UserSession
@@ -28,8 +29,7 @@ class AuthServiceKt(private val supabaseProps: SupabaseProperties) {
 		}
 	}
 
-	// cbb8528e-7d8c-448a-9d52-537c5bf97dc2
-	fun signUp(request: SignUpRequest): String = runBlocking {
+	fun signUp(request: SignUpRequest): Unit = runBlocking {
 		val client = createIsolatedClient()
 		try {
 			val user: UserInfo? = client.auth.signUpWith(Email) {
@@ -44,8 +44,6 @@ class AuthServiceKt(private val supabaseProps: SupabaseProperties) {
 			client.close()
 		}
 	}
-
-	// Ensure correct import
 
 	fun resendConfirmation(email: String) = runBlocking {
 		val client = createIsolatedClient()
@@ -95,10 +93,10 @@ class AuthServiceKt(private val supabaseProps: SupabaseProperties) {
 		}
 	}
 
-	fun getUserMetadata(accessToken: String): UserInfo = runBlocking {
+	fun getUserMetadata(accessToken: String): JwtPayload = runBlocking {
 		val client = createIsolatedClient()
 		try {
-			client.auth.retrieveUser(accessToken)
+			client.auth.getClaims(accessToken).claims
 		} finally {
 			client.close()
 		}

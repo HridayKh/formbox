@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en">
 <head>
     <title>Register</title>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
@@ -13,15 +13,21 @@
     <form hx-post="/auth/signup" hx-target="#alert-container" hx-swap="innerHTML">
         <div>
             <label>Username</label>
-            <input type="text" name="username" required autocomplete="username"/>
+            <label>
+                <input type="text" name="username" required autocomplete="username"/>
+            </label>
         </div>
         <div>
             <label>Email Address</label>
-            <input type="email" name="email" required autocomplete="email"/>
+            <label>
+                <input type="email" name="email" required autocomplete="email"/>
+            </label>
         </div>
         <div>
             <label>Password</label>
-            <input type="password" name="password" required autocomplete="new-password"/>
+            <label>
+                <input type="password" name="password" required autocomplete="new-password"/>
+            </label>
         </div>
         <button type="submit">Sign Up</button>
     </form>

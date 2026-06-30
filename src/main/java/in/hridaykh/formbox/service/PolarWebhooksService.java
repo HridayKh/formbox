@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import in.hridaykh.formbox.config.PolarIdProperties;
 import in.hridaykh.formbox.model.entity.Tenant;
 import in.hridaykh.formbox.repository.TenantRepository;
 import org.slf4j.Logger;
@@ -14,7 +15,8 @@ import sh.polar.sdk.models.common.PolarListResponse;
 import sh.polar.sdk.models.meter.PolarCustomerMeterResponse;
 
 import java.time.OffsetDateTime;
-import java.util.UUID;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 public class PolarWebhooksService {
@@ -24,12 +26,15 @@ public class PolarWebhooksService {
 	private final PolarHttpClient polarHttpClient;
 	private final TenantRepository tenantRepository;
 	private final ICacheService cacheService;
+	private final PolarIdProperties polarIdProperties;
+
 	private final ObjectMapper objectMapper;
 
-	public PolarWebhooksService(PolarHttpClient polarHttpClient, TenantRepository tenantRepository, ICacheService cacheService) {
+	public PolarWebhooksService(PolarHttpClient polarHttpClient, TenantRepository tenantRepository, ICacheService cacheService, PolarIdProperties polarIdProperties) {
 		this.polarHttpClient = polarHttpClient;
 		this.tenantRepository = tenantRepository;
 		this.cacheService = cacheService;
+		this.polarIdProperties = polarIdProperties;
 		this.objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 	}
 
@@ -89,24 +94,17 @@ public class PolarWebhooksService {
 	}
 
 	private void handleSubscriptionActive(String email, JsonNode dataNode) {
-		Tenant tenant = tenantRepository.findByEmailIgnoreCase(email)
-			.orElseThrow(() -> new IllegalStateException("Tenant missing for: " + email));
-
+		Tenant tenant = tenantRepository.findByEmailIgnoreCase(email).orElseThrow(() -> new IllegalStateException("Tenant missing for: " + email));
 		tenant.givePaidSubscription();
-
 		String endPeriodStr = dataNode.path("current_period_end").asText();
-		if (!endPeriodStr.isEmpty()) {
-			tenant.setCurrentPeriodEnd(OffsetDateTime.parse(endPeriodStr));
-		}
-
+		if (!endPeriodStr.isEmpty()) tenant.setCurrentPeriodEnd(OffsetDateTime.parse(endPeriodStr));
 		tenantRepository.save(tenant);
 		syncCache(tenant);
 		log.info("Subscription marked ACTIVE for: {}", email);
 	}
 
 	private void handleSubscriptionCanceled(String email, JsonNode dataNode) {
-		Tenant tenant = tenantRepository.findByEmailIgnoreCase(email)
-			.orElseThrow(() -> new IllegalStateException("Tenant missing for: " + email));
+		Tenant tenant = tenantRepository.findByEmailIgnoreCase(email).orElseThrow(() -> new IllegalStateException("Tenant missing for: " + email));
 
 		OffsetDateTime periodEnd = OffsetDateTime.now();
 		String endPeriodStr = dataNode.path("current_period_end").asText();
@@ -123,8 +121,7 @@ public class PolarWebhooksService {
 	}
 
 	private void handleSubscriptionPastDue(String email) {
-		Tenant tenant = tenantRepository.findByEmailIgnoreCase(email)
-			.orElseThrow(() -> new IllegalStateException("Tenant missing for: " + email));
+		Tenant tenant = tenantRepository.findByEmailIgnoreCase(email).orElseThrow(() -> new IllegalStateException("Tenant missing for: " + email));
 
 		tenant.setPastDueSubscription();
 		tenantRepository.save(tenant);
@@ -134,8 +131,7 @@ public class PolarWebhooksService {
 	}
 
 	private void handleSubscriptionEnded(String email) {
-		Tenant tenant = tenantRepository.findByEmailIgnoreCase(email)
-			.orElseThrow(() -> new IllegalStateException("Tenant missing for: " + email));
+		Tenant tenant = tenantRepository.findByEmailIgnoreCase(email).orElseThrow(() -> new IllegalStateException("Tenant missing for: " + email));
 
 		tenant.giveFreeSubscription();
 		tenantRepository.save(tenant);
@@ -161,20 +157,30 @@ public class PolarWebhooksService {
 	}
 
 	private void syncCache(Tenant tenant) {
-		cacheService.set("user:" + tenant.getId() + ":tier", tenant.resolveCurrentTier());
-	}
-
-	public void syncUserMeterWithPolar(String externalUserId) {
+		String externalUserId = tenant.getId().toString();
+		String balanceKey = "user:" + externalUserId + ":meter_balance";
+		cacheService.set("user:" + externalUserId + ":tier", tenant.resolveCurrentTier());
 		try {
 			String url = "/customer-meters/?external_customer_id=" + externalUserId;
 			PolarListResponse<PolarCustomerMeterResponse> response = polarHttpClient.get(url, new TypeReference<>() {
 			});
 
-			if (response != null && response.items() != null && !response.items().isEmpty()) {
-				PolarCustomerMeterResponse matchedMeter = response.items().getFirst();
-				Double actualPolarBalance = matchedMeter.balance();
-				cacheService.set("user:" + externalUserId + ":meter_balance", String.valueOf(actualPolarBalance.longValue()));
+			Optional<PolarCustomerMeterResponse> matchedMeter = Optional.ofNullable(response)
+				.map(PolarListResponse::items)
+				.stream()
+				.flatMap(List::stream)
+				.filter(meter -> meter.meterId().toString().equalsIgnoreCase(polarIdProperties.getSubmissionMeterId()))
+				.filter(meter -> meter.balance() != null)
+				.findFirst();
+
+			if (matchedMeter.isPresent()) {
+				long longBalance = matchedMeter.get().balance().longValue();
+				cacheService.set(balanceKey, String.valueOf(longBalance));
+			} else {
+				log.warn("Target meter not found or has a null balance for user: {}", externalUserId);
+				cacheService.delete(balanceKey);
 			}
+
 		} catch (Exception e) {
 			log.error("Failed to query Polar CustomerMeters API for user: {}", externalUserId, e);
 		}

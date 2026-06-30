@@ -69,20 +69,9 @@ public class Tenant {
 		this.subscriptionStatus = SubscriptionState.past_due;
 	}
 
-	public SubscriptionState getSubscriptionStatusEnum() {
-		return this.subscriptionStatus;
-	}
 
 	public String getSubscriptionStatus() {
 		return this.subscriptionStatus.toString();
-	}
-
-	public String getEmail() {
-		return email;
-	}
-
-	public void setEmail(String email) {
-		this.email = email;
 	}
 
 	public UUID getId() {
@@ -101,11 +90,4 @@ public class Tenant {
 		this.currentPeriodEnd = currentPeriodEnd;
 	}
 
-	public OffsetDateTime getUpdatedAt() {
-		return updatedAt;
-	}
-
-	public void setUpdatedAt(OffsetDateTime updatedAt) {
-		this.updatedAt = updatedAt;
-	}
 }
