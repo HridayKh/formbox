@@ -5,7 +5,7 @@ import in.hridaykh.formbox.model.entity.Form;
 import in.hridaykh.formbox.model.entity.Tenant;
 import in.hridaykh.formbox.repository.FormRepository;
 import in.hridaykh.formbox.repository.TenantRepository;
-import in.hridaykh.formbox.service.AuthServiceKt;
+import in.hridaykh.formbox.AuthServiceKt;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;

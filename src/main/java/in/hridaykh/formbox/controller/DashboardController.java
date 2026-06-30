@@ -3,7 +3,7 @@ package in.hridaykh.formbox.controller;
 import in.hridaykh.formbox.constant.PathRegistry;
 import in.hridaykh.formbox.constant.ViewRegistry;
 import in.hridaykh.formbox.model.entity.Tenant;
-import in.hridaykh.formbox.service.AuthServiceKt;
+import in.hridaykh.formbox.AuthServiceKt;
 import in.hridaykh.formbox.repository.TenantRepository;
 import in.hridaykh.formbox.service.ICacheService;
 import org.springframework.stereotype.Controller;

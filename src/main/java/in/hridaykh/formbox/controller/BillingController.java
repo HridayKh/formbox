@@ -2,7 +2,7 @@ package in.hridaykh.formbox.controller;
 
 import in.hridaykh.formbox.config.PolarIdProperties;
 import in.hridaykh.formbox.constant.PathRegistry;
-import in.hridaykh.formbox.service.AuthServiceKt;
+import in.hridaykh.formbox.AuthServiceKt;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;

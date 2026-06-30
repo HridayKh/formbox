@@ -241,3 +241,12 @@ export async function POST(req) {
 }
 
 ```
+
+
+
+
+PolarApiException
+PolarAuthenticationException
+PolarNotFoundException
+PolarRateLimitException
+PolarValidationException
