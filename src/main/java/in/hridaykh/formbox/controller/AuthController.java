@@ -78,7 +78,7 @@ public class AuthController {
 
 	@PostMapping(PathRegistry.Auth.SESSION_CALLBACK)
 	@ResponseBody
-	public void handleSessionCallback(@RequestParam("access_token") String accessToken, @RequestParam("refresh_token") String refreshToken, @RequestParam("expiresIn") int expiresInSeconds, HttpServletResponse response) {
+	public void handleSessionCallback(@RequestParam("access_token") String accessToken, @RequestParam("refresh_token") String refreshToken, @RequestParam("expires_in") int expiresInSeconds, HttpServletResponse response) {
 		setAuthCookie(response, "sb_token", accessToken, expiresInSeconds);
 		setAuthCookie(response, "sb_refresh", refreshToken, (int) Duration.ofDays(7).toSeconds());
 		response.setHeader("HX-Redirect", PathRegistry.Auth.Hx.DASHBOARD);

@@ -61,6 +61,7 @@ public class PolarWebhooksService {
 				case "subscription.created":
 				case "subscription.active":
 				case "subscription.uncanceled":
+				case "subscription.cycled":
 					handleSubscriptionActive(customerEmail, dataNode);
 					break;
 
@@ -77,7 +78,6 @@ public class PolarWebhooksService {
 					handleSubscriptionEnded(customerEmail);
 					break;
 
-				// Fallback benefits logic
 				case "benefit_grant.created":
 				case "benefit_grant.updated":
 					handleBenefitGrantFallback(customerEmail, dataNode);

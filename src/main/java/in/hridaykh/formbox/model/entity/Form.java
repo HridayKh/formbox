@@ -2,13 +2,25 @@ package in.hridaykh.formbox.model.entity;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
 @Table(name = "forms")
+@SQLDelete(sql = "UPDATE forms SET is_deleted = true, is_active = false WHERE id = ?")
+@SQLRestriction("is_deleted IS false")
 public class Form {
+	public Form() {
+	}
+
+	public Form(Tenant tenant, String name, String redirectUrl) {
+		this.tenant = tenant;
+		this.name = name;
+		this.redirectUrl = redirectUrl;
+	}
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.UUID)
@@ -31,7 +43,6 @@ public class Form {
 	@Column(name = "is_active")
 	private Boolean isActive = true;
 
-	// Circular reference breaker: Map to the ID or use a dedicated OneToOne mapping
 	@OneToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "current_version_id", referencedColumnName = "id")
 	private FormVersion currentVersion;
@@ -40,5 +51,22 @@ public class Form {
 	@ColumnDefault("NOW()")
 	private OffsetDateTime createdAt = OffsetDateTime.now();
 
-	// Getters, Setters, Constructors
+	@Column(name = "is_deleted", nullable = false)
+	private Boolean isDeleted = false;
+
+	public boolean compareTenant(Tenant tenant) {
+		return this.tenant.getId().equals(tenant.getId());
+	}
+
+	public UUID getId() {
+		return id;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public boolean getIsActive() {
+		return isActive;
+	}
 }

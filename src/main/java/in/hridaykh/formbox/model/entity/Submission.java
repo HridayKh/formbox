@@ -40,5 +40,4 @@ public class Submission {
 	@ColumnDefault("NOW()")
 	private OffsetDateTime createdAt = OffsetDateTime.now();
 
-	// Getters, Setters, Constructors
 }

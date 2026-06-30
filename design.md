@@ -87,11 +87,11 @@ The queue workers that fire off after a successful submission.
 
 The infrastructure that separates the free tier from the paid tier.
 
-* **[ ] Stripe Integration**
+* **[-] Stripe Integration**
 * Handle the $2.99/month subscription lifecycle (Trial → Active → Past Due → Canceled).
 
 
-* **[ ] Usage Tracking (Metered Billing or Caps)**
+* **[-] Usage Tracking (Metered Billing or Caps)**
 * A cron job or event listener that resets submission counters on the 1st of the month or on the user's billing cycle date.
 
 

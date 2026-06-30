@@ -4,6 +4,12 @@ public interface PathRegistry {
 
 	String DASHBOARD = "/dashboard";
 
+	interface Form {
+		String BASE = "/forms";
+
+	}
+
+
 	interface Auth {
 		String BASE = "/auth";
 		String LOGIN = "/login";
@@ -35,7 +41,6 @@ public interface PathRegistry {
 		String BILLING_STATUS = "/billing-status";
 	}
 
-	// --- Added Webhooks Section ---
 	interface Webhooks {
 		String POLAR = "/polar";
 	}
