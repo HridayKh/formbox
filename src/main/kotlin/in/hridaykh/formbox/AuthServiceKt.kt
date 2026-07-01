@@ -164,4 +164,13 @@ class AuthServiceKt(private val supabaseProps: SupabaseProperties) {
 			client.close()
 		}
 	}
+
+	fun refreshSession(refreshToken: String): UserSession = runBlocking {
+		val client = createIsolatedClient()
+		try {
+			client.auth.refreshSession(refreshToken)
+		} finally {
+			client.close()
+		}
+	}
 }

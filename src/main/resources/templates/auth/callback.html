@@ -1,16 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>Verifying Session...</title>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 </head>
 <body>
 <div style="text-align: center; margin-top: 10%;">
     <h3>Finalizing verification, please wait...</h3>
-
-    <button id="submit-tokens-btn"
-            hx-post="/auth/session-callback"
-            style="display:none;"></button>
 </div>
 
 <script>
@@ -25,19 +22,14 @@
         };
     }
 
-    // Intercept HTMX request configurations to cleanly append parameters
-    document.body.addEventListener('htmx:configRequest', (event) => {
-        if (event.detail.path === '/auth/session-callback') {
-            const tokens = getHashParams();
-            // Assign parameters safely into the outbound form data payload
-            Object.assign(event.detail.parameters, tokens);
-        }
-    });
-
     window.addEventListener("DOMContentLoaded", () => {
         if (window.location.hash) {
-            // Instantly trigger HTMX post call
-            document.getElementById("submit-tokens-btn").click();
+            const tokens = getHashParams();
+
+            // Programmatically execute the HTMX post without needing a dummy hidden button
+            htmx.ajax('POST', '/auth/session-callback', {
+                values: tokens
+            });
         } else {
             window.location.href = "/auth/login";
         }

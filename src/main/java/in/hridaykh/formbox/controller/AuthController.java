@@ -28,13 +28,17 @@ public class AuthController {
 	}
 
 	@GetMapping(PathRegistry.Auth.LOGIN)
-	public String loginPage(@RequestParam(name = "msg", required = false, defaultValue = "") String msg, HttpServletResponse response) {
+	public String loginPage(@RequestParam(name = "msg", required = false, defaultValue = "") String msg, HttpServletResponse response, @CookieValue(name = "sb_token", required = false) String token) {
+		if (token != null && !token.isBlank() && authService.isValidToken(token))
+			return "redirect:" + PathRegistry.DASHBOARD;
 		authService.processLoginPage(msg, response);
 		return ViewRegistry.Auth.LOGIN;
 	}
 
 	@GetMapping(PathRegistry.Auth.SIGNUP)
-	public String signupPage() {
+	public String signupPage(@CookieValue(name = "sb_token", required = false) String token) {
+		if (token != null && !token.isBlank() && authService.isValidToken(token))
+			return "redirect:" + PathRegistry.DASHBOARD;
 		return ViewRegistry.Auth.REGISTER;
 	}
 
@@ -108,4 +112,5 @@ public class AuthController {
 	public String sessionCallback() {
 		return ViewRegistry.Auth.CALLBACK;
 	}
+
 }

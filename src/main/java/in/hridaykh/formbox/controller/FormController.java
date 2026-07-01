@@ -9,8 +9,8 @@ import in.hridaykh.formbox.AuthServiceKt;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import jakarta.servlet.http.HttpServletResponse;
 
-import java.util.List;
 import java.util.UUID;
 
 @Controller
@@ -27,23 +27,79 @@ public class FormController {
 		this.formRepository = formRepository;
 	}
 
+	// 1. Get partial rows for the table
 	@GetMapping
 	public String listForms(@CookieValue(name = "sb_token", required = false) String token, Model model) {
 		model.addAttribute("forms", formRepository.findByTenantAndIsDeletedIsFalse(resolveTenant(token)));
 		return "fragments/form-list :: form-rows";
 	}
 
+	// 2. Handle form creation and send an HTMX redirect to the management view
 	@PostMapping
-	public String createForm(@CookieValue(name = "sb_token", required = false) String token, @RequestParam("name") String name, @RequestParam(value = "redirectUrl", required = false) String redirectUrl, Model model) {
+	public String createForm(
+		@CookieValue(name = "sb_token", required = false) String token,
+		@RequestParam("name") String name,
+		@RequestParam(value = "redirectUrl", required = false) String redirectUrl,
+		HttpServletResponse response) {
 
 		Tenant tenant = resolveTenant(token);
+		Form savedForm = formRepository.save(new Form(tenant, name, redirectUrl));
 
-		formRepository.save(new Form(tenant, name, redirectUrl));
+		// Instruct HTMX to push the user directly to the new form management screen
+		response.setHeader("HX-Redirect", PathRegistry.Form.BASE + "/" + savedForm.getId());
 
-		List<Form> forms = formRepository.findByTenantAndIsDeletedIsFalse(tenant);
-		model.addAttribute("forms", forms);
+		return "auth/fragments :: empty";
+	}
 
-		return "fragments/form-list :: form-rows";
+	// 3. Form management workspace view
+	@GetMapping("/{id}")
+	public String manageForm(
+		@CookieValue(name = "sb_token", required = false) String token,
+		@PathVariable("id") UUID formId,
+		Model model) {
+
+		Form form = formRepository.findById(formId)
+			.orElseThrow(() -> new RuntimeException("Form not found"));
+
+		if (!form.compareTenant(resolveTenant(token))) {
+			throw new RuntimeException("Unauthorized access to form system.");
+		}
+
+		model.addAttribute("form", form);
+		return "dashboard/manage-form"; // Returns the empty view skeleton
+	}
+
+	// 4. Update Form Settings via HTMX Put Request
+	@PutMapping("/{id}")
+	public String updateForm(
+		@CookieValue(name = "sb_token", required = false) String token,
+		@PathVariable("id") UUID formId,
+		@RequestParam("name") String name,
+		@RequestParam(value = "redirectUrl", required = false) String redirectUrl,
+		@RequestParam(value = "isActive", required = false) Boolean isActive,
+		Model model) {
+
+		Tenant tenant = resolveTenant(token);
+		Form form = formRepository.findById(formId)
+			.orElseThrow(() -> new RuntimeException("Form not found"));
+
+		if (!form.compareTenant(tenant)) {
+			throw new RuntimeException("Unauthorized access to form system.");
+		}
+
+		// Apply variations from parameters
+		form.setName(name);
+		form.setRedirectUrl(redirectUrl == null || redirectUrl.isBlank() ? null : redirectUrl);
+		// Handle checkboxes safely (checkboxes are missing from parameters if unchecked)
+		form.setIsActive(isActive != null && isActive);
+
+		formRepository.save(form);
+
+		model.addAttribute("form", form);
+		model.addAttribute("message", "Form configurations updated successfully!");
+
+		// Re-render the form fragments container inside the configuration workspace
+		return "dashboard/manage-form :: settings-panel";
 	}
 
 	@DeleteMapping("/{id}")

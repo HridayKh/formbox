@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
-    <title>Dashboard</title>
+    <meta charset="UTF-8">
+    <title>Dashboard | FormBox</title>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 </head>
 <body>
@@ -90,9 +91,44 @@
         </div>
     </section>
 
-    <section>
-        <h3>Application Workspace</h3>
-        <p>FormBox data engines are spinning.</p>
+    <section style="margin-top: 2rem;">
+        <h3>Your Form Desks</h3>
+
+        <div id="create-form-container"
+             style="margin-bottom: 2rem; border: 1px dashed #ccc; padding: 1rem; background: #fff; border-radius: 6px;">
+            <h4>Create New Form Endpoint</h4>
+            <form hx-post="/forms">
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; font-weight: 500; margin-bottom: 0.25rem;">Form Name</label>
+                    <input type="text" name="name" required placeholder="Contact Form"
+                           style="width: 100%; padding: 0.4rem; box-sizing: border-box;">
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; font-weight: 500; margin-bottom: 0.25rem;">Custom Redirect URL
+                        (Optional)</label>
+                    <input type="url" name="redirectUrl" placeholder="https://mysite.com/thanks"
+                           style="width: 100%; padding: 0.4rem; box-sizing: border-box;">
+                </div>
+                <button type="submit"
+                        style="background: #007bff; color: white; padding: 0.5rem 1rem; border: none; border-radius: 4px; cursor: pointer;">
+                    Create Endpoint
+                </button>
+            </form>
+        </div>
+        <div hx-get="/forms" hx-trigger="load" hx-target="#form-table-body" hx-swap="innerHTML">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; margin-top: 1rem;">
+                <thead>
+                <tr style="border-bottom: 2px solid #ddd;">
+                    <th style="padding: 0.5rem;">Name</th>
+                    <th style="padding: 0.5rem;">Endpoint URL</th>
+                    <th style="padding: 0.5rem;">Status</th>
+                    <th style="padding: 0.5rem; text-align: right;">Actions</th>
+                </tr>
+                </thead>
+                <tbody id="form-table-body">
+                </tbody>
+            </table>
+        </div>
     </section>
 
 </main>

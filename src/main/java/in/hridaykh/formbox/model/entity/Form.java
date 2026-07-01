@@ -62,11 +62,71 @@ public class Form {
 		return id;
 	}
 
+	public void setId(UUID id) {
+		this.id = id;
+	}
+
+	public Tenant getTenant() {
+		return tenant;
+	}
+
+	public void setTenant(Tenant tenant) {
+		this.tenant = tenant;
+	}
+
 	public String getName() {
 		return name;
 	}
 
-	public boolean getIsActive() {
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getRedirectUrl() {
+		return redirectUrl;
+	}
+
+	public void setRedirectUrl(String redirectUrl) {
+		this.redirectUrl = redirectUrl;
+	}
+
+	public String getTurnstileSecretKey() throws IllegalAccessException {
+		throw new IllegalAccessException("TURNSTILE NOW ALLOWED BRUH");
+	}
+
+	public void setTurnstileSecretKey(String turnstileSecretKey) throws IllegalAccessException {
+		throw new IllegalAccessException("TURNSTILE NOW ALLOWED BRUH");
+	}
+
+	public Boolean getIsActive() {
 		return isActive;
+	}
+
+	public void setIsActive(Boolean isActive) {
+		this.isActive = isActive;
+	}
+
+	public FormVersion getCurrentVersion() {
+		return currentVersion;
+	}
+
+	public void setCurrentVersion(FormVersion currentVersion) {
+		this.currentVersion = currentVersion;
+	}
+
+	public OffsetDateTime getCreatedAt() {
+		return createdAt;
+	}
+
+	public void setCreatedAt(OffsetDateTime createdAt) {
+		this.createdAt = createdAt;
+	}
+
+	public Boolean getDeleted() {
+		return isDeleted;
+	}
+
+	public void setDeleted(Boolean deleted) {
+		isDeleted = deleted;
 	}
 }

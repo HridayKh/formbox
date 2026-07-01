@@ -6,6 +6,7 @@ import in.hridaykh.formbox.LoginRequest;
 import in.hridaykh.formbox.SignUpRequest;
 import in.hridaykh.formbox.constant.PathRegistry;
 import io.github.jan.supabase.auth.exception.AuthWeakPasswordException;
+import io.github.jan.supabase.auth.user.UserSession;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -44,7 +45,7 @@ public class AuthService {
 		setAuthCookie(response, "sb_refresh", auth.getRefreshToken(), 604800);
 
 		log.info("Assigned secure cookie contexts for verified UID payload reference: {}", auth.getUserId());
-		response.setHeader("HX-Redirect", PathRegistry.Auth.Hx.DASHBOARD);
+		response.setHeader("HX-Redirect", PathRegistry.DASHBOARD);
 	}
 
 	public void terminateSession(String accessToken, String refreshToken, HttpServletResponse response) {
@@ -64,7 +65,7 @@ public class AuthService {
 		setAuthCookie(response, "sb_token", accessToken, expiresInSeconds);
 		setAuthCookie(response, "sb_refresh", refreshToken, (int) Duration.ofDays(7).toSeconds());
 		log.info("OAuth token state exchange generation successful.");
-		response.setHeader("HX-Redirect", PathRegistry.Auth.Hx.DASHBOARD);
+		response.setHeader("HX-Redirect", PathRegistry.DASHBOARD);
 	}
 
 	private void clearAuthCookies(HttpServletResponse response) {
@@ -72,12 +73,32 @@ public class AuthService {
 		setAuthCookie(response, "sb_refresh", "", 0);
 	}
 
-	private void setAuthCookie(HttpServletResponse response, String name, String value, int maxAge) {
+	public void setAuthCookie(HttpServletResponse response, String name, String value, int maxAge) {
 		Cookie cookie = new Cookie(name, value == null ? "" : value);
 		cookie.setHttpOnly(true);
 		cookie.setSecure(true);
 		cookie.setPath("/");
 		cookie.setMaxAge(maxAge);
 		response.addCookie(cookie);
+	}
+
+	public boolean isValidToken(String token) {
+		try {
+			var metadata = authServiceKt.getUserMetadata(token);
+
+			return metadata.getSub() != null;
+		} catch (Exception e) {
+			log.debug("Token evaluation failed or expired: {}", e.getMessage());
+			return false;
+		}
+	}
+
+	public UserSession refreshUserSession(String refreshToken) {
+		try {
+			return authServiceKt.refreshSession(refreshToken);
+		} catch (Exception e) {
+			log.error("Failed to silently roll session credentials: {}", e.getMessage());
+			return null;
+		}
 	}
 }

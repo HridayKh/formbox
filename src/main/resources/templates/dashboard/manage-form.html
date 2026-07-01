@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Form | FormBox</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+</head>
+<body>
+<main style="padding: 2rem; max-width: 600px; margin: 0 auto;">
+    <p><a href="/dashboard">← Back to Dashboard</a></p>
+
+    <h1 id="form-heading" th:text="'Managing: ' + ${form.name}">Managing Form Name</h1>
+    <p>Endpoint URL: <code th:text="'/f/' + ${form.id}">/f/uuid</code></p>
+
+    <hr style="margin: 1.5rem 0;"/>
+
+    <div id="settings-panel-container">
+        <div th:fragment="settings-panel"
+             style="background: #fafafa; border: 1px solid #ddd; padding: 1.5rem; border-radius: 6px;">
+
+            <h1 id="form-heading" hx-swap-oob="true" th:text="'Managing: ' + ${form.name}">Managing Form Name</h1>
+
+            <h3>Form Settings</h3>
+
+            <div th:if="${message}"
+                 style="background: #d4edda; color: #155724; border: 1px solid #c3e6cb; padding: 0.75rem; margin-bottom: 1rem; border-radius: 4px;">
+                <p th:text="${message}" style="margin: 0; font-weight: 500;">Saved!</p>
+            </div>
+
+            <form th:attr="hx-put=|/forms/${form.id}|" hx-target="#settings-panel-container" hx-swap="innerHTML">
+
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; font-weight: bold; margin-bottom: 0.25rem;">Form Name</label>
+                    <input type="text" name="name" th:value="${form.name}" required
+                           style="width: 100%; padding: 0.4rem; box-sizing: border-box;"/>
+                </div>
+
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; font-weight: bold; margin-bottom: 0.25rem;">Custom Redirect URL
+                        (Optional)</label>
+                    <input type="url" name="redirectUrl" th:value="${form.redirectUrl}"
+                           placeholder="https://your-site.com/thanks"
+                           style="width: 100%; padding: 0.4rem; box-sizing: border-box;"/>
+                </div>
+
+                <div style="margin-bottom: 1.5rem; display: flex; align-items: center;">
+                    <input type="checkbox" id="isActive" name="isActive" value="true" th:checked="${form.isActive}"
+                           style="margin-right: 0.5rem; transform: scale(1.1);"/>
+                    <label for="isActive" style="font-weight: bold; cursor: pointer;">Allow Submission Receipts (Active
+                        Endpoint)</label>
+                </div>
+
+                <button type="submit"
+                        style="background: #28a745; color: white; padding: 0.6rem 1.2rem; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">
+                    Save Configurations
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div style="padding: 2rem; border: 2px dashed #bbb; text-align: center; margin-top: 2rem; color: #666; border-radius: 6px;">
+        <h4>Field Configuration Blueprint</h4>
+        <p style="margin: 0; font-size: 0.9rem;">Workspace slot placeholder. Field structure controls, custom rules,
+            webhook nodes, and honeypot traps will drop in here.</p>
+    </div>
+</main>
+</body>
+</html>

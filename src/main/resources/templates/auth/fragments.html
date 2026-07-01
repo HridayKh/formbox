@@ -1,4 +1,8 @@
-<div th:fragment="empty-frag"></div>
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<body>
+
+<div th:fragment="empty-frag" hx-trigger="load" hx-redirect="/dashboard"></div>
 
 <div th:fragment="error-alert" class="alert alert-danger" role="alert" th:text="${error}">
     An error occurred.
@@ -11,9 +15,13 @@
 <div th:fragment="resend-form" class="resend-container">
     <form hx-post="/auth/resend-confirmation" hx-target="#alert-container" hx-swap="innerHTML">
         <p>Didn't get the link?</p>
-        <label>
-            <input type="email" name="email" placeholder="Enter email to resend" required/>
-        </label>
+        <div>
+            <label for="resend-email">Enter email to resend</label>
+            <input type="email" id="resend-email" name="email" placeholder="name@example.com" required/>
+        </div>
         <button type="submit">Resend Confirmation</button>
     </form>
 </div>
+
+</body>
+</html>

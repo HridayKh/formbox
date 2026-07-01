@@ -11,7 +11,7 @@ public interface ViewRegistry {
 
 		interface Fragments {
 			String BASE = "auth/fragments";
-			String EMPTY = BASE + " :: empty";
+			String EMPTY = BASE + " :: empty-frag";
 			String ERROR_ALERT = BASE + " :: error-alert";
 			String SUCCESS_ALERT = BASE + " :: success-alert";
 		}
