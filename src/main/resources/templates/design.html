@@ -1,16 +1,16 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<html lang="en">
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Manage Form | FormBox</title>
+    <title>Manage Form — Formbox</title>
     <meta name="description" content="Configure your form endpoint settings and field schema."/>
 
     <link rel="preconnect" href="https://fonts.googleapis.com"/>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
           rel="stylesheet"/>
-    <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.10/dist/htmx.min.js"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.12" defer></script>
 
     <style>
         /* ════════════════════════════════════════════════════
@@ -121,7 +121,7 @@
         }
 
         .navbar__inner {
-            max-width: 900px;
+            max-width: 1200px;
             margin-inline: auto;
             width: 100%;
             display: flex;
@@ -314,6 +314,11 @@
             box-shadow: 0 0 0 3px rgba(124, 92, 252, 0.18);
         }
 
+        .textarea {
+            resize: vertical;
+            min-height: 96px;
+        }
+
         .checkbox-group {
             display: flex;
             align-items: center;
@@ -324,7 +329,6 @@
             border-radius: var(--radius-md);
             cursor: pointer;
             transition: border-color 0.15s ease;
-            margin-bottom: var(--space-5);
         }
 
         .checkbox-group:hover {
@@ -390,6 +394,10 @@
             font-size: 0.82rem;
         }
 
+        .btn--full {
+            width: 100%;
+        }
+
         .btn svg {
             width: 16px;
             height: 16px;
@@ -434,7 +442,7 @@
         .field-row {
             display: flex;
             gap: var(--space-3);
-            align-items: center;
+            align-items: flex-start;
             padding: var(--space-4);
             background: var(--color-surface-2);
             border: var(--border-2);
@@ -524,7 +532,6 @@
             padding: var(--space-10);
             color: var(--color-text-faint);
             font-style: italic;
-            width: 100%;
         }
 
         /* ════════════════════════════════════════════════════
@@ -551,6 +558,23 @@
         /* ════════════════════════════════════════════════════
            UTILITIES
         ════════════════════════════════════════════════════ */
+        .text-mono {
+            font-family: var(--font-mono);
+        }
+
+        .text-dim {
+            color: var(--color-text-dim);
+        }
+
+        .visually-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
+        }
+
         .htmx-indicator {
             display: none;
         }
@@ -584,7 +608,6 @@
 
             .field-row {
                 flex-direction: column;
-                align-items: stretch;
             }
 
             .field-row input, .field-row select {
@@ -595,15 +618,18 @@
 </head>
 <body>
 
+<!-- ════════════════════════════════════════════
+     NAVIGATION
+════════════════════════════════════════════ -->
 <header class="navbar">
     <div class="navbar__inner">
         <a href="/" class="navbar__logo">
-            <span class="navbar__logo-mark">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                     stroke-linejoin="round">
-                    <path d="M4 6h16M4 12h10M4 18h16"/>
-                </svg>
-            </span>
+      <span class="navbar__logo-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+             stroke-linejoin="round">
+          <path d="M4 6h16M4 12h10M4 18h16"/>
+        </svg>
+      </span>
             <span class="navbar__wordmark">Formbox</span>
         </a>
         <div class="navbar__breadcrumb">
@@ -614,6 +640,9 @@
     </div>
 </header>
 
+<!-- ════════════════════════════════════════════
+     PAGE CONTENT
+════════════════════════════════════════════ -->
 <div class="page-wrapper">
 
     <a href="/dashboard" class="back-link">
@@ -624,63 +653,361 @@
         Back to Dashboard
     </a>
 
+    <!-- PAGE HEADER -->
     <div class="page-header" id="page-header">
-        <h1 id="form-heading" th:text="'Managing: ' + ${form.name}">Managing Form Name</h1>
+        <h1 id="form-heading">Managing: Contact Form</h1>
         <p>
-            Endpoint URL: <code th:text="'/f/' + ${form.id}">/f/uuid</code>
+            Endpoint URL: <code>https://formbox.dev/f/8k2p9q</code>
         </p>
     </div>
 
-    <div id="settings-panel-container">
-        <div th:fragment="settings-panel" class="card">
+    <!-- FORM SETTINGS CARD -->
+    <div class="card" id="settings-panel-container">
+        <div class="card__header">
+            <div>
+                <h2 class="card__title">Form Settings</h2>
+                <p class="card__subtitle">Update endpoint configuration and webhooks</p>
+            </div>
+        </div>
 
-            <h1 id="form-heading" hx-swap-oob="true" th:text="'Managing: ' + ${form.name}" style="display: none;">
-                Managing Form Name</h1>
+        <div id="settings-message"></div>
 
-            <div class="card__header">
-                <div>
-                    <h2 class="card__title">Form Settings</h2>
-                    <p class="card__subtitle">Update endpoint configuration and webhooks</p>
-                </div>
+        <form id="settings-form" hx-put="/forms/8k2p9q" hx-target="#settings-panel-container" hx-swap="outerHTML">
+            <div class="form-block">
+                <label class="form-label" for="form-name">Form Name</label>
+                <input class="input" id="form-name" name="name" type="text" value="Contact Form" required/>
             </div>
 
-            <div th:if="${message}" class="alert alert--success">
-                <p th:text="${message}">Saved!</p>
+            <div class="form-block">
+                <label class="form-label" for="form-redirect">Custom Redirect URL (Optional)</label>
+                <input class="input" id="form-redirect" name="redirectUrl" type="url"
+                       placeholder="https://yoursite.com/thank-you" value="https://usepilot.dev/thank-you"/>
             </div>
 
-            <form th:attr="hx-put=|/forms/${form.id}|" hx-target="#settings-panel-container" hx-swap="innerHTML">
+            <div class="form-block">
+                <label class="form-label" for="form-discord">Discord Webhook (Optional)</label>
+                <input class="input" id="form-discord" name="discordWebhook" type="url"
+                       placeholder="https://discord.com/api/webhooks/..."/>
+            </div>
 
-                <div class="form-block">
-                    <label class="form-label">Form Name</label>
-                    <input class="input" type="text" name="name" th:value="${form.name}" required/>
-                </div>
+            <label class="checkbox-group">
+                <input type="checkbox" id="form-active" name="isActive" checked/>
+                <label for="form-active" style="margin: 0;">Form is currently active</label>
+            </label>
 
-                <div class="form-block">
-                    <label class="form-label">Custom Redirect URL (Optional)</label>
-                    <input class="input" type="url" name="redirectUrl" th:value="${form.redirectUrl}"
-                           placeholder="https://your-site.com/thanks"/>
-                </div>
+            <div class="form-actions">
+                <button class="btn btn--primary" type="submit">
+                    <span class="btn-label">Save Settings</span>
+                    <span class="spinner htmx-indicator"></span>
+                </button>
+            </div>
+        </form>
+    </div>
 
-                <div class="form-block">
-                    <label class="form-label">Discord Webhook (Optional — Coming Soon)</label>
-                    <input class="input" type="url" placeholder="https://discord.com/api/webhooks/..." disabled
-                           style="opacity: 0.5; cursor: not-allowed;"/>
-                </div>
+    <!-- FIELD SCHEMA CARD -->
+    <div class="card" id="fields-panel-container">
+        <div class="card__header">
+            <div>
+                <h2 class="card__title">Field Schema</h2>
+                <p class="card__subtitle">Define which fields your form accepts and their validation rules</p>
+            </div>
+        </div>
 
-                <label class="checkbox-group" for="isActive">
-                    <input type="checkbox" id="isActive" name="isActive" value="true" th:checked="${form.isActive}"/>
-                    <label for="isActive" style="margin: 0;">Form is currently active</label>
+        <div id="schema-message"></div>
+
+        <div id="fields-list" style="margin-bottom: var(--space-6);">
+            <!-- Field rows will be dynamically added here -->
+            <div class="field-row">
+                <input type="text" placeholder="Field Name (key)" class="f-name" value="email" required/>
+                <input type="text" placeholder="Human Label" class="f-label" value="Email Address" required/>
+                <select class="f-type">
+                    <option value="text">text</option>
+                    <option value="email" selected>email</option>
+                    <option value="number">number</option>
+                    <option value="textarea">textarea</option>
+                    <option value="checkbox">checkbox</option>
+                    <option value="radio">radio</option>
+                    <option value="select">select</option>
+                    <option value="tel">tel</option>
+                    <option value="url">url</option>
+                    <option value="date">date</option>
+                    <option value="file">file</option>
+                </select>
+                <label style="display: flex; align-items: center; gap: var(--space-2); font-size: 0.85rem;">
+                    <input type="checkbox" class="f-req" checked/>
+                    Required
                 </label>
-
-                <div class="form-actions">
-                    <button class="btn btn--primary" type="submit">
-                        <span class="btn-label">Save Configurations</span>
-                        <span class="spinner htmx-indicator"></span>
+                <button type="button" class="field-action-btn f-validate-btn">⚙ Validation</button>
+                <button type="button" class="field-action-btn field-action-btn--delete"
+                        onclick="this.closest('.field-row').remove()">Delete
+                </button>
+                <div class="field-validation-panel">
+                    <label>
+                        Min Length
+                        <input type="number" class="f-min-length"/>
+                    </label>
+                    <label>
+                        Max Length
+                        <input type="number" class="f-max-length"/>
+                    </label>
+                    <label>
+                        Regex Pattern
+                        <input type="text" class="f-pattern" placeholder="e.g., ^[A-Z].*"/>
+                    </label>
+                    <label>
+                        Options (comma-separated)
+                        <input type="text" class="f-options" placeholder="opt1, opt2, opt3"/>
+                    </label>
+                    <button type="button" class="f-close-validation btn btn--secondary btn--sm"
+                            style="align-self: flex-end;">Done
                     </button>
                 </div>
-            </form>
+            </div>
+
+            <div class="field-row">
+                <input type="text" placeholder="Field Name (key)" class="f-name" value="message" required/>
+                <input type="text" placeholder="Human Label" class="f-label" value="Message" required/>
+                <select class="f-type">
+                    <option value="text">text</option>
+                    <option value="email">email</option>
+                    <option value="number">number</option>
+                    <option value="textarea" selected>textarea</option>
+                    <option value="checkbox">checkbox</option>
+                    <option value="radio">radio</option>
+                    <option value="select">select</option>
+                    <option value="tel">tel</option>
+                    <option value="url">url</option>
+                    <option value="date">date</option>
+                    <option value="file">file</option>
+                </select>
+                <label style="display: flex; align-items: center; gap: var(--space-2); font-size: 0.85rem;">
+                    <input type="checkbox" class="f-req" checked/>
+                    Required
+                </label>
+                <button type="button" class="field-action-btn f-validate-btn">⚙ Validation</button>
+                <button type="button" class="field-action-btn field-action-btn--delete"
+                        onclick="this.closest('.field-row').remove()">Delete
+                </button>
+                <div class="field-validation-panel">
+                    <label>
+                        Min Length
+                        <input type="number" class="f-min-length" value="10"/>
+                    </label>
+                    <label>
+                        Max Length
+                        <input type="number" class="f-max-length" value="1000"/>
+                    </label>
+                    <label>
+                        Regex Pattern
+                        <input type="text" class="f-pattern"/>
+                    </label>
+                    <label>
+                        Options (comma-separated)
+                        <input type="text" class="f-options"/>
+                    </label>
+                    <button type="button" class="f-close-validation btn btn--secondary btn--sm"
+                            style="align-self: flex-end;">Done
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="field-actions">
+            <button type="button" class="btn btn--secondary" id="add-field-btn" onclick="addNewFieldRow()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                     stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Add Field
+            </button>
+            <button type="button" class="btn btn--primary" id="save-fields-btn" onclick="submitFieldsForm()">
+                <span class="btn-label">Save Schema</span>
+                <span class="spinner htmx-indicator"></span>
+            </button>
         </div>
     </div>
+
 </div>
+
+<script>
+    // ──────────────────────────────────────────
+    // Field Schema Management
+    // ──────────────────────────────────────────
+
+    function attachValidationHandlers(row) {
+        const validateBtn = row.querySelector('.f-validate-btn');
+        const validationPanel = row.querySelector('.field-validation-panel');
+        const closeBtn = row.querySelector('.f-close-validation');
+
+        if (validateBtn) {
+            validateBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                validationPanel.classList.toggle('active');
+            });
+        }
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                validationPanel.classList.remove('active');
+            });
+        }
+    }
+
+    window.addNewFieldRow = function addNewFieldRow() {
+        const container = document.getElementById('fields-list');
+        const row = document.createElement('div');
+        row.className = 'field-row';
+
+        row.innerHTML = `
+      <input type="text" placeholder="Field Name (key)" class="f-name" required />
+      <input type="text" placeholder="Human Label" class="f-label" required />
+      <select class="f-type">
+        <option value="text">text</option>
+        <option value="email">email</option>
+        <option value="number">number</option>
+        <option value="textarea">textarea</option>
+        <option value="checkbox">checkbox</option>
+        <option value="radio">radio</option>
+        <option value="select">select</option>
+        <option value="tel">tel</option>
+        <option value="url">url</option>
+        <option value="date">date</option>
+        <option value="file">file</option>
+      </select>
+      <label style="display: flex; align-items: center; gap: var(--space-2); font-size: 0.85rem;">
+        <input type="checkbox" class="f-req" />
+        Required
+      </label>
+      <button type="button" class="field-action-btn f-validate-btn">⚙ Validation</button>
+      <button type="button" class="field-action-btn field-action-btn--delete" onclick="this.closest('.field-row').remove()">Delete</button>
+      <div class="field-validation-panel">
+        <label>
+          Min Length
+          <input type="number" class="f-min-length" />
+        </label>
+        <label>
+          Max Length
+          <input type="number" class="f-max-length" />
+        </label>
+        <label>
+          Regex Pattern
+          <input type="text" class="f-pattern" placeholder="e.g., ^[A-Z].*" />
+        </label>
+        <label>
+          Options (comma-separated)
+          <input type="text" class="f-options" placeholder="opt1, opt2, opt3" />
+        </label>
+        <button type="button" class="f-close-validation btn btn--secondary btn--sm" style="align-self: flex-end;">Done</button>
+      </div>
+    `;
+
+        container.appendChild(row);
+        attachValidationHandlers(row);
+    };
+
+    // Initialize validation handlers on page load
+    document.querySelectorAll('.field-row').forEach(row => {
+        attachValidationHandlers(row);
+    });
+
+    window.submitFieldsForm = async function submitFieldsForm() {
+        const saveBtn = document.getElementById('save-fields-btn');
+        const messageDiv = document.getElementById('schema-message');
+        const rows = document.querySelectorAll('#fields-list .field-row');
+
+        messageDiv.innerHTML = '';
+
+        if (rows.length === 0) {
+            messageDiv.innerHTML = '<div class="alert alert--error"><p>Add at least one field before saving.</p></div>';
+            return;
+        }
+
+        const payload = [];
+
+        for (const row of rows) {
+            const nameInput = row.querySelector('.f-name');
+            const labelInput = row.querySelector('.f-label');
+            const typeInput = row.querySelector('.f-type');
+            const reqInput = row.querySelector('.f-req');
+            const minLengthInput = row.querySelector('.f-min-length');
+            const maxLengthInput = row.querySelector('.f-max-length');
+            const patternInput = row.querySelector('.f-pattern');
+            const optionsInput = row.querySelector('.f-options');
+
+            const name = nameInput?.value?.trim() || '';
+            const label = labelInput?.value?.trim() || '';
+
+            if (!name || !label) {
+                messageDiv.innerHTML = '<div class="alert alert--error"><p>Every field needs both a Field Name and a Human Label.</p></div>';
+                return;
+            }
+
+            let validation = null;
+            const minLength = minLengthInput?.value ? parseInt(minLengthInput.value, 10) : null;
+            const maxLength = maxLengthInput?.value ? parseInt(maxLengthInput.value, 10) : null;
+            const pattern = patternInput?.value?.trim() || null;
+
+            if (minLength || maxLength || pattern) {
+                validation = {};
+                if (minLength) validation.min_length = minLength;
+                if (maxLength) validation.max_length = maxLength;
+                if (pattern) validation.pattern = pattern;
+            }
+
+            let options = null;
+            const optionsText = optionsInput?.value?.trim();
+            if (optionsText) {
+                options = optionsText.split(',').map(opt => opt.trim()).filter(opt => opt.length > 0);
+                if (options.length === 0) options = null;
+            }
+
+            payload.push({
+                name: name,
+                label: label,
+                type: typeInput?.value || 'text',
+                required: reqInput?.checked || false,
+                validation: validation,
+                options: options
+            });
+        }
+
+        saveBtn.disabled = true;
+
+        try {
+            const resp = await fetch('/forms/8k2p9q/fields', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+
+            if (resp.ok) {
+                messageDiv.innerHTML = '<div class="alert alert--success"><p>Field schema saved successfully!</p></div>';
+            } else {
+                const errorText = await resp.text();
+                messageDiv.innerHTML = `<div class="alert alert--error"><p>Save failed (${resp.status}). ${errorText || ''}</p></div>`;
+            }
+        } catch (err) {
+            messageDiv.innerHTML = `<div class="alert alert--error"><p>Network error: ${err.message}</p></div>`;
+        } finally {
+            saveBtn.disabled = false;
+        }
+    };
+
+    // ──────────────────────────────────────────
+    // Settings Form HTMX
+    // ──────────────────────────────────────────
+    document.getElementById('settings-form').addEventListener('htmx:responseError', function () {
+        const msgDiv = document.getElementById('settings-message');
+        msgDiv.innerHTML = '<div class="alert alert--error"><p>Failed to save form settings.</p></div>';
+    });
+
+    document.getElementById('settings-form').addEventListener('htmx:afterSwap', function () {
+        const msgDiv = document.getElementById('settings-message');
+        msgDiv.innerHTML = '<div class="alert alert--success"><p>Form settings saved successfully!</p></div>';
+    });
+</script>
+
 </body>
 </html>

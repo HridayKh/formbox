@@ -2,12 +2,70 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Verifying Session...</title>
-    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Verifying Session | FormBox</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.10/dist/htmx.min.js"></script>
+
+    <style>
+        :root {
+            --color-bg:           #09090B;
+            --color-surface:      #121218;
+            --color-border-2:     #27272A;
+            --color-text:         #F4F4F6;
+            --color-text-dim:     #A3A3AE;
+            --color-accent:       #7C5CFC;
+            --color-accent-bright:#9B7CFF;
+            --gradient-accent:    linear-gradient(135deg, #7C5CFC 0%, #5B3FE0 100%);
+            --font-body:          'Inter', system-ui, -apple-system, sans-serif;
+            --space-4: 16px;
+            --space-6: 24px;
+            --radius-lg: 14px;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--color-bg);
+            color: var(--color-text);
+            font-family: var(--font-body);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .auth-card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border-2);
+            border-radius: var(--radius-lg);
+            padding: var(--space-6);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--space-4);
+        }
+        .spinner {
+            border: 3px solid rgba(124, 92, 252, 0.1);
+            border-top: 3px solid var(--color-accent-bright);
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            animation: spin 0.8s linear infinite;
+        }
+        h3 { font-size: 1.1rem; font-weight: 500; color: var(--color-text); }
+        p { font-size: 0.9rem; color: var(--color-text-dim); }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
 </head>
 <body>
-<div style="text-align: center; margin-top: 10%;">
-    <h3>Finalizing verification, please wait...</h3>
+
+<div class="auth-card">
+    <div class="spinner"></div>
+    <h3>Verifying Session</h3>
+    <p>Finalizing verification, please wait...</p>
 </div>
 
 <script>

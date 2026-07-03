@@ -13,6 +13,16 @@ import java.util.UUID;
 @Table(name = "submissions", indexes = {@Index(name = "idx_submissions_form_id", columnList = "form_id")})
 public class Submission {
 
+	public Submission() {
+	}
+
+	public Submission(Form form,String clientIp, Map<String, String> payload, boolean isSpam) {
+		this.form = form;
+		this.payload = payload;
+		this.isSpam = isSpam;
+		this.senderIp = clientIp;
+	}
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.UUID)
 	@Column(name = "id", updatable = false, nullable = false)
@@ -22,13 +32,9 @@ public class Submission {
 	@JoinColumn(name = "form_id", nullable = false)
 	private Form form;
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "version_id")
-	private FormVersion version;
-
 	@JdbcTypeCode(SqlTypes.JSON)
 	@Column(name = "payload", nullable = false)
-	private Map<String, Object> payload;
+	private Map<String, String> payload;
 
 	@Column(name = "sender_ip")
 	private String senderIp;
@@ -40,4 +46,52 @@ public class Submission {
 	@ColumnDefault("NOW()")
 	private OffsetDateTime createdAt = OffsetDateTime.now();
 
+
+	public UUID getId() {
+		return id;
+	}
+
+	public void setId(UUID id) {
+		this.id = id;
+	}
+
+	public Form getForm() {
+		return form;
+	}
+
+	public void setForm(Form form) {
+		this.form = form;
+	}
+
+	public Map<String, String> getPayload() {
+		return payload;
+	}
+
+	public void setPayload(Map<String, String> payload) {
+		this.payload = payload;
+	}
+
+	public String getSenderIp() {
+		return senderIp;
+	}
+
+	public void setSenderIp(String senderIp) {
+		this.senderIp = senderIp;
+	}
+
+	public Boolean getSpam() {
+		return isSpam;
+	}
+
+	public void setSpam(Boolean spam) {
+		isSpam = spam;
+	}
+
+	public OffsetDateTime getCreatedAt() {
+		return createdAt;
+	}
+
+	public void setCreatedAt(OffsetDateTime createdAt) {
+		this.createdAt = createdAt;
+	}
 }

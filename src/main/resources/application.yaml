@@ -10,10 +10,9 @@ spring:
     password: ${FORM_DB_PASS}
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: none
     open-in-view: true
     show-sql: false
-
   thymeleaf:
     cache: true
   web:
@@ -24,7 +23,11 @@ spring:
       whitelabel:
         enabled: false
   main:
-    lazy-initialization: false
+    lazy-initialization: true
+
+server:
+  address: "0.0.0.0"
+  port: ${FORMBOX_PORT}
 
 supabase:
   url: ${SUPABASE_URL}
@@ -40,3 +43,4 @@ polar:
 polar-ids:
   paid-product-id: ${POLAR_PAID_PROD_ID_DEV}
   submission-meter-id: ${POLAR_SUBMISSION_METER_ID_DEV}
+

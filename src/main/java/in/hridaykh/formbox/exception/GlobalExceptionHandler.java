@@ -12,6 +12,11 @@ import org.springframework.web.servlet.ModelAndView;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
+	@ExceptionHandler(Exception.class)
+	public ModelAndView genericException(Exception ex) {
+		return buildErrorResponse("internal server error occurred", ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+	}
+
 	@ExceptionHandler(AuthWeakPasswordException.class)
 	public ModelAndView handleWeakPassword(AuthWeakPasswordException ex) {
 		String errorDesc = ex.getDescription() != null ? ex.getDescription() : "Password must be at least 8 characters long and contain uppercase, lowercase, digits, and symbols.";

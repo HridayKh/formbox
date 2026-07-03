@@ -43,10 +43,6 @@ public class Form {
 	@Column(name = "is_active")
 	private Boolean isActive = true;
 
-	@OneToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "current_version_id", referencedColumnName = "id")
-	private FormVersion currentVersion;
-
 	@Column(name = "created_at")
 	@ColumnDefault("NOW()")
 	private OffsetDateTime createdAt = OffsetDateTime.now();
@@ -90,28 +86,12 @@ public class Form {
 		this.redirectUrl = redirectUrl;
 	}
 
-	public String getTurnstileSecretKey() throws IllegalAccessException {
-		throw new IllegalAccessException("TURNSTILE NOW ALLOWED BRUH");
-	}
-
-	public void setTurnstileSecretKey(String turnstileSecretKey) throws IllegalAccessException {
-		throw new IllegalAccessException("TURNSTILE NOW ALLOWED BRUH");
-	}
-
 	public Boolean getIsActive() {
 		return isActive;
 	}
 
 	public void setIsActive(Boolean isActive) {
 		this.isActive = isActive;
-	}
-
-	public FormVersion getCurrentVersion() {
-		return currentVersion;
-	}
-
-	public void setCurrentVersion(FormVersion currentVersion) {
-		this.currentVersion = currentVersion;
 	}
 
 	public OffsetDateTime getCreatedAt() {

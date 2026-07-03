@@ -27,20 +27,10 @@ public class FormController {
 		this.formRepository = formRepository;
 	}
 
-	// 1. Get partial rows for the table
-	@GetMapping
-	public String listForms(@CookieValue(name = "sb_token", required = false) String token, Model model) {
-		model.addAttribute("forms", formRepository.findByTenantAndIsDeletedIsFalse(resolveTenant(token)));
-		return "fragments/form-list :: form-rows";
-	}
 
-	// 2. Handle form creation and send an HTMX redirect to the management view
+	// ========== FORM CRUD ==========
 	@PostMapping
-	public String createForm(
-		@CookieValue(name = "sb_token", required = false) String token,
-		@RequestParam("name") String name,
-		@RequestParam(value = "redirectUrl", required = false) String redirectUrl,
-		HttpServletResponse response) {
+	public String createForm(@CookieValue(name = "sb_token", required = false) String token, @RequestParam("name") String name, @RequestParam(value = "redirectUrl", required = false) String redirectUrl, HttpServletResponse response) {
 
 		Tenant tenant = resolveTenant(token);
 		Form savedForm = formRepository.save(new Form(tenant, name, redirectUrl));
@@ -51,15 +41,16 @@ public class FormController {
 		return "auth/fragments :: empty";
 	}
 
-	// 3. Form management workspace view
-	@GetMapping("/{id}")
-	public String manageForm(
-		@CookieValue(name = "sb_token", required = false) String token,
-		@PathVariable("id") UUID formId,
-		Model model) {
+	@GetMapping
+	public String listForms(@CookieValue(name = "sb_token", required = false) String token, Model model) {
+		model.addAttribute("forms", formRepository.findByTenantAndIsDeletedIsFalse(resolveTenant(token)));
+		return "fragments/form-list :: form-rows";
+	}
 
-		Form form = formRepository.findById(formId)
-			.orElseThrow(() -> new RuntimeException("Form not found"));
+	@GetMapping("/{id}")
+	public String manageForm(@CookieValue(name = "sb_token", required = false) String token, @PathVariable("id") UUID formId, Model model) {
+
+		Form form = formRepository.findById(formId).orElseThrow(() -> new RuntimeException("Form not found"));
 
 		if (!form.compareTenant(resolveTenant(token))) {
 			throw new RuntimeException("Unauthorized access to form system.");
@@ -69,19 +60,11 @@ public class FormController {
 		return "dashboard/manage-form"; // Returns the empty view skeleton
 	}
 
-	// 4. Update Form Settings via HTMX Put Request
 	@PutMapping("/{id}")
-	public String updateForm(
-		@CookieValue(name = "sb_token", required = false) String token,
-		@PathVariable("id") UUID formId,
-		@RequestParam("name") String name,
-		@RequestParam(value = "redirectUrl", required = false) String redirectUrl,
-		@RequestParam(value = "isActive", required = false) Boolean isActive,
-		Model model) {
+	public String updateForm(@CookieValue(name = "sb_token", required = false) String token, @PathVariable("id") UUID formId, @RequestParam("name") String name, @RequestParam(value = "redirectUrl", required = false) String redirectUrl, @RequestParam(value = "isActive", required = false) Boolean isActive, Model model) {
 
 		Tenant tenant = resolveTenant(token);
-		Form form = formRepository.findById(formId)
-			.orElseThrow(() -> new RuntimeException("Form not found"));
+		Form form = formRepository.findById(formId).orElseThrow(() -> new RuntimeException("Form not found"));
 
 		if (!form.compareTenant(tenant)) {
 			throw new RuntimeException("Unauthorized access to form system.");
@@ -106,15 +89,14 @@ public class FormController {
 	@ResponseBody
 	public void deleteForm(@CookieValue(name = "sb_token", required = false) String token, @PathVariable("id") UUID formId) {
 		Form form = formRepository.findById(formId).orElseThrow(() -> new RuntimeException("Form not found"));
-		if (form.compareTenant(resolveTenant(token)))
-			formRepository.delete(form);
+		if (form.compareTenant(resolveTenant(token))) formRepository.delete(form);
 	}
 
+	// ========== PRIVATE HELPERS ==========
 	private Tenant resolveTenant(String token) {
 		if (token == null || token.isBlank()) throw new RuntimeException("Unauthorized");
 		var userMetadata = authServiceKt.getUserMetadata(token);
-		if (userMetadata.getSub() == null)
-			throw new RuntimeException("Tenant not found");
+		if (userMetadata.getSub() == null) throw new RuntimeException("Tenant not found");
 		UUID userId = UUID.fromString(userMetadata.getSub());
 		return tenantRepository.findById(userId).orElseThrow(() -> new RuntimeException("Tenant not found"));
 	}
