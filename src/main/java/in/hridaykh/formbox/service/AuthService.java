@@ -32,7 +32,7 @@ public class AuthService {
 		}
 	}
 
-	public void registerUser(SignUpRequest request, HttpServletResponse response) throws AuthWeakPasswordException {
+	public void registerUser(SignUpRequest request, HttpServletResponse response) {
 		authServiceKt.signUp(request);
 		log.info("Registration request completed cleanly for: {}", request.getEmail());
 		response.setHeader("HX-Redirect", PathRegistry.Auth.Hx.LOGIN_CHECK_EMAIL);

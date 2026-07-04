@@ -82,7 +82,7 @@ public class FormController {
 		model.addAttribute("message", "Form configurations updated successfully!");
 
 		// Re-render the form fragments container inside the configuration workspace
-		return "dashboard/manage-form :: settings-panel";
+		return "ashboard/manage-form :: settings-panel";
 	}
 
 	@DeleteMapping("/{id}")
