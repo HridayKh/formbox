@@ -16,12 +16,12 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Controller
-public class PolarController {
+public class PolarWebhookController {
 
 	private final PolarWebhooksService polarWebhooksService;
 	private final PolarWebhookVerifier polarWebhookVerifier;
 
-	public PolarController(PolarWebhooksService polarWebhooksService, PolarWebhookVerifier polarWebhookVerifier) {
+	public PolarWebhookController(PolarWebhooksService polarWebhooksService, PolarWebhookVerifier polarWebhookVerifier) {
 		this.polarWebhooksService = polarWebhooksService;
 		this.polarWebhookVerifier = polarWebhookVerifier;
 	}

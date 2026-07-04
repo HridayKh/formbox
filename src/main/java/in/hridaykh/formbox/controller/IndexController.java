@@ -6,14 +6,12 @@ import in.hridaykh.formbox.model.entity.Form;
 import in.hridaykh.formbox.model.entity.Submission;
 import in.hridaykh.formbox.repository.FormRepository;
 import in.hridaykh.formbox.repository.SubmissionRepository;
-import in.hridaykh.formbox.service.AuthService;
 import in.hridaykh.formbox.service.FilterService;
+import io.github.jan.supabase.auth.jwt.JwtPayload;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Map;
 import java.util.UUID;
@@ -23,21 +21,19 @@ import java.util.UUID;
 @RequestMapping(PathRegistry.ROOT)
 public class IndexController {
 
-	private final AuthService authService;
 	private final FormRepository formRepository;
 	private final FilterService filterService;
 	private final SubmissionRepository submissionRepository;
 
-	public IndexController(AuthService authService, FormRepository formRepository, FilterService filterService, SubmissionRepository submissionRepository) {
-		this.authService = authService;
+	public IndexController(FormRepository formRepository, FilterService filterService, SubmissionRepository submissionRepository) {
 		this.formRepository = formRepository;
 		this.filterService = filterService;
 		this.submissionRepository = submissionRepository;
 	}
 
 	@GetMapping
-	public String index(@CookieValue(name = "sb_token", required = false) String token, Model model) {
-		model.addAttribute("loggedIn", token != null && !token.isBlank() && authService.isValidToken(token));
+	public String index(@RequestAttribute(required = false) JwtPayload userMetadata, Model model) {
+		model.addAttribute("loggedIn", userMetadata.getSub() != null);
 		return ViewRegistry.INDEX;
 	}
 

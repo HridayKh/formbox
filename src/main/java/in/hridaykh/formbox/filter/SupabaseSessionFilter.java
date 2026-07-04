@@ -1,7 +1,9 @@
 package in.hridaykh.formbox.filter;
 
+import in.hridaykh.formbox.AuthServiceKt;
 import in.hridaykh.formbox.constant.PathRegistry;
 import in.hridaykh.formbox.service.AuthService;
+import io.github.jan.supabase.SupabaseClient;
 import io.github.jan.supabase.auth.user.UserSession;
 import jakarta.servlet.*;
 import jakarta.servlet.http.Cookie;
@@ -18,45 +20,78 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.Arrays;
 
+// ... keeping your imports ...
+
 @Component
 public class SupabaseSessionFilter extends OncePerRequestFilter {
 
 	private final Logger log = LoggerFactory.getLogger(SupabaseSessionFilter.class);
-
 	private final AuthService authService;
+	private final AuthServiceKt authServiceKt;
 
-	public SupabaseSessionFilter(AuthService authService) {
+	public SupabaseSessionFilter(AuthService authService, AuthServiceKt authServiceKt) {
 		this.authService = authService;
+		this.authServiceKt = authServiceKt;
 	}
 
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
 		String path = request.getRequestURI();
-		if (path.startsWith("/css/") || path.startsWith("/js/") || path.startsWith("/images/") || path.startsWith(PathRegistry.Auth.BASE) || path.startsWith("/f/")) {
+
+		// 1. Skip static/public endpoints
+		if (path.startsWith("/css/") || path.startsWith("/js/") || path.startsWith("/images/") || path.startsWith("/f/")) {
 			filterChain.doFilter(request, response);
 			return;
 		}
+
+		SupabaseClient supabaseClient = authServiceKt.createIsolatedClient();
+		request.setAttribute("supabaseClient", supabaseClient);
+
+
 		String oldAccessToken = getCookieValue(request, "sb_token");
 		String oldRefreshToken = getCookieValue(request, "sb_refresh");
-		if (oldAccessToken != null && !oldAccessToken.isBlank() && authService.isValidToken(oldAccessToken)) {
+
+		var userMetadata = authServiceKt.getUserMetadata(supabaseClient, oldAccessToken == null ? "" : oldAccessToken);
+
+		// 2. Path A: Active and Valid Session
+		if (userMetadata.getSub() != null) {
+			request.setAttribute("userMetadata", userMetadata);
+			filterChain.doFilter(request, response);
+			authServiceKt.closeIsolatedClient(supabaseClient);
+			return;
+		}
+
+		if (path.startsWith(PathRegistry.Auth.BASE)) {
+			request.setAttribute("userMetadata", null);
 			filterChain.doFilter(request, response);
 			return;
 		}
+
+		// 3. Path B: Expired Session / Background Token Rotation
 		if (oldRefreshToken != null && !oldRefreshToken.isBlank()) {
-			assert oldAccessToken != null;
 			log.info("Access token expired/invalid. Attempting background token rotation...");
-			UserSession newSession = authService.refreshUserSession(oldRefreshToken);
+			UserSession newSession = authService.refreshUserSession(supabaseClient, oldRefreshToken);
 
 			if (newSession != null) {
 				String newAccessToken = newSession.getAccessToken();
 				String newRefreshToken = newSession.getRefreshToken();
+
 				authService.setAuthCookie(response, "sb_token", newAccessToken, (int) newSession.getExpiresIn());
 				authService.setAuthCookie(response, "sb_refresh", newRefreshToken, (int) Duration.ofDays(7).toSeconds());
 				log.info("OAuth token state exchange generation successful.");
-				filterChain.doFilter(new RequestWrapper(request, newAccessToken, newRefreshToken), response);
+
+				HttpServletRequest wrappedRequest = new RequestWrapper(request, newAccessToken, newRefreshToken);
+
+				wrappedRequest.setAttribute("userMetadata", authServiceKt.getUserMetadata(supabaseClient, newAccessToken));
+
+				filterChain.doFilter(wrappedRequest, response);
+				authServiceKt.closeIsolatedClient(supabaseClient);
 				return;
 			}
 		}
+
+		authServiceKt.closeIsolatedClient(supabaseClient);
+		// 4. Path C: Unauthenticated Fallback
 		log.warn("Unauthenticated attempt targeting protected domain path: {}", path);
 		if ("true".equals(request.getHeader("HX-Request"))) {
 			response.setHeader("HX-Redirect", PathRegistry.Auth.Redirects.TO_LOGIN_UNAUTHORIZED);
@@ -65,13 +100,11 @@ public class SupabaseSessionFilter extends OncePerRequestFilter {
 		}
 	}
 
-
 	private String getCookieValue(HttpServletRequest request, String name) {
 		if (request.getCookies() == null) return null;
 		return Arrays.stream(request.getCookies()).filter(cookie -> name.equals(cookie.getName())).map(Cookie::getValue).findFirst().orElse(null);
 	}
 }
-
 
 class RequestWrapper extends HttpServletRequestWrapper {
 	private final String accessToken;

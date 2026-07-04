@@ -3,9 +3,9 @@ package in.hridaykh.formbox.controller;
 import in.hridaykh.formbox.constant.PathRegistry;
 import in.hridaykh.formbox.constant.ViewRegistry;
 import in.hridaykh.formbox.model.entity.Tenant;
-import in.hridaykh.formbox.AuthServiceKt;
 import in.hridaykh.formbox.repository.TenantRepository;
 import in.hridaykh.formbox.service.ICacheService;
+import io.github.jan.supabase.auth.jwt.JwtPayload;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -16,21 +16,18 @@ import java.util.UUID;
 @RequestMapping(PathRegistry.DASHBOARD)
 public class DashboardController {
 
-	private final AuthServiceKt authServiceKt;
 	private final TenantRepository tenantRepository;
 	private final ICacheService cacheService;
 
-	public DashboardController(AuthServiceKt authServiceKt, TenantRepository tenantRepository, ICacheService cacheService) {
-		this.authServiceKt = authServiceKt;
+	public DashboardController(TenantRepository tenantRepository, ICacheService cacheService) {
 		this.tenantRepository = tenantRepository;
 		this.cacheService = cacheService;
 	}
 
 	@GetMapping
-	public String showDashboard(@CookieValue(name = "sb_token", required = false) String token, @RequestParam(name = "customer_session_token", required = false) String customerSessionToken, Model model) {
-		if (token == null || token.isBlank()) return PathRegistry.Auth.Redirects.TO_LOGIN_UNAUTHORIZED;
+	public String showDashboard(@RequestAttribute JwtPayload userMetadata, @RequestParam(name = "customer_session_token", required = false) String customerSessionToken, Model model) {
+		if (userMetadata == null) return PathRegistry.Auth.Redirects.TO_LOGIN_UNAUTHORIZED;
 
-		var userMetadata = authServiceKt.getUserMetadata(token);
 		String userIdStr = userMetadata.getSub();
 		if (userIdStr == null)
 			return PathRegistry.Auth.Redirects.TO_LOGIN_UNAUTHORIZED;
@@ -57,14 +54,11 @@ public class DashboardController {
 	}
 
 	@GetMapping(PathRegistry.Dashboard.BILLING_STATUS)
-	public String pollBillingStatus(@CookieValue(name = "sb_token") String token, @RequestParam(name = "customer_session_token", required = false) String customerSessionToken, Model model) {
-
-		var userMetadata = authServiceKt.getUserMetadata(token);
-		String userIdStr = userMetadata.getSub();
-		if (userIdStr == null)
+	public String pollBillingStatus(@RequestAttribute JwtPayload userMetadata, @RequestParam(name = "customer_session_token", required = false) String customerSessionToken, Model model) {
+		if (userMetadata == null || userMetadata.getSub() == null)
 			return PathRegistry.Auth.Redirects.TO_LOGIN_UNAUTHORIZED;
 
-		UUID userId = UUID.fromString(userIdStr);
+		UUID userId = UUID.fromString(userMetadata.getSub());
 
 		Tenant tenant = tenantRepository.findById(userId).orElseThrow();
 

@@ -7,7 +7,8 @@ import in.hridaykh.formbox.constant.ViewRegistry;
 import in.hridaykh.formbox.exception.auth.InvalidCredentialsException;
 import in.hridaykh.formbox.exception.auth.UserAlreadyExistsException;
 import in.hridaykh.formbox.service.AuthService;
-import io.github.jan.supabase.auth.exception.AuthWeakPasswordException;
+import io.github.jan.supabase.SupabaseClient;
+import io.github.jan.supabase.auth.jwt.JwtPayload;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
@@ -28,31 +29,25 @@ public class AuthController {
 	}
 
 	@GetMapping(PathRegistry.Auth.LOGIN)
-	public String loginPage(@RequestParam(name = "msg", required = false, defaultValue = "") String msg, HttpServletResponse response, @CookieValue(name = "sb_token", required = false) String token) {
-		if (token != null && !token.isBlank() && authService.isValidToken(token))
+	public String loginPage(@RequestParam(required = false) String msg, @RequestAttribute(required = false) JwtPayload userMetadata, HttpServletResponse response) {
+		if (userMetadata != null)
 			return "redirect:" + PathRegistry.DASHBOARD;
 		authService.processLoginPage(msg, response);
 		return ViewRegistry.Auth.LOGIN;
 	}
 
 	@GetMapping(PathRegistry.Auth.SIGNUP)
-	public String signupPage(@CookieValue(name = "sb_token", required = false) String token) {
-		if (token != null && !token.isBlank() && authService.isValidToken(token))
-			return "redirect:" + PathRegistry.DASHBOARD;
-		return ViewRegistry.Auth.REGISTER;
+	public String signupPage(@RequestAttribute(required = false) JwtPayload userMetadata) {
+		return userMetadata == null ? ViewRegistry.Auth.REGISTER : "redirect:" + PathRegistry.DASHBOARD;
 	}
 
 	@PostMapping(PathRegistry.Auth.SIGNUP)
-	public String handleSignup(@RequestParam String email, @RequestParam String password, @RequestParam String username, HttpServletResponse response, Model model) {
+	public String handleSignup(@RequestParam String email, @RequestParam String password, @RequestParam String username, @RequestAttribute SupabaseClient supabaseClient, HttpServletResponse response, Model model) {
 		try {
-			authService.registerUser(new SignUpRequest(email, password, username), response);
+			authService.registerUser(supabaseClient, new SignUpRequest(email, password, username), response);
 			return ViewRegistry.Auth.Fragments.EMPTY;
 		} catch (UserAlreadyExistsException e) {
 			log.warn("Registration rejected: Account conflict tracking email source: {}", email);
-			model.addAttribute("error", e.getMessage());
-			return ViewRegistry.Auth.Fragments.ERROR_ALERT;
-		} catch (AuthWeakPasswordException e) {
-			log.warn("Registration rejected: Validation rule exception handling password parameters.");
 			model.addAttribute("error", e.getMessage());
 			return ViewRegistry.Auth.Fragments.ERROR_ALERT;
 		} catch (Exception e) {
@@ -63,9 +58,9 @@ public class AuthController {
 	}
 
 	@PostMapping(PathRegistry.Auth.LOGIN)
-	public String handleLogin(@RequestParam String email, @RequestParam String password, HttpServletResponse response, Model model) {
+	public String handleLogin(@RequestParam String email, @RequestParam String password, @RequestAttribute SupabaseClient supabaseClient, HttpServletResponse response, Model model) {
 		try {
-			authService.authenticateUser(new LoginRequest(email, password), response);
+			authService.authenticateUser(supabaseClient, new LoginRequest(email, password), response);
 			return ViewRegistry.Auth.Fragments.EMPTY;
 		} catch (InvalidCredentialsException e) {
 			log.warn("Authentication clearance challenge failed for matching entity root: {}", email);
@@ -79,15 +74,15 @@ public class AuthController {
 	}
 
 	@PostMapping(PathRegistry.Auth.LOGOUT)
-	public String logout(HttpServletResponse response, @CookieValue(name = "sb_token", required = false) String accessToken, @CookieValue(name = "sb_refresh", required = false) String refreshToken) {
-		authService.terminateSession(accessToken, refreshToken, response);
+	public String logout(HttpServletResponse response, @CookieValue(name = "sb_token", required = false) String accessToken, @CookieValue(name = "sb_refresh", required = false) String refreshToken, @RequestAttribute SupabaseClient supabaseClient) {
+		authService.terminateSession(supabaseClient, accessToken, refreshToken, response);
 		return ViewRegistry.Auth.Fragments.EMPTY;
 	}
 
 	@PostMapping(PathRegistry.Auth.RESEND_CONFIRMATION)
-	public String resend(@RequestParam String email, Model model) {
+	public String resend(@RequestParam String email, Model model, @RequestAttribute SupabaseClient supabaseClient) {
 		try {
-			authService.resendVerification(email);
+			authService.resendVerification(supabaseClient, email);
 			model.addAttribute("message", "Confirmation validation token successfully transmitted!");
 			return ViewRegistry.Auth.Fragments.SUCCESS_ALERT;
 		} catch (Exception e) {

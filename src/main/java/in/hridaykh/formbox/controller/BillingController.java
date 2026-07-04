@@ -2,7 +2,6 @@ package in.hridaykh.formbox.controller;
 
 import in.hridaykh.formbox.config.PolarIdProperties;
 import in.hridaykh.formbox.constant.PathRegistry;
-import in.hridaykh.formbox.AuthServiceKt;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -22,13 +21,11 @@ import java.util.Map;
 @RequestMapping(PathRegistry.Billing.BASE)
 public class BillingController {
 
-	private final AuthServiceKt authServiceKt;
 	private final Polar polar;
 	private final PolarHttpClient polarHttpClient;
 	private final PolarIdProperties polarIdProperties;
 
-	public BillingController(AuthServiceKt authServiceKt, Polar polar, PolarHttpClient polarHttpClient, PolarIdProperties polarIdProperties) {
-		this.authServiceKt = authServiceKt;
+	public BillingController(Polar polar, PolarHttpClient polarHttpClient, PolarIdProperties polarIdProperties) {
 		this.polar = polar;
 		this.polarHttpClient = polarHttpClient;
 		this.polarIdProperties = polarIdProperties;
@@ -36,8 +33,7 @@ public class BillingController {
 
 	@PostMapping(PathRegistry.Billing.UPGRADE)
 	@ResponseBody
-	public void redirectToCheckout(@CookieValue(name = "sb_token") String token, HttpServletRequest request, HttpServletResponse response) {
-		JwtPayload userMetadata = authServiceKt.getUserMetadata(token);
+	public void redirectToCheckout(@RequestAttribute JwtPayload userMetadata, HttpServletRequest request, HttpServletResponse response) {
 		String successUrl = ServletUriComponentsBuilder.fromContextPath(request).path(PathRegistry.DASHBOARD).toUriString();
 		Map<String, Object> customBody = new HashMap<>();
 		customBody.put("products", List.of(polarIdProperties.getPaidProductId()));
@@ -50,8 +46,8 @@ public class BillingController {
 
 	@PostMapping(PathRegistry.Billing.PORTAL)
 	@ResponseBody
-	public void redirectToCustomerPortal(@CookieValue(name = "sb_token") String token, HttpServletResponse response) {
-		String userId = authServiceKt.getUserMetadata(token).getSub();
+	public void redirectToCustomerPortal(@RequestAttribute JwtPayload userMetadata, HttpServletResponse response) {
+		String userId = userMetadata.getSub();
 		if (userId == null) {
 			response.setHeader("HX-Redirect", PathRegistry.Auth.Hx.LOGIN_UNAUTHORIZED);
 			return;

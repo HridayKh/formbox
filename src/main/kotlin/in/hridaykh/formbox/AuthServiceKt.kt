@@ -5,6 +5,7 @@ import `in`.hridaykh.formbox.exception.auth.AuthException
 import `in`.hridaykh.formbox.exception.auth.InvalidCredentialsException
 import `in`.hridaykh.formbox.exception.auth.SessionExpiredException
 import `in`.hridaykh.formbox.exception.auth.UserAlreadyExistsException
+import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.OtpType
 import io.github.jan.supabase.auth.auth
@@ -12,8 +13,6 @@ import io.github.jan.supabase.auth.exception.AuthRestException
 import io.github.jan.supabase.auth.exception.AuthSessionMissingException
 import io.github.jan.supabase.auth.exception.AuthWeakPasswordException
 import io.github.jan.supabase.auth.exception.InvalidJwtException
-import io.github.jan.supabase.auth.exception.SessionRequiredException
-import io.github.jan.supabase.auth.exception.TokenExpiredException
 import io.github.jan.supabase.auth.jwt.JwtPayload
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.auth.user.UserInfo
@@ -34,7 +33,7 @@ class AuthServiceKt(private val supabaseProps: SupabaseProperties) {
 
 	private val log = LoggerFactory.getLogger(AuthServiceKt::class.java)
 
-	private fun createIsolatedClient() = createSupabaseClient(supabaseProps.url, supabaseProps.secretKey) {
+	fun createIsolatedClient() = createSupabaseClient(supabaseProps.url, supabaseProps.secretKey) {
 		install(Auth.Companion) {
 			autoLoadFromStorage = false
 			autoSaveToStorage = false
@@ -42,8 +41,11 @@ class AuthServiceKt(private val supabaseProps: SupabaseProperties) {
 		}
 	}
 
-	fun signUp(request: SignUpRequest): Unit = runBlocking {
-		val client = createIsolatedClient()
+	fun closeIsolatedClient(client: SupabaseClient) = runBlocking {
+		client.close()
+	}
+
+	fun signUp(client: SupabaseClient, request: SignUpRequest): Unit = runBlocking {
 		try {
 			log.info("Processing Supabase registration chain for: {}", request.email)
 			val user: UserInfo? = client.auth.signUpWith(Email) {
@@ -72,13 +74,10 @@ class AuthServiceKt(private val supabaseProps: SupabaseProperties) {
 		} catch (e: Exception) {
 			log.error("Unhandled error context during registration for: {}", request.email, e)
 			throw AuthException("An unexpected registration error occurred.", e)
-		} finally {
-			client.close()
 		}
 	}
 
-	fun resendConfirmation(email: String) = runBlocking {
-		val client = createIsolatedClient()
+	fun resendConfirmation(client: SupabaseClient, email: String) = runBlocking {
 		try {
 			log.info("Triggering remote token reissue request to: {}", email)
 			client.auth.resendEmail(OtpType.Email.SIGNUP, email)
@@ -88,13 +87,10 @@ class AuthServiceKt(private val supabaseProps: SupabaseProperties) {
 		} catch (e: Exception) {
 			log.error("Failed handling automated token renewal flow for target destination: {}", email, e)
 			throw AuthException("Failed to reissue validation email.", e)
-		} finally {
-			client.close()
 		}
 	}
 
-	fun login(request: LoginRequest): AuthResponse = runBlocking {
-		val client = createIsolatedClient()
+	fun login(client: SupabaseClient, request: LoginRequest): AuthResponse = runBlocking {
 		try {
 			log.info("Forwarding authentication request parameters for user: {}", request.email)
 			client.auth.signInWith(Email) {
@@ -127,50 +123,28 @@ class AuthServiceKt(private val supabaseProps: SupabaseProperties) {
 		} catch (e: Exception) {
 			log.error("Unexpected login failure context tracking profile address: {}", request.email, e)
 			throw AuthException("Authentication server encountered an unexpected error.", e)
-		} finally {
-			client.close()
 		}
 	}
 
-	fun logout(accessToken: String, refreshToken: String): Unit = runBlocking {
-		val client = createIsolatedClient()
-		try {
-			log.info("Terminating authorization states via infrastructure pipeline.")
-			val dummySession = UserSession(
-				accessToken = accessToken,
-				refreshToken = refreshToken,
-				expiresIn = 3600,
-				tokenType = "Bearer",
-				user = null
-			)
-			client.auth.importSession(dummySession)
-			client.auth.signOut()
-		} catch (_: TokenExpiredException) {
-			log.warn("Local authentication credential payload was already expired at the server node.")
-		} catch (_: SessionRequiredException) {
-			log.warn("Supabase active lifecycle tracking engine confirms no session footprint requires removal.")
-		} catch (e: Exception) {
-			log.warn("Supabase safe sign-out failed cleanly: {}", e.message)
-		} finally {
-			client.close()
-		}
+	fun logout(client: SupabaseClient, accessToken: String, refreshToken: String): Unit = runBlocking {
+		log.info("Terminating authorization states via infrastructure pipeline.")
+		val dummySession = UserSession(
+			accessToken = accessToken,
+			refreshToken = refreshToken,
+			expiresIn = 3600,
+			tokenType = "Bearer",
+			user = null
+		)
+		client.auth.importSession(dummySession)
+		client.auth.signOut()
 	}
 
-	fun getUserMetadata(accessToken: String): JwtPayload = runBlocking {
-		val client = createIsolatedClient()
-		try {
-			client.auth.getClaims(accessToken).claims
-		} finally {
-			client.close()
-		}
+	fun getUserMetadata(client: SupabaseClient, accessToken: String): JwtPayload = runBlocking {
+		client.auth.getClaims(accessToken).claims
 	}
 
-	fun refreshSession(refreshToken: String): UserSession = runBlocking {
-		val client = createIsolatedClient()
-		try {
-			client.auth.refreshSession(refreshToken)
-		} finally {
-			client.close()
-		}
+
+	fun refreshSession(client: SupabaseClient, refreshToken: String): UserSession = runBlocking {
+		client.auth.refreshSession(refreshToken)
 	}
 }
