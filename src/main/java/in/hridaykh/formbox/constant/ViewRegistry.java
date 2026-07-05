@@ -17,9 +17,8 @@ public interface ViewRegistry {
 		}
 	}
 
-	interface Dashboard {
-		interface Fragments {
-			String SUBSCRIPTION_CARD_INNER = ViewRegistry.DASHBOARD + " :: subscriptionCardInner";
-		}
+	interface Fragments {
+		String FORM_ROWS = "fragments/form-list :: form-rows";
+		String SETTINGS = "dashboard/manage-form :: settings-panel";
 	}
 }
