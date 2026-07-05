@@ -8,8 +8,9 @@ import java.util.Map;
 @Service
 public class FilterService {
 
-	public boolean checkIsSpam(Form form, Map<String, String> payload, String clientIp, String userAgent) {
-		return false;
+	public boolean checkIsSpam(Form ignoredForm, Map<String, String> payload, String ignoredClientIp, String ignoredUserAgent) {
+		String p = payload.getOrDefault("_gotcha", "");
+		return p != null && !p.isBlank();
 	}
 }
 

@@ -1,9 +1,10 @@
 package in.hridaykh.formbox.exception;
 
 import io.github.jan.supabase.auth.exception.AuthErrorCode;
-import io.github.jan.supabase.auth.exception.AuthWeakPasswordException;
 import io.github.jan.supabase.auth.exception.AuthRestException;
 import io.github.jan.supabase.auth.exception.TokenExpiredException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -12,18 +13,12 @@ import org.springframework.web.servlet.ModelAndView;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
+	private final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
 	@ExceptionHandler(Exception.class)
 	public ModelAndView genericException(Exception ex) {
+		log.error("Internal Server Error" ,ex);
 		return buildErrorResponse("internal server error occurred", ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-	}
-
-	@ExceptionHandler(AuthWeakPasswordException.class)
-	public ModelAndView handleWeakPassword(AuthWeakPasswordException ex) {
-		String errorDesc = ex.getDescription() != null ? ex.getDescription() : "Password must be at least 8 characters long and contain uppercase, lowercase, digits, and symbols.";
-		if (!ex.getReasons().isEmpty()) {
-			errorDesc += " Reasons: " + String.join(", ", ex.getReasons());
-		}
-		return buildErrorResponse("Weak Password", errorDesc, HttpStatus.BAD_REQUEST);
 	}
 
 	@ExceptionHandler(AuthRestException.class)

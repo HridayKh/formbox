@@ -1,43 +1,42 @@
 package in.hridaykh.formbox.service;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import in.hridaykh.formbox.config.PolarIdProperties;
+import in.hridaykh.formbox.model.entity.PolarProducts;
+import in.hridaykh.formbox.model.entity.Purchases;
 import in.hridaykh.formbox.model.entity.Tenant;
+import in.hridaykh.formbox.model.enums.SubscriptionState;
+import in.hridaykh.formbox.repository.PolarProductsRepository;
+import in.hridaykh.formbox.repository.PurchasesRepository;
 import in.hridaykh.formbox.repository.TenantRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import sh.polar.sdk.http.PolarHttpClient;
-import sh.polar.sdk.models.common.PolarListResponse;
-import sh.polar.sdk.models.meter.PolarCustomerMeterResponse;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.Optional;
 
 @Service
 public class PolarWebhooksService {
 
 	private static final Logger log = LoggerFactory.getLogger(PolarWebhooksService.class);
 
-	private final PolarHttpClient polarHttpClient;
 	private final TenantRepository tenantRepository;
-	private final ICacheService cacheService;
-	private final PolarIdProperties polarIdProperties;
-
+	private final PolarProductsRepository polarProductsRepository;
+	private final PurchasesRepository purchasesRepository;
 	private final ObjectMapper objectMapper;
+	private final PolarMeterService polarMeterService;
 
-	public PolarWebhooksService(PolarHttpClient polarHttpClient, TenantRepository tenantRepository, ICacheService cacheService, PolarIdProperties polarIdProperties) {
-		this.polarHttpClient = polarHttpClient;
+	public PolarWebhooksService(TenantRepository tenantRepository, PolarProductsRepository polarProductsRepository, PurchasesRepository purchasesRepository, PolarMeterService polarMeterService) {
 		this.tenantRepository = tenantRepository;
-		this.cacheService = cacheService;
-		this.polarIdProperties = polarIdProperties;
+		this.polarProductsRepository = polarProductsRepository;
+		this.purchasesRepository = purchasesRepository;
 		this.objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+		this.polarMeterService = polarMeterService;
 	}
 
+	@Transactional
 	public void processHook(String rawBody) {
 		try {
 			JsonNode root = objectMapper.readTree(rawBody);
@@ -47,44 +46,48 @@ public class PolarWebhooksService {
 			log.info("Processing Polar Webhook event: {}", eventType);
 
 			String customerEmail = dataNode.path("customer").path("email").asText();
-			if (customerEmail.isEmpty() || "null".equals(customerEmail)) {
+			if (customerEmail.isBlank() || "null".equals(customerEmail)) {
 				customerEmail = dataNode.path("user").path("email").asText();
 			}
 
-			if (customerEmail.isEmpty()) {
+			if (customerEmail.isBlank()) {
 				log.warn("Skipping webhook event {}: No customer email context found", eventType);
 				return;
 			}
 
+			// Look up product contextual rules before processing state assignments
+			PolarProducts product = resolveProductFromDataNode(dataNode);
+
 			switch (eventType) {
-				// Subscriptions lifecycle mutations
+				case "benefit_grant.cycled":
+				case "benefit_grant.updated":
+				case "order.created":
 				case "subscription.created":
-				case "subscription.active":
 				case "subscription.uncanceled":
-				case "subscription.cycled":
-					handleSubscriptionActive(customerEmail, dataNode);
+					SubscriptionState activeState = (product != null && "free-v1".equals(product.getSlug())) ? SubscriptionState.free : SubscriptionState.active;
+					handleDynamicSubscription(customerEmail, product, dataNode, activeState);
 					break;
 
 				case "subscription.canceled":
-					handleSubscriptionCanceled(customerEmail, dataNode);
+					if (product != null && "free-v1".equals(product.getSlug())) {
+						log.info("Free plan cancellation webhook intercepted for {}. Keeping plan active/free.", customerEmail);
+						handleDynamicSubscription(customerEmail, product, dataNode, SubscriptionState.free);
+					} else {
+						handleDynamicSubscription(customerEmail, product, dataNode, SubscriptionState.cancelled_grace_period);
+					}
 					break;
 
 				case "subscription.past_due":
-					handleSubscriptionPastDue(customerEmail);
+					handleDynamicSubscription(customerEmail, product, dataNode, SubscriptionState.past_due);
 					break;
 
-				case "subscription.revoked":
 				case "benefit_grant.revoked":
-					handleSubscriptionEnded(customerEmail);
-					break;
-
-				case "benefit_grant.created":
-				case "benefit_grant.updated":
-					handleBenefitGrantFallback(customerEmail, dataNode);
+				case "subscription.revoked":
+					handleDynamicSubscription(customerEmail, product, dataNode, SubscriptionState.unpaid);
 					break;
 
 				default:
-					log.debug("Unmanaged event passed validation: {}", eventType);
+					log.warn("Unmanaged event passed validation: {}", eventType);
 					break;
 			}
 
@@ -93,96 +96,66 @@ public class PolarWebhooksService {
 		}
 	}
 
-	private void handleSubscriptionActive(String email, JsonNode dataNode) {
-		Tenant tenant = tenantRepository.findByEmailIgnoreCase(email).orElseThrow(() -> new IllegalStateException("Tenant missing for: " + email));
-		tenant.givePaidSubscription();
-		String endPeriodStr = dataNode.path("current_period_end").asText();
-		if (!endPeriodStr.isEmpty()) tenant.setCurrentPeriodEnd(OffsetDateTime.parse(endPeriodStr));
-		tenantRepository.save(tenant);
-		syncCache(tenant);
-		log.info("Subscription marked ACTIVE for: {}", email);
+	private void removeLowerTiersOnUpgrade(Tenant tenant, PolarProducts newProduct) {
+		if ("pro-v1".equals(newProduct.getSlug())) {
+			PolarProducts free = polarProductsRepository.findBySlug("free-v1").orElseThrow();
+			PolarProducts starter = polarProductsRepository.findBySlug("starter-v1").orElseThrow();
+			purchasesRepository.deleteByUserIdAndProduct(tenant, free);
+			purchasesRepository.deleteByUserIdAndProduct(tenant, starter);
+			log.info("Purged lower tiers (free and starter) for upgraded Pro user: {}", tenant.getEmail());
+		} else if ("start-v1".equals(newProduct.getSlug())) {
+			PolarProducts free = polarProductsRepository.findBySlug("free-v1").orElseThrow();
+			purchasesRepository.deleteByUserIdAndProduct(tenant, free);
+			log.info("Purged free tier for upgraded Starter user: {}", tenant.getEmail());
+		}
 	}
 
-	private void handleSubscriptionCanceled(String email, JsonNode dataNode) {
+	private PolarProducts resolveProductFromDataNode(JsonNode dataNode) {
+		String polarProductId = dataNode.path("product_id").asText();
+		if (polarProductId.isBlank()) {
+			polarProductId = dataNode.path("product").path("id").asText();
+		}
+		if (polarProductId.isBlank()) return null;
+
+		return polarProductsRepository.findByPolarProductId(polarProductId).orElse(null);
+	}
+
+	private void handleDynamicSubscription(String email, PolarProducts product, JsonNode dataNode, SubscriptionState newState) {
 		Tenant tenant = tenantRepository.findByEmailIgnoreCase(email).orElseThrow(() -> new IllegalStateException("Tenant missing for: " + email));
 
-		OffsetDateTime periodEnd = OffsetDateTime.now();
-		String endPeriodStr = dataNode.path("current_period_end").asText();
-		if (!endPeriodStr.isEmpty()) {
-			periodEnd = OffsetDateTime.parse(endPeriodStr);
+		if (product == null) {
+			log.error("Webhook payload matching failed due to missing product context for tenant: {}", email);
+			return;
 		}
 
-		// Set status to grace period so they retain premium access
-		tenant.setGracePeriodSubscription(periodEnd);
-		tenantRepository.save(tenant);
-
-		syncCache(tenant);
-		log.info("Subscription marked CANCELLED_GRACE_PERIOD until {} for: {}", periodEnd, email);
-	}
-
-	private void handleSubscriptionPastDue(String email) {
-		Tenant tenant = tenantRepository.findByEmailIgnoreCase(email).orElseThrow(() -> new IllegalStateException("Tenant missing for: " + email));
-
-		tenant.setPastDueSubscription();
-		tenantRepository.save(tenant);
-
-		syncCache(tenant);
-		log.warn("Subscription marked PAST_DUE for: {}", email);
-	}
-
-	private void handleSubscriptionEnded(String email) {
-		Tenant tenant = tenantRepository.findByEmailIgnoreCase(email).orElseThrow(() -> new IllegalStateException("Tenant missing for: " + email));
-
-		tenant.giveFreeSubscription();
-		tenantRepository.save(tenant);
-
-		syncCache(tenant);
-		log.info("Subscription fully REVOKED/ENDED. Dropped to Free Tier for: {}", email);
-	}
-
-	private void handleBenefitGrantFallback(String email, JsonNode dataNode) {
-		String status = dataNode.path("status").asText();
-		if (status.isEmpty() && dataNode.has("is_granted")) {
-			status = dataNode.path("is_granted").asBoolean() ? "granted" : "pending";
+		if (newState == SubscriptionState.active || newState == SubscriptionState.free) {
+			removeLowerTiersOnUpgrade(tenant, product);
 		}
 
-		if (!"granted".equals(status)) return;
+		// Look up purchase database mapping or open new transaction row
+		Purchases purchase = purchasesRepository.findByUserIdAndProduct(tenant, product).orElse(new Purchases());
+		purchase.setUserId(tenant);
+		purchase.setProduct(product);
+		purchase.setStatus(newState);
 
-		Tenant tenant = tenantRepository.findByEmailIgnoreCase(email).orElse(null);
-		if (tenant != null && "free".equals(tenant.resolveCurrentTier())) {
-			tenant.givePaidSubscription();
+		// Fulfill the DB constraint field if missing
+		if (purchase.getPolarOrderId() == null) {
+			String subId = dataNode.path("id").asText();
+			purchase.setPolarOrderId(!subId.isBlank() ? subId : "WEBHOOK_PROVISION_" + tenant.getId());
+		}
+
+		String endPeriodStr = dataNode.path("current_period_end").asText();
+		if (!endPeriodStr.isBlank() && !"null".equals(endPeriodStr)) {
+			OffsetDateTime periodEnd = OffsetDateTime.parse(endPeriodStr);
+			purchase.setCurrentPeriodEnd(periodEnd);
+
+			tenant.setCurrentPeriodEnd(periodEnd);
 			tenantRepository.save(tenant);
-			syncCache(tenant);
 		}
-	}
 
-	private void syncCache(Tenant tenant) {
-		String externalUserId = tenant.getId().toString();
-		String balanceKey = "user:" + externalUserId + ":meter_balance";
-		cacheService.set("user:" + externalUserId + ":tier", tenant.resolveCurrentTier());
-		try {
-			String url = "/customer-meters/?external_customer_id=" + externalUserId;
-			PolarListResponse<PolarCustomerMeterResponse> response = polarHttpClient.get(url, new TypeReference<>() {
-			});
+		purchasesRepository.save(purchase);
+		log.info("Successfully updated purchase state to {} for tenant: {} on product: {}", newState, email, product.getName());
 
-			Optional<PolarCustomerMeterResponse> matchedMeter = Optional.ofNullable(response)
-				.map(PolarListResponse::items)
-				.stream()
-				.flatMap(List::stream)
-				.filter(meter -> meter.meterId().toString().equalsIgnoreCase(polarIdProperties.getSubmissionMeterId()))
-				.filter(meter -> meter.balance() != null)
-				.findFirst();
-
-			if (matchedMeter.isPresent()) {
-				long longBalance = matchedMeter.get().balance().longValue();
-				cacheService.set(balanceKey, String.valueOf(longBalance));
-			} else {
-				log.warn("Target meter not found or has a null balance for user: {}", externalUserId);
-				cacheService.delete(balanceKey);
-			}
-
-		} catch (Exception e) {
-			log.error("Failed to query Polar CustomerMeters API for user: {}", externalUserId, e);
-		}
+		polarMeterService.getRemainingSubmissionsBalance(tenant);
 	}
 }

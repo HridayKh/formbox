@@ -19,12 +19,10 @@ import io.github.jan.supabase.auth.user.UserInfo
 import io.github.jan.supabase.auth.user.UserSession
 import io.github.jan.supabase.createSupabaseClient
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 
-data class SignUpRequest(val email: String, val password: String, val username: String)
+data class SignUpRequest(val email: String, val password: String)
 data class LoginRequest(val email: String, val password: String)
 data class AuthResponse(val userId: String, val accessToken: String, val refreshToken: String)
 
@@ -51,9 +49,6 @@ class AuthServiceKt(private val supabaseProps: SupabaseProperties) {
 			val user: UserInfo? = client.auth.signUpWith(Email) {
 				email = request.email
 				password = request.password
-				data = buildJsonObject {
-					put("first_name", request.username)
-				}
 			}
 			if (user?.id == null) {
 				throw AuthException("Registration failed: Service did not assign a valid User UID.")
@@ -139,7 +134,9 @@ class AuthServiceKt(private val supabaseProps: SupabaseProperties) {
 		client.auth.signOut()
 	}
 
-	fun getUserMetadata(client: SupabaseClient, accessToken: String): JwtPayload = runBlocking {
+	fun getUserMetadata(client: SupabaseClient, accessToken: String?): JwtPayload? = runBlocking {
+		if (accessToken.isNullOrBlank())
+			return@runBlocking null
 		client.auth.getClaims(accessToken).claims
 	}
 

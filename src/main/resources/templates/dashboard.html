@@ -472,6 +472,10 @@
             padding: var(--space-6);
         }
 
+        .modal.active {
+            display: flex;
+        }
+
         .modal__content {
             background: var(--color-surface);
             border: var(--border-2);
@@ -532,6 +536,7 @@
             justify-content: flex-end;
         }
 
+
         /* ════════════════════════════════════════════════════
            SUBSCRIPTION BANNER & STATES
         ════════════════════════════════════════════════════ */
@@ -547,33 +552,6 @@
             margin-bottom: var(--space-10);
         }
 
-        .subscription-banner--success {
-            background: linear-gradient(180deg, rgba(52, 211, 153, 0.12), rgba(52, 211, 153, 0.05));
-            border-color: rgba(52, 211, 153, 0.3);
-        }
-
-        .subscription-banner--warning {
-            background: linear-gradient(180deg, rgba(242, 184, 75, 0.12), rgba(242, 184, 75, 0.05));
-            border-color: rgba(242, 184, 75, 0.3);
-        }
-
-        .subscription-banner--danger {
-            background: linear-gradient(180deg, rgba(243, 100, 100, 0.12), rgba(243, 100, 100, 0.05));
-            border-color: rgba(243, 100, 100, 0.3);
-        }
-
-        .subscription-banner__icon {
-            width: 48px;
-            height: 48px;
-            border-radius: var(--radius-md);
-            background: var(--color-accent-soft);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--color-accent-bright);
-            flex-shrink: 0;
-        }
-
         .subscription-banner__content h3 {
             font-family: var(--font-display);
             font-weight: 600;
@@ -584,11 +562,6 @@
         .subscription-banner__content p {
             color: var(--color-text-dim);
             font-size: 0.9rem;
-        }
-
-        .subscription-banner__action {
-            margin-left: auto;
-            flex-shrink: 0;
         }
 
         /* ════════════════════════════════════════════════════
@@ -607,11 +580,6 @@
             .subscription-banner {
                 flex-direction: column;
                 align-items: flex-start;
-            }
-
-            .subscription-banner__action {
-                margin-left: 0;
-                width: 100%;
             }
 
             .subscription-banner__action .btn {
@@ -670,8 +638,7 @@
         <div class="navbar__user">
             <div class="navbar__user-name">
                 <div style="font-size: 0.82rem; color: var(--color-text-dim);">Signed in as</div>
-                <!-- Thymeleaf User Injection -->
-                <div style="font-weight: 500;" th:text="${user.userMetadata['username'] ?: user.email}">
+                <div style="font-weight: 500;" th:text="${user.email}">
                     user@domain.com
                 </div>
             </div>
@@ -683,7 +650,32 @@
             </div>
         </div>
         <div class="navbar__actions">
-            <!-- Functional Logout Button -->
+            <th:block th:if="${tier != 'pro-v1'}">
+                <div th:if="${tier == 'free-v1'}" style="display: flex; gap: 0.5rem; align-items: center;">
+                    <a href="/billing/upgrade/starter-v1" class="btn btn--secondary"
+                       style="padding: 0.5rem 1rem; font-size: 0.875rem; text-decoration: none;">
+                        Upgrade to Starter
+                    </a>
+                    <a href="/billing/upgrade/pro-v1" class="btn btn--primary"
+                       style="padding: 0.5rem 1rem; font-size: 0.875rem; text-decoration: none;">
+                        Upgrade to Pro
+                    </a>
+                </div>
+
+                <div th:if="${tier == 'starter-v1'}">
+                    <a href="/billing/upgrade/pro-v1" class="btn btn--primary"
+                       style="padding: 0.5rem 1rem; font-size: 0.875rem; text-decoration: none;">
+                        Upgrade to Pro
+                    </a>
+                </div>
+            </th:block>
+
+            <button th:if="${tier != 'free-v1'}"
+                    hx-post="/billing/portal"
+                    class="btn btn--secondary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
+                Manage Subscription
+            </button>
+
             <button class="btn btn--secondary btn--sm" hx-post="/auth/logout">
                 Sign out
             </button>
@@ -700,8 +692,7 @@
     <!-- PAGE HEADER -->
     <div class="page-header">
         <div class="page-header__content">
-            <h1 th:text="'Welcome back, ' + (${user.userMetadata['username'] ?: user.email})">Welcome back,
-                User</h1>
+            <h1>Welcome back</h1>
             <p>Manage your form endpoints, track submissions, and upgrade your plan.</p>
         </div>
         <div class="page-header__actions">
@@ -713,120 +704,6 @@
                 </svg>
                 New Endpoint
             </button>
-        </div>
-    </div>
-
-    <!-- DYNAMIC SUBSCRIPTION STATUS CONTAINER -->
-    <div id="subscription-card-container">
-        <div th:fragment="subscriptionCardInner">
-
-            <!-- 1. Polling State (Processing Payment) -->
-            <div th:if="${checkingPurchase and tier == 'free'}"
-                 th:hx-get="@{/dashboard/billing-status(customer_session_token=${param.customer_session_token})}"
-                 hx-trigger="every 2s"
-                 hx-target="#subscription-card-container"
-                 hx-swap="innerHTML"
-                 class="subscription-banner" style="justify-content: center; text-align: center;">
-                <div class="subscription-banner__content">
-                    <h3><span class="spinner"
-                              style="display:inline-block; border-top-color: var(--color-accent); border-right-color: var(--color-accent); margin-right: 8px; margin-bottom: -2px;"></span>
-                        Processing your payment securely...</h3>
-                    <p>Finalizing provisioning state. Please hold tight.</p>
-                </div>
-            </div>
-
-            <div th:if="${not checkingPurchase or tier == 'paid'}">
-
-                <!-- 2. Free Tier State -->
-                <div th:if="${tenant.subscriptionStatus == 'free'}" class="subscription-banner">
-                    <div class="subscription-banner__icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                             stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M20 6L9 17l-5-5"/>
-                        </svg>
-                    </div>
-                    <div class="subscription-banner__content">
-                        <h3>Free Plan</h3>
-                        <p>Unlock premium limits and advanced forms tracking!</p>
-                    </div>
-                    <div class="subscription-banner__action">
-                        <button hx-post="/billing/upgrade" class="btn btn--primary">
-                            Upgrade to Paid Tier
-                        </button>
-                    </div>
-                </div>
-
-                <!-- 3. Active Tier State -->
-                <div th:if="${tenant.subscriptionStatus == 'active'}"
-                     class="subscription-banner subscription-banner--success">
-                    <div class="subscription-banner__icon"
-                         style="background: rgba(52, 211, 153, 0.2); color: var(--color-success);">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                             stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                            <polyline points="22 4 12 14.01 9 11.01"/>
-                        </svg>
-                    </div>
-                    <div class="subscription-banner__content">
-                        <h3>🎉 Pro Plan Fully Active</h3>
-                        <p>Your subscription is fully managed and auto-renews via Polar.</p>
-                    </div>
-                    <div class="subscription-banner__action">
-                        <button hx-post="/billing/portal" class="btn btn--secondary">
-                            Manage Subscription / Downgrade
-                        </button>
-                    </div>
-                </div>
-
-                <!-- 4. Canceled Grace Period State -->
-                <div th:if="${tenant.subscriptionStatus == 'cancelled_grace_period'}"
-                     class="subscription-banner subscription-banner--warning">
-                    <div class="subscription-banner__icon"
-                         style="background: rgba(242, 184, 75, 0.2); color: var(--color-warning);">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                             stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                            <line x1="12" y1="9" x2="12" y2="13"/>
-                            <line x1="12" y1="17" x2="12.01" y2="17"/>
-                        </svg>
-                    </div>
-                    <div class="subscription-banner__content">
-                        <h3 style="color: var(--color-warning);">⚠️ Subscription Cancelled</h3>
-                        <p>Premium capabilities retained until: <code class="badge"
-                                                                      th:text="${#temporals.format(tenant.currentPeriodEnd, 'dd MMM yyyy')}">Date</code>.
-                        </p>
-                    </div>
-                    <div class="subscription-banner__action">
-                        <button hx-post="/billing/portal" class="btn btn--success">
-                            Renew / Resubscribe Now
-                        </button>
-                    </div>
-                </div>
-
-                <!-- 5. Past Due State -->
-                <div th:if="${tenant.subscriptionStatus == 'past_due'}"
-                     class="subscription-banner subscription-banner--danger">
-                    <div class="subscription-banner__icon"
-                         style="background: rgba(243, 100, 100, 0.2); color: var(--color-danger);">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                             stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"/>
-                            <line x1="12" y1="8" x2="12" y2="12"/>
-                            <line x1="12" y1="16" x2="12.01" y2="16"/>
-                        </svg>
-                    </div>
-                    <div class="subscription-banner__content">
-                        <h3 style="color: var(--color-danger);">🚨 Payment Past Due</h3>
-                        <p>Polar was unable to process your recurring charge. Please update details.</p>
-                    </div>
-                    <div class="subscription-banner__action">
-                        <button hx-post="/billing/portal" class="btn btn--danger">
-                            Update Payment Info
-                        </button>
-                    </div>
-                </div>
-
-            </div>
         </div>
     </div>
 
@@ -888,8 +765,16 @@
                 </div>
                 <div class="form-block">
                     <label class="form-label" for="form-redirect">Custom Redirect URL (Optional)</label>
+
                     <input class="input" id="form-redirect" name="redirectUrl" type="url"
-                           placeholder="https://yoursite.com/thank-you"/>
+                           placeholder="https://yoursite.com/thank-you"
+                           th:disabled="${tier == 'free'}"/>
+
+                    <p class="upgrade-message" th:if="${tier == 'free'}"
+                       style="color: #ef4444; font-size: 0.875rem; margin-top: 0.25rem;">
+                        Custom redirects are a premium feature.
+                        <a href="/billing/upgrade" style="text-decoration: underline;">Upgrade your plan</a> to unlock.
+                    </p>
                 </div>
             </div>
 

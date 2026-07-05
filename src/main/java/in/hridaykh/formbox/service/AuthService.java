@@ -6,6 +6,7 @@ import in.hridaykh.formbox.LoginRequest;
 import in.hridaykh.formbox.SignUpRequest;
 import in.hridaykh.formbox.constant.PathRegistry;
 import io.github.jan.supabase.SupabaseClient;
+import io.github.jan.supabase.auth.exception.AuthWeakPasswordException;
 import io.github.jan.supabase.auth.user.UserSession;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
@@ -32,7 +33,7 @@ public class AuthService {
 		}
 	}
 
-	public void registerUser(SupabaseClient supabaseClient, SignUpRequest request, HttpServletResponse response) {
+	public void registerUser(SupabaseClient supabaseClient, SignUpRequest request, HttpServletResponse response) throws AuthWeakPasswordException {
 		authServiceKt.signUp(supabaseClient, request);
 		log.info("Registration request completed cleanly for: {}", request.getEmail());
 		response.setHeader("HX-Redirect", PathRegistry.Auth.Hx.LOGIN_CHECK_EMAIL);

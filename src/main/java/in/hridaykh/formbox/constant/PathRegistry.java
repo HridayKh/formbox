@@ -3,7 +3,6 @@ package in.hridaykh.formbox.constant;
 public interface PathRegistry {
 
 	String DASHBOARD = "/dashboard";
-	String ROOT = "/";
 	String WAITLIST = "/api/waitlist";
 
 	interface Form {
@@ -33,12 +32,7 @@ public interface PathRegistry {
 
 	interface Billing {
 		String BASE = "/billing";
-		String UPGRADE = "/upgrade";
 		String PORTAL = "/portal";
-	}
-
-	interface Dashboard {
-		String BILLING_STATUS = "/billing-status";
 	}
 
 	interface Webhooks {

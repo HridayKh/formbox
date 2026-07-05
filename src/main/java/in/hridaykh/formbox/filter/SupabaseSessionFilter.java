@@ -39,7 +39,11 @@ public class SupabaseSessionFilter extends OncePerRequestFilter {
 		String path = request.getRequestURI();
 
 		// 1. Skip static/public endpoints
-		if (path.startsWith("/css/") || path.startsWith("/js/") || path.startsWith("/images/") || path.startsWith("/f/")) {
+		if (path.startsWith("/favicon")) {
+			response.setStatus(404);
+			return;
+		}
+		if (path.startsWith("/assets/") || path.startsWith("/f/") || path.startsWith("/polar")) {
 			filterChain.doFilter(request, response);
 			return;
 		}
@@ -47,23 +51,16 @@ public class SupabaseSessionFilter extends OncePerRequestFilter {
 		SupabaseClient supabaseClient = authServiceKt.createIsolatedClient();
 		request.setAttribute("supabaseClient", supabaseClient);
 
-
 		String oldAccessToken = getCookieValue(request, "sb_token");
 		String oldRefreshToken = getCookieValue(request, "sb_refresh");
 
-		var userMetadata = authServiceKt.getUserMetadata(supabaseClient, oldAccessToken == null ? "" : oldAccessToken);
+		request.setAttribute("userMetadata", null);
+		var userMetadata = authServiceKt.getUserMetadata(supabaseClient, oldAccessToken);
 
-		// 2. Path A: Active and Valid Session
-		if (userMetadata.getSub() != null) {
+		if (userMetadata != null && userMetadata.getSub() != null) {
 			request.setAttribute("userMetadata", userMetadata);
 			filterChain.doFilter(request, response);
 			authServiceKt.closeIsolatedClient(supabaseClient);
-			return;
-		}
-
-		if (path.startsWith(PathRegistry.Auth.BASE)) {
-			request.setAttribute("userMetadata", null);
-			filterChain.doFilter(request, response);
 			return;
 		}
 
@@ -90,8 +87,13 @@ public class SupabaseSessionFilter extends OncePerRequestFilter {
 			}
 		}
 
+		if (path.startsWith(PathRegistry.Auth.BASE) || "/".equals(path) || path.isBlank()) {
+			filterChain.doFilter(request, response);
+			authServiceKt.closeIsolatedClient(supabaseClient);
+			return;
+		}
+
 		authServiceKt.closeIsolatedClient(supabaseClient);
-		// 4. Path C: Unauthenticated Fallback
 		log.warn("Unauthenticated attempt targeting protected domain path: {}", path);
 		if ("true".equals(request.getHeader("HX-Request"))) {
 			response.setHeader("HX-Redirect", PathRegistry.Auth.Redirects.TO_LOGIN_UNAUTHORIZED);

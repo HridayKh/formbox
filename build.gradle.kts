@@ -31,6 +31,9 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
 	implementation("org.springframework.boot:spring-boot-starter-webmvc")
 
+	compileOnly("org.projectlombok:lombok:1.18.46")
+	annotationProcessor("org.projectlombok:lombok:1.18.46")
+
 	// Supabase Dependencies
 	implementation(platform("io.github.jan-tennert.supabase:bom:3.6.0"))
 	implementation("io.github.jan-tennert.supabase:auth-kt")
@@ -46,7 +49,8 @@ dependencies {
 	implementation("com.jsandev.polar:polar-spring:0.1.5")
 
 	// redis
-	implementation("org.springframework.data:spring-data-redis:4.1.0")
+	implementation("org.springframework.data:spring-data-redis")
+	implementation("redis.clients:jedis")
 }
 
 tasks.withType<Test> {

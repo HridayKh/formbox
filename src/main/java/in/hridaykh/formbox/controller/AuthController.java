@@ -8,6 +8,7 @@ import in.hridaykh.formbox.exception.auth.InvalidCredentialsException;
 import in.hridaykh.formbox.exception.auth.UserAlreadyExistsException;
 import in.hridaykh.formbox.service.AuthService;
 import io.github.jan.supabase.SupabaseClient;
+import io.github.jan.supabase.auth.exception.AuthWeakPasswordException;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,17 +43,20 @@ public class AuthController {
 	}
 
 	@PostMapping(PathRegistry.Auth.SIGNUP)
-	public String handleSignup(@RequestParam String email, @RequestParam String password, @RequestParam String username, @RequestAttribute SupabaseClient supabaseClient, HttpServletResponse response, Model model) {
+	public String handleSignup(@RequestParam String email, @RequestParam String password, @RequestAttribute SupabaseClient supabaseClient, HttpServletResponse response, Model model) {
 		try {
-			authService.registerUser(supabaseClient, new SignUpRequest(email, password, username), response);
+			authService.registerUser(supabaseClient, new SignUpRequest(email, password), response);
 			return ViewRegistry.Auth.Fragments.EMPTY;
 		} catch (UserAlreadyExistsException e) {
-			log.warn("Registration rejected: Account conflict tracking email source: {}", email);
+			log.warn("User with email {} already exists, please log in", email);
 			model.addAttribute("error", e.getMessage());
 			return ViewRegistry.Auth.Fragments.ERROR_ALERT;
-		} catch (Exception e) {
+		} catch (AuthWeakPasswordException e) {
+			model.addAttribute("error", "Password must be at least 8 characters long and contain uppercase, lowercase, digits, and symbols");
+			return ViewRegistry.Auth.Fragments.ERROR_ALERT;
+		}catch (Exception e) {
 			log.error("Critical infrastructure handling exception during registration process: ", e);
-			model.addAttribute("error", "An internal processing error occurred.");
+			model.addAttribute("error", "An internal processing error occurred. " + e.getClass().getName());
 			return ViewRegistry.Auth.Fragments.ERROR_ALERT;
 		}
 	}

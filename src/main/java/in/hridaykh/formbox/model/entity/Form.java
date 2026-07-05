@@ -1,6 +1,7 @@
 package in.hridaykh.formbox.model.entity;
 
 import jakarta.persistence.*;
+import lombok.Data;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
@@ -12,15 +13,8 @@ import java.util.UUID;
 @Table(name = "forms")
 @SQLDelete(sql = "UPDATE forms SET is_deleted = true, is_active = false WHERE id = ?")
 @SQLRestriction("is_deleted IS false")
+@Data
 public class Form {
-	public Form() {
-	}
-
-	public Form(Tenant tenant, String name, String redirectUrl) {
-		this.tenant = tenant;
-		this.name = name;
-		this.redirectUrl = redirectUrl;
-	}
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.UUID)
@@ -54,59 +48,4 @@ public class Form {
 		return this.tenant.getId().equals(tenant.getId());
 	}
 
-	public UUID getId() {
-		return id;
-	}
-
-	public void setId(UUID id) {
-		this.id = id;
-	}
-
-	public Tenant getTenant() {
-		return tenant;
-	}
-
-	public void setTenant(Tenant tenant) {
-		this.tenant = tenant;
-	}
-
-	public String getName() {
-		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public String getRedirectUrl() {
-		return redirectUrl;
-	}
-
-	public void setRedirectUrl(String redirectUrl) {
-		this.redirectUrl = redirectUrl;
-	}
-
-	public Boolean getIsActive() {
-		return isActive;
-	}
-
-	public void setIsActive(Boolean isActive) {
-		this.isActive = isActive;
-	}
-
-	public OffsetDateTime getCreatedAt() {
-		return createdAt;
-	}
-
-	public void setCreatedAt(OffsetDateTime createdAt) {
-		this.createdAt = createdAt;
-	}
-
-	public Boolean getDeleted() {
-		return isDeleted;
-	}
-
-	public void setDeleted(Boolean deleted) {
-		isDeleted = deleted;
-	}
 }

@@ -1,27 +1,19 @@
 package in.hridaykh.formbox.model.entity;
 
+import in.hridaykh.formbox.model.enums.SubscriptionState;
+import in.hridaykh.formbox.repository.PurchasesRepository;
 import jakarta.persistence.*;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
+import lombok.Data;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
-enum SubscriptionState {
-	free, active, cancelled_grace_period, past_due, unpaid
-}
 
 @Entity
 @Table(name = "tenants")
+@Data
 public class Tenant {
-
-	public Tenant() {
-	}
-
-	public Tenant(UUID id, String email) {
-		this.id = id;
-		this.email = email;
-	}
 
 	@Id
 	@Column(name = "id", nullable = false)
@@ -29,11 +21,6 @@ public class Tenant {
 
 	@Column(name = "email", nullable = false, unique = true)
 	private String email;
-
-	@Enumerated(EnumType.STRING)
-	@JdbcTypeCode(SqlTypes.NAMED_ENUM)
-	@Column(name = "subscription_status", nullable = false)
-	private SubscriptionState subscriptionStatus = SubscriptionState.free;
 
 	@Column(name = "current_period_end")
 	private OffsetDateTime currentPeriodEnd;
@@ -46,48 +33,11 @@ public class Tenant {
 		this.updatedAt = OffsetDateTime.now();
 	}
 
-	// Returns 'paid' if they are active OR in their grace period window
-	public String resolveCurrentTier() {
-		return (subscriptionStatus == SubscriptionState.active || subscriptionStatus == SubscriptionState.cancelled_grace_period) ? "paid" : "free";
+	public String resolveHighestActiveTier(PurchasesRepository purchasesRepository) {
+		List<Purchases> activePurchases = purchasesRepository.findActiveOrGracePurchasesByUserId(this, SubscriptionState.active, SubscriptionState.cancelled_grace_period, OffsetDateTime.now());
+		if (activePurchases.isEmpty())
+			return "free-v1";
+		PolarProducts product = activePurchases.getFirst().getProduct();
+		return product.getSlug().toLowerCase();
 	}
-
-	public void givePaidSubscription() {
-		this.subscriptionStatus = SubscriptionState.active;
-	}
-
-	public void giveFreeSubscription() {
-		this.subscriptionStatus = SubscriptionState.free;
-		this.currentPeriodEnd = null;
-	}
-
-	public void setGracePeriodSubscription(OffsetDateTime periodEnd) {
-		this.subscriptionStatus = SubscriptionState.cancelled_grace_period;
-		this.currentPeriodEnd = periodEnd;
-	}
-
-	public void setPastDueSubscription() {
-		this.subscriptionStatus = SubscriptionState.past_due;
-	}
-
-
-	public String getSubscriptionStatus() {
-		return this.subscriptionStatus.toString();
-	}
-
-	public UUID getId() {
-		return id;
-	}
-
-	public void setId(UUID id) {
-		this.id = id;
-	}
-
-	public OffsetDateTime getCurrentPeriodEnd() {
-		return currentPeriodEnd;
-	}
-
-	public void setCurrentPeriodEnd(OffsetDateTime currentPeriodEnd) {
-		this.currentPeriodEnd = currentPeriodEnd;
-	}
-
 }

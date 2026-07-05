@@ -1,7 +1,8 @@
 package in.hridaykh.formbox.controller;
 
-import in.hridaykh.formbox.config.PolarIdProperties;
 import in.hridaykh.formbox.constant.PathRegistry;
+import in.hridaykh.formbox.model.entity.PolarProducts;
+import in.hridaykh.formbox.repository.PolarProductsRepository;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -23,25 +24,23 @@ public class BillingController {
 
 	private final Polar polar;
 	private final PolarHttpClient polarHttpClient;
-	private final PolarIdProperties polarIdProperties;
+	private final PolarProductsRepository polarProductsRepository;
 
-	public BillingController(Polar polar, PolarHttpClient polarHttpClient, PolarIdProperties polarIdProperties) {
+	public BillingController(Polar polar, PolarHttpClient polarHttpClient, PolarProductsRepository polarProductsRepository) {
 		this.polar = polar;
 		this.polarHttpClient = polarHttpClient;
-		this.polarIdProperties = polarIdProperties;
+		this.polarProductsRepository = polarProductsRepository;
 	}
 
-	@PostMapping(PathRegistry.Billing.UPGRADE)
+	@PostMapping("/upgrade/{plan}")
 	@ResponseBody
-	public void redirectToCheckout(@RequestAttribute JwtPayload userMetadata, HttpServletRequest request, HttpServletResponse response) {
-		String successUrl = ServletUriComponentsBuilder.fromContextPath(request).path(PathRegistry.DASHBOARD).toUriString();
-		Map<String, Object> customBody = new HashMap<>();
-		customBody.put("products", List.of(polarIdProperties.getPaidProductId()));
-		customBody.put("customer_email", userMetadata.getEmail());
-		customBody.put("success_url", successUrl);
-		customBody.put("external_customer_id", userMetadata.getSub());
-		customBody.put("allow_discount_codes", false);
-		response.setHeader("HX-Redirect", polar.checkouts().create(customBody).url());
+	public void redirectToCheckout(@PathVariable String plan, @RequestAttribute JwtPayload userMetadata, HttpServletRequest request, HttpServletResponse response) {
+		response.setHeader("HX-Redirect", generateCheckoutUrl(plan, userMetadata, request));
+	}
+
+	@GetMapping("/upgrade/{plan}")
+	public String redirectToCheckoutGet(@PathVariable String plan, @RequestAttribute JwtPayload userMetadata, HttpServletRequest request) {
+		return "redirect:" + generateCheckoutUrl(plan, userMetadata, request);
 	}
 
 	@PostMapping(PathRegistry.Billing.PORTAL)
@@ -54,5 +53,20 @@ public class BillingController {
 		}
 		var session = polarHttpClient.post("/customer-sessions/", Map.of("external_customer_id", userId), PolarCustomerSessionResponse.class);
 		response.setHeader("HX-Redirect", session.customerPortalUrl());
+	}
+
+	private String generateCheckoutUrl(String plan, JwtPayload userMetadata, HttpServletRequest request) {
+		if ("free-v1".equals(plan))
+			return PathRegistry.DASHBOARD;
+		PolarProducts product = polarProductsRepository.findBySlug(plan.toLowerCase()).orElseThrow(() -> new IllegalArgumentException("Unknown plan: " + plan));
+		String successUrl = ServletUriComponentsBuilder.fromContextPath(request).path(PathRegistry.DASHBOARD).toUriString();
+
+		Map<String, Object> customBody = new HashMap<>();
+		customBody.put("products", List.of(product.getPolarProductId()));
+		customBody.put("customer_email", userMetadata.getEmail());
+		customBody.put("success_url", successUrl);
+		customBody.put("external_customer_id", userMetadata.getSub());
+
+		return polar.checkouts().create(customBody).url();
 	}
 }
