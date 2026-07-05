@@ -47,7 +47,7 @@ public class FormController {
 		Form newForm = new Form();
 		newForm.setTenant(tenant);
 		newForm.setName(name);
-		newForm.setName(redirectUrl);
+		newForm.setRedirectUrl(redirectUrl);
 		Form savedForm = formRepository.save(newForm);
 
 		// Append the message query parameter to the redirect path
