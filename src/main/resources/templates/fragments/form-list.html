@@ -17,12 +17,12 @@
         </td>
 
         <td>
-            <div class="table__actions" style="justify-content: flex-end;">
+            <div class="table__actions" style="display: flex; justify-content: flex-end;">
                 <a class="btn btn--secondary btn--sm" th:href="@{/forms/{id}(id=${form.id})}">Manage</a>
-
                 <button class="btn btn--danger btn--sm"
                         hx-trigger="click"
-                        th:attr="hx-delete='/forms/${form.id}', hx-target='#form-row-${form.id}'"
+                        th:hx-delete="|/forms/${form.id}|"
+                        th:hx-target="'#' + |form-row-${form.id}|"
                         hx-swap="outerHTML"
                         hx-confirm="Are you sure you want to delete this form?">
                     Delete

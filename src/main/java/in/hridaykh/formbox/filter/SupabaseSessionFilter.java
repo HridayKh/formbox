@@ -47,10 +47,8 @@ public class SupabaseSessionFilter extends OncePerRequestFilter {
 			return;
 		}
 
-		long supabaseStart = System.currentTimeMillis();
 		SupabaseClient supabaseClient = authServiceKt.createIsolatedClient();
 		request.setAttribute("supabaseClient", supabaseClient);
-		log.info("Create Client: {}", System.currentTimeMillis() - supabaseStart);
 
 		String oldAccessToken = getCookieValue(request, "sb_token");
 		String oldRefreshToken = getCookieValue(request, "sb_refresh");
@@ -63,10 +61,8 @@ public class SupabaseSessionFilter extends OncePerRequestFilter {
 			filterChain.doFilter(request, response);
 
 
-			long supabaseStop = System.currentTimeMillis();
 			authServiceKt.closeIsolatedClient(supabaseClient);
 			log.info("{} {}: {}", method, path, System.currentTimeMillis() - start);
-			log.info("Close Client: {}", System.currentTimeMillis() - supabaseStop);
 			return;
 		}
 
