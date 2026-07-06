@@ -1,6 +1,7 @@
-package in.hridaykh.formbox.service;
+package in.hridaykh.formbox.service.cache;
 
 import in.hridaykh.formbox.model.entity.Tenant;
+import in.hridaykh.formbox.service.polar.PolarMeterService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -15,7 +16,7 @@ public class PolarCacheService {
 
 	private static final Logger log = LoggerFactory.getLogger(PolarCacheService.class);
 
-	private static final String METER_BALANCE_KEY_PREFIX = "formbox:tenant:meter-balance:";
+	private static final String METER_BALANCE_KEY_PREFIX = "formbox:meterBalance:";
 	private static final long CACHE_TTL_HOURS = 2;
 
 	private final StringRedisTemplate redisTemplate;

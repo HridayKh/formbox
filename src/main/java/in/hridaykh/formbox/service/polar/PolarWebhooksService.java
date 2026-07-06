@@ -1,4 +1,4 @@
-package in.hridaykh.formbox.service;
+package in.hridaykh.formbox.service.polar;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -12,6 +12,7 @@ import in.hridaykh.formbox.repository.PurchasesRepository;
 import in.hridaykh.formbox.repository.TenantRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -55,8 +56,9 @@ public class PolarWebhooksService {
 				return;
 			}
 
-			// Look up product contextual rules before processing state assignments
 			PolarProducts product = resolveProductFromDataNode(dataNode);
+			String finalCustomerEmail = customerEmail;
+			Tenant tenant = tenantRepository.findByEmailIgnoreCase(customerEmail).orElseThrow(() -> new IllegalStateException("Tenant missing for: " + finalCustomerEmail));
 
 			switch (eventType) {
 				case "benefit_grant.cycled":
@@ -65,25 +67,25 @@ public class PolarWebhooksService {
 				case "subscription.created":
 				case "subscription.uncanceled":
 					SubscriptionState activeState = (product != null && "free-v1".equals(product.getSlug())) ? SubscriptionState.free : SubscriptionState.active;
-					handleDynamicSubscription(customerEmail, product, dataNode, activeState);
+					handleDynamicSubscription(tenant, product, dataNode, activeState);
 					break;
 
 				case "subscription.canceled":
 					if (product != null && "free-v1".equals(product.getSlug())) {
 						log.info("Free plan cancellation webhook intercepted for {}. Keeping plan active/free.", customerEmail);
-						handleDynamicSubscription(customerEmail, product, dataNode, SubscriptionState.free);
+						handleDynamicSubscription(tenant, product, dataNode, SubscriptionState.free);
 					} else {
-						handleDynamicSubscription(customerEmail, product, dataNode, SubscriptionState.cancelled_grace_period);
+						handleDynamicSubscription(tenant, product, dataNode, SubscriptionState.cancelled_grace_period);
 					}
 					break;
 
 				case "subscription.past_due":
-					handleDynamicSubscription(customerEmail, product, dataNode, SubscriptionState.past_due);
+					handleDynamicSubscription(tenant, product, dataNode, SubscriptionState.past_due);
 					break;
 
 				case "benefit_grant.revoked":
 				case "subscription.revoked":
-					handleDynamicSubscription(customerEmail, product, dataNode, SubscriptionState.unpaid);
+					handleDynamicSubscription(tenant, product, dataNode, SubscriptionState.unpaid);
 					break;
 
 				default:
@@ -120,11 +122,10 @@ public class PolarWebhooksService {
 		return polarProductsRepository.findByPolarProductId(polarProductId).orElse(null);
 	}
 
-	private void handleDynamicSubscription(String email, PolarProducts product, JsonNode dataNode, SubscriptionState newState) {
-		Tenant tenant = tenantRepository.findByEmailIgnoreCase(email).orElseThrow(() -> new IllegalStateException("Tenant missing for: " + email));
-
+	@CacheEvict(value = "tenantTiers", key = "#tenant.id")
+	public void handleDynamicSubscription(Tenant tenant, PolarProducts product, JsonNode dataNode, SubscriptionState newState) {
 		if (product == null) {
-			log.error("Webhook payload matching failed due to missing product context for tenant: {}", email);
+			log.error("Webhook payload matching failed due to missing product context for tenant: {}", tenant.getEmail());
 			return;
 		}
 
@@ -154,7 +155,7 @@ public class PolarWebhooksService {
 		}
 
 		purchasesRepository.save(purchase);
-		log.info("Successfully updated purchase state to {} for tenant: {} on product: {}", newState, email, product.getName());
+		log.info("Successfully updated purchase state to {} for tenant: {} on product: {}", newState, tenant.getEmail(), product.getName());
 
 		polarMeterService.getRemainingSubmissionsBalance(tenant);
 	}

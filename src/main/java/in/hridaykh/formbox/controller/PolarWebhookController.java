@@ -1,7 +1,7 @@
 package in.hridaykh.formbox.controller;
 
 import in.hridaykh.formbox.constant.PathRegistry;
-import in.hridaykh.formbox.service.PolarWebhooksService;
+import in.hridaykh.formbox.service.polar.PolarWebhooksService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

@@ -2,108 +2,120 @@ package in.hridaykh.formbox.controller;
 
 import in.hridaykh.formbox.constant.PathRegistry;
 import in.hridaykh.formbox.constant.ViewRegistry;
+import in.hridaykh.formbox.model.dto.CachedForm;
 import in.hridaykh.formbox.model.dto.FormSubmissionsResponse;
 import in.hridaykh.formbox.model.entity.Form;
-import in.hridaykh.formbox.model.entity.Tenant;
 import in.hridaykh.formbox.repository.FormRepository;
-import in.hridaykh.formbox.repository.PurchasesRepository;
 import in.hridaykh.formbox.repository.TenantRepository;
-import in.hridaykh.formbox.service.SubmissionService;
+import in.hridaykh.formbox.service.cache.FormCacheService;
+import in.hridaykh.formbox.service.cache.SubmissionCacheService;
+import in.hridaykh.formbox.service.TenantTierService;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.HttpServletResponse;
 
+import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
+@Slf4j
 @Controller
 @RequestMapping(PathRegistry.Form.BASE)
 public class FormController {
 
 	private final TenantRepository tenantRepository;
 	private final FormRepository formRepository;
-	private final SubmissionService submissionService;
-	private final PurchasesRepository purchasesRepository;
+	private final SubmissionCacheService submissionCacheService;
+	private final TenantTierService tenantTierService;
+	private final FormCacheService formCacheService;
 
-	public FormController(TenantRepository tenantRepository, FormRepository formRepository, SubmissionService submissionService, PurchasesRepository purchasesRepository) {
+	public FormController(TenantRepository tenantRepository, FormRepository formRepository, SubmissionCacheService submissionCacheService, TenantTierService tenantTierService, FormCacheService formCacheService) {
 		this.tenantRepository = tenantRepository;
 		this.formRepository = formRepository;
-		this.submissionService = submissionService;
-		this.purchasesRepository = purchasesRepository;
+		this.submissionCacheService = submissionCacheService;
+		this.tenantTierService = tenantTierService;
+		this.formCacheService = formCacheService;
 	}
 
 
 	// ========== FORM CRUD ==========
 	@PostMapping
 	public String createForm(@RequestAttribute JwtPayload userMetadata, @RequestParam("name") String name, @RequestParam(value = "redirectUrl", required = false) String redirectUrl, HttpServletResponse response) {
-		Tenant tenant = resolveTenant(userMetadata);
 		String msgParam = "";
 
-		if ("free-v1".equals(tenant.resolveHighestActiveTier(purchasesRepository)) && redirectUrl != null && !redirectUrl.isBlank()) {
+		if ("free-v1".equals(tenantTierService.resolveHighestActiveTierNonNull(userMetadata.getSub())) && redirectUrl != null && !redirectUrl.isBlank()) {
 			redirectUrl = null;
 			msgParam = "?msg=upgrade_required_for_redirect";
 		}
+		UUID tenantId = UUID.fromString(Objects.requireNonNull(userMetadata.getSub()));
 		Form newForm = new Form();
-		newForm.setTenant(tenant);
+		newForm.setTenant(tenantRepository.getReferenceById(tenantId));
 		newForm.setName(name);
 		newForm.setRedirectUrl(redirectUrl);
 		Form savedForm = formRepository.save(newForm);
 
-		// Append the message query parameter to the redirect path
+		formCacheService.updateFormCache(savedForm);
+		formCacheService.evictTenantForms(tenantId);
+
 		response.setHeader("HX-Redirect", PathRegistry.Form.BASE + "/" + savedForm.getId() + msgParam);
 		return ViewRegistry.Auth.Fragments.EMPTY;
 	}
 
 	@GetMapping
 	public String listForms(@RequestAttribute JwtPayload userMetadata, Model model) {
-		model.addAttribute("forms", formRepository.findByTenantAndIsDeletedIsFalse(resolveTenant(userMetadata)));
+		String tenantId = userMetadata.getSub();
+		if (tenantId == null) return "redirect:" + PathRegistry.Auth.Redirects.TO_LOGIN_UNAUTHORIZED;
+		List<CachedForm> forms = formCacheService.getTenantForms(UUID.fromString(tenantId));
+		model.addAttribute("forms", forms);
 		return ViewRegistry.Fragments.FORM_ROWS;
 	}
 
-	@GetMapping("/{id}")
-	public String manageForm(@RequestAttribute JwtPayload userMetadata, @PathVariable("id") UUID formId, @RequestParam(value = "msg", required = false) String msg, Model model) {
-		Form form = formRepository.findById(formId).orElseThrow(() -> new RuntimeException("Form not found"));
+	@GetMapping("/{formId}")
+	public String manageForm(@RequestAttribute JwtPayload userMetadata, @PathVariable UUID formId, @RequestParam(value = "msg", required = false) String msg, Model model) {
+		CachedForm form = formCacheService.getCachedForm(formId);
 
-		if (!form.compareTenant(resolveTenant(userMetadata))) {
+		if (!form.tenantId().toString().equals(userMetadata.getSub()))
 			throw new RuntimeException("Unauthorized access to form system.");
-		}
 
-		if ("upgrade_required_for_redirect".equals(msg)) {
+		if ("upgrade_required_for_redirect".equals(msg))
 			model.addAttribute("warningMessage", "Form created successfully! However, custom redirects are only available on paid tiers.");
-		}
 
-		FormSubmissionsResponse submissions = submissionService.getFormSubmissionsGrouped(formId);
+		FormSubmissionsResponse submissions = submissionCacheService.getFormSubmissionsGrouped(formId);
 
 		model.addAttribute("form", form);
-		model.addAttribute("tier", resolveTenant(userMetadata).resolveHighestActiveTier(purchasesRepository));
+		model.addAttribute("tier", tenantTierService.resolveHighestActiveTierNonNull(form.tenantId()));
 		model.addAttribute("submissions", submissions.submissions());
 		model.addAttribute("spamSubmissions", submissions.spam());
+
 		return "dashboard/manage-form";
 	}
 
 	@PutMapping("/{id}")
 	public String updateForm(@RequestAttribute JwtPayload userMetadata, @PathVariable("id") UUID formId, @RequestParam("name") String name, @RequestParam(value = "redirectUrl", required = false) String redirectUrl, @RequestParam(value = "isActive", required = false) Boolean isActive, Model model) {
-		Tenant tenant = resolveTenant(userMetadata);
 		Form form = formRepository.findById(formId).orElseThrow(() -> new RuntimeException("Form not found"));
 
-		if (!form.compareTenant(tenant))
+		if (!form.getTenant().getId().toString().equals(userMetadata.getSub()))
 			throw new RuntimeException("Unauthorized access to form system.");
 
-		// 1. Enforce business rule check on updates
 		boolean tierViolationAttempted = false;
-		if ("free-v1".equals(tenant.resolveHighestActiveTier(purchasesRepository)) && redirectUrl != null && !redirectUrl.isBlank()) {
+		if ("free-v1".equals(tenantTierService.resolveHighestActiveTierNonNull(form.getTenant().getId())) && redirectUrl != null && !redirectUrl.isBlank()) {
 			redirectUrl = null;
 			tierViolationAttempted = true;
 		}
 
-		// 2. Safe variable mapping
 		form.setName(name);
 		form.setRedirectUrl(redirectUrl == null || redirectUrl.isBlank() ? null : redirectUrl);
 		form.setIsActive(isActive != null && isActive);
+		Form savedForm = formRepository.save(form);
 
-		formRepository.save(form);
-		model.addAttribute("form", form);
+		formCacheService.updateFormCache(savedForm);
+		formCacheService.evictTenantForms(savedForm.getTenant().getId());
+
+		model.addAttribute("form", savedForm);
+
 
 		// 3. Contextual UI Messages based on behavior
 		if (tierViolationAttempted) {
@@ -112,21 +124,18 @@ public class FormController {
 			model.addAttribute("message", "Form configurations updated successfully!");
 		}
 
-		return ViewRegistry.Fragments.SETTINGS ;
+		return ViewRegistry.Fragments.SETTINGS;
 	}
 
 	@DeleteMapping("/{id}")
 	@ResponseBody
 	public void deleteForm(@RequestAttribute JwtPayload userMetadata, @PathVariable("id") UUID formId) {
-		Form form = formRepository.findById(formId).orElseThrow(() -> new RuntimeException("Form not found"));
-		if (form.compareTenant(resolveTenant(userMetadata))) formRepository.delete(form);
+		CachedForm form = formCacheService.getCachedForm(formId);
+		if (!form.tenantId().toString().equals(userMetadata.getSub())) return;
+		formRepository.deleteById(form.id());
+		formCacheService.evictFormCache(formId);
+		formCacheService.evictTenantForms(form.tenantId());
+
 	}
 
-	// ========== PRIVATE HELPERS ==========
-	private Tenant resolveTenant(JwtPayload userMetadata) {
-		if (userMetadata == null) throw new RuntimeException("Unauthorized");
-		if (userMetadata.getSub() == null) throw new RuntimeException("Tenant not found");
-		UUID userId = UUID.fromString(userMetadata.getSub());
-		return tenantRepository.findById(userId).orElseThrow(() -> new RuntimeException("Tenant not found"));
-	}
 }

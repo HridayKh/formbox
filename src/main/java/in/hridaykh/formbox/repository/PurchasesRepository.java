@@ -17,10 +17,9 @@ public interface PurchasesRepository extends JpaRepository<Purchases, UUID> {
 
 	Optional<Purchases> findByUserIdAndProduct(Tenant userId, PolarProducts product);
 
-	boolean existsByUserId(Tenant userId);
-
 	void deleteByUserIdAndProduct(Tenant userId, PolarProducts polarProductsId);
 
-	@Query("SELECT p FROM Purchases p WHERE p.userId = :user AND (p.status = :activeState OR (p.status = :canceledState AND p.currentPeriodEnd > :now)) ORDER BY p.product.priceCents DESC")
-	List<Purchases> findActiveOrGracePurchasesByUserId(@Param("user") Tenant user, @Param("activeState") SubscriptionState activeState, @Param("canceledState") SubscriptionState canceledState, @Param("now") OffsetDateTime now);
+	@Query("SELECT p FROM Purchases p WHERE p.userId.id = :user AND (p.status = :activeState OR (p.status = :canceledState AND p.currentPeriodEnd > :now)) ORDER BY p.product.priceCents DESC")
+	List<Purchases> findActiveOrGracePurchasesByUserId(@Param("user") UUID user, @Param("activeState") SubscriptionState activeState, @Param("canceledState") SubscriptionState canceledState, @Param("now") OffsetDateTime now);
+
 }

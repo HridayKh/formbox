@@ -10,6 +10,7 @@ import in.hridaykh.formbox.repository.TenantRepository;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sh.polar.sdk.Polar;
@@ -30,17 +31,20 @@ public class DashboardService {
 	private final PurchasesRepository purchasesRepository;
 	private final PolarHttpClient polarHttpClient;
 	private final Polar polar;
+	private final TenantTierService tenantTierService;
 
-	public DashboardService(TenantRepository tenantRepository, PolarProductsRepository polarProductsRepository, PurchasesRepository purchasesRepository, PolarHttpClient polarHttpClient, Polar polar) {
+	public DashboardService(TenantRepository tenantRepository, PolarProductsRepository polarProductsRepository, PurchasesRepository purchasesRepository, PolarHttpClient polarHttpClient, Polar polar, TenantTierService tenantTierService) {
 		this.tenantRepository = tenantRepository;
 		this.polarProductsRepository = polarProductsRepository;
 		this.purchasesRepository = purchasesRepository;
 		this.polarHttpClient = polarHttpClient;
 		this.polar = polar;
+		this.tenantTierService = tenantTierService;
 	}
 
 	@Transactional
-	public Tenant getOrCreateTenantWithFreeSubscription(JwtPayload userMetadata) {
+	@Cacheable(value = "tenantTiers", key = "T(java.util.UUID).fromString(#userMetadata.getSub())")
+	public UUID getOrCreateTenantWithFreeSubscription(JwtPayload userMetadata) {
 		UUID userId = UUID.fromString(Objects.requireNonNull(userMetadata.getSub()));
 
 		Tenant tenant = tenantRepository.findById(userId).orElseGet(() -> {
@@ -52,21 +56,16 @@ public class DashboardService {
 
 		ensureFreeSubscriptionProvisioned(tenant);
 
-		return tenant;
-	}
-
-	public String resolveHighestActiveTier(Tenant tenant) {
-		return tenant.resolveHighestActiveTier(purchasesRepository);
+		return tenant.getId();
 	}
 
 	private void ensureFreeSubscriptionProvisioned(Tenant tenant) {
-		if (purchasesRepository.existsByUserId(tenant)) return;
+		if (tenantTierService.resolveHighestActiveTierNullable(tenant.getId()) != null) return;
 
 		log.info("Provisioning Polar Free Subscription for: {}", tenant.getEmail());
 
 		try {
-			PolarProducts freeProduct = polarProductsRepository.findBySlug("free-v1")
-				.orElseThrow(() -> new IllegalStateException("Database configuration missing for 'free-v1' slug product"));
+			PolarProducts freeProduct = polarProductsRepository.findBySlug("free-v1").orElseThrow(() -> new IllegalStateException("Database configuration missing for 'free-v1' slug product"));
 
 			createCustomer(tenant.getId().toString(), tenant.getEmail());
 
@@ -88,8 +87,7 @@ public class DashboardService {
 
 			if (polarSubscription != null && polarSubscription.currentPeriodEnd() != null)
 				freePurchase.setCurrentPeriodEnd(polarSubscription.currentPeriodEnd());
-			else
-				freePurchase.setCurrentPeriodEnd(OffsetDateTime.now().plusMonths(1));
+			else freePurchase.setCurrentPeriodEnd(OffsetDateTime.now().plusMonths(1));
 
 			purchasesRepository.save(freePurchase);
 			log.info("Successfully provisioned Polar Free Subscription via backfill for: {}", tenant.getEmail());

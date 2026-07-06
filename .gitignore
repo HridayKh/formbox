@@ -5,6 +5,8 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 notes.md
+notes
+notes.*
 
 ### STS ###
 .apt_generated

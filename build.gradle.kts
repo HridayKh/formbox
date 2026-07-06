@@ -26,11 +26,17 @@ repositories {
 
 dependencies {
 	// Standard Spring Boot dependencies
+	implementation("org.springframework.boot:spring-boot-starter-webmvc")
+	implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.postgresql:postgresql")
-	implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
-	implementation("org.springframework.boot:spring-boot-starter-webmvc")
 
+	// caching
+	implementation("org.springframework.boot:spring-boot-starter-cache")
+	implementation("com.github.ben-manes.caffeine:caffeine")
+	implementation("org.springframework.boot:spring-boot-starter-data-redis")
+
+	// lombok
 	compileOnly("org.projectlombok:lombok:1.18.46")
 	annotationProcessor("org.projectlombok:lombok:1.18.46")
 
@@ -41,16 +47,10 @@ dependencies {
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlin:kotlin-stdlib:2.3.21")
 
-	// Resend Emails
+	// Resend and Polar
 	implementation("com.resend:resend-java:+")
-
-	// polar sh
 	implementation("com.jsandev.polar:polar-java-sdk:0.1.5")
 	implementation("com.jsandev.polar:polar-spring:0.1.5")
-
-	// redis
-	implementation("org.springframework.data:spring-data-redis")
-	implementation("redis.clients:jedis")
 }
 
 tasks.withType<Test> {

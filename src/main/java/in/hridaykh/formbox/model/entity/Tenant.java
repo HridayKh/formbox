@@ -1,12 +1,9 @@
 package in.hridaykh.formbox.model.entity;
 
-import in.hridaykh.formbox.model.enums.SubscriptionState;
-import in.hridaykh.formbox.repository.PurchasesRepository;
 import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.OffsetDateTime;
-import java.util.List;
 import java.util.UUID;
 
 
@@ -33,11 +30,4 @@ public class Tenant {
 		this.updatedAt = OffsetDateTime.now();
 	}
 
-	public String resolveHighestActiveTier(PurchasesRepository purchasesRepository) {
-		List<Purchases> activePurchases = purchasesRepository.findActiveOrGracePurchasesByUserId(this, SubscriptionState.active, SubscriptionState.cancelled_grace_period, OffsetDateTime.now());
-		if (activePurchases.isEmpty())
-			return "free-v1";
-		PolarProducts product = activePurchases.getFirst().getProduct();
-		return product.getSlug().toLowerCase();
-	}
 }

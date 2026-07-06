@@ -1,4 +1,4 @@
-package in.hridaykh.formbox.service;
+package in.hridaykh.formbox.service.polar;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import in.hridaykh.formbox.config.PolarIdProperties;

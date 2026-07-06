@@ -1,5 +1,6 @@
 package in.hridaykh.formbox.model.entity;
 
+import in.hridaykh.formbox.model.dto.CachedForm;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.ColumnDefault;
@@ -44,8 +45,7 @@ public class Form {
 	@Column(name = "is_deleted", nullable = false)
 	private Boolean isDeleted = false;
 
-	public boolean compareTenant(Tenant tenant) {
-		return this.tenant.getId().equals(tenant.getId());
+	public CachedForm toCachedFormDto() {
+		return new CachedForm(this.id, this.tenant != null ? this.tenant.getId() : null, this.name, this.redirectUrl, this.turnstileSecretKey, this.isActive);
 	}
-
 }
