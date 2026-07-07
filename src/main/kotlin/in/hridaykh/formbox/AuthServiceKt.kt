@@ -32,6 +32,7 @@ class AuthServiceKt(private val supabaseProps: SupabaseProperties) {
 	private val log = LoggerFactory.getLogger(AuthServiceKt::class.java)
 
 	fun createIsolatedClient() = createSupabaseClient(supabaseProps.url, supabaseProps.secretKey) {
+		logging = false
 		install(Auth.Companion) {
 			autoLoadFromStorage = false
 			autoSaveToStorage = false
