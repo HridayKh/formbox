@@ -12,6 +12,7 @@ import in.hridaykh.formbox.service.polar.PolarCacheService;
 import in.hridaykh.formbox.service.cache.TenantTierCacheService;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Controller;
@@ -23,6 +24,7 @@ import java.util.UUID;
 
 @Slf4j
 @Controller
+@RequiredArgsConstructor
 public class IndexController {
 
 	private final FormRepository formRepository;
@@ -32,35 +34,42 @@ public class IndexController {
 	private final TenantTierCacheService tenantTierCacheService;
 	private final StringRedisTemplate stringRedisTemplate;
 
-	public IndexController(FormRepository formRepository, FormService formService, SubmissionRepository submissionRepository, PolarCacheService polarCacheService, TenantTierCacheService tenantTierCacheService, StringRedisTemplate stringRedisTemplate) {
-		this.formRepository = formRepository;
-		this.formService = formService;
-		this.submissionRepository = submissionRepository;
-		this.polarCacheService = polarCacheService;
-		this.tenantTierCacheService = tenantTierCacheService;
-		this.stringRedisTemplate = stringRedisTemplate;
-	}
-
 	@GetMapping("/")
 	public String index(@RequestAttribute(required = false) JwtPayload userMetadata, Model model) {
-		model.addAttribute("loggedIn", userMetadata != null && userMetadata.getSub() != null);
+		boolean isLoggedIn = userMetadata != null && userMetadata.getSub() != null;
+		log.trace("Landing index page evaluated. Auth active status: {}", isLoggedIn);
+
+		model.addAttribute("loggedIn", isLoggedIn);
 		return ViewRegistry.INDEX;
 	}
 
 	@PostMapping(PathRegistry.WAITLIST)
 	public String waitlist(@RequestParam String ignoredEmail) {
-		// TODO: store emails
+		try {
+			log.error("WHO ENTERED THE WAITLIST BURH\nIncoming request to join product waitlist allocation for email placeholder: {}", ignoredEmail, new Exception("WAITLIST"));
+		} catch (Exception _) {
+		}
 		return ViewRegistry.Auth.Fragments.EMPTY;
 	}
 
 	@PostMapping("/f/{formId}")
 	public String submission(@PathVariable UUID formId, @RequestParam Map<String, String> payload, HttpServletRequest request) {
+		log.debug("Processing incoming webhook submission request path channel for form ID: {}", formId);
+
 		Form form = formRepository.findById(formId).orElse(null);
-		if (form == null) return "form-not-found";
+		if (form == null) {
+			log.warn("Submission rejected. Form destination completely missing from structural records for ID: {}", formId);
+			return "form-not-found";
+		}
+
 		var tenant = form.getTenant();
 		long remainingSubmissions = polarCacheService.getCachedSubmissionBalance(tenant);
+		log.trace("Evaluated submission request metrics for form ID: {} -> Tenant ID: {}, Remaining tokens: {}", formId, tenant.getId(), remainingSubmissions);
 
-		if (remainingSubmissions <= 0) return "submit/out-of-submissions";
+		if (remainingSubmissions <= 0) {
+			log.warn("Submission blocked due to depleted usage bounds. Tenant target profile: {} is out of tokens.", tenant.getId());
+			return "submit/out-of-submissions";
+		}
 
 		polarCacheService.decrementCachedSubmissionBalance(tenant);
 
@@ -68,22 +77,33 @@ public class IndexController {
 		String userAgent = request.getHeader("User-Agent");
 
 		boolean isSpam = formService.checkIsSpam(form, payload, clientIp, userAgent);
+		log.debug("Spam filter check evaluation completed for form ID {}. Spam detected classification status: {}", formId, isSpam);
 
 		Submission submission = new Submission();
 		submission.setForm(form);
 		submission.setSenderIp(clientIp);
 		submission.setPayload(payload);
 		submission.setIsSpam(isSpam);
-		submissionRepository.save(submission);
 
-		stringRedisTemplate.delete(SubmissionCacheService.CACHE_KEY_BASE + formId);
+		submissionRepository.save(submission);
+		log.info("Successfully persisted incoming submission record ID: {} for form context mapping: {}", submission.getId(), formId);
+
+		try {
+			stringRedisTemplate.delete(SubmissionCacheService.CACHE_KEY_BASE + formId);
+			log.trace("Evicted submission aggregates collection buffer from Redis for form ID: {}", formId);
+		} catch (Exception e) {
+			log.error("Failed to invalidate group view cache string bindings for form ID matching key payload: {}", formId, e);
+		}
 
 		String redirectUrl = form.getRedirectUrl();
 		String tenantTier = tenantTierCacheService.resolveHighestActiveTierNonNull(tenant.getId());
 
-		if (redirectUrl == null || redirectUrl.isBlank() || tenantTier == null || "free-v1".equals(tenantTier))
+		if (redirectUrl == null || redirectUrl.isBlank() || "free-v1".equals(tenantTier)) {
+			log.debug("Standard internal notification acknowledgment view served. Tier: {}, Redirect field configuration empty or restricted.", tenantTier);
 			return "submit/thanks";
+		}
 
+		log.debug("Executing custom transaction redirection route parsing instructions. Forwarding response target thread to URL: {}", redirectUrl);
 		return "redirect:" + redirectUrl;
 	}
 }

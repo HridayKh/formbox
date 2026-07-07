@@ -3,8 +3,8 @@ package in.hridaykh.formbox.service.polar;
 import com.fasterxml.jackson.core.type.TypeReference;
 import in.hridaykh.formbox.config.PolarIdProperties;
 import in.hridaykh.formbox.model.entity.Tenant;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import sh.polar.sdk.Polar;
 import sh.polar.sdk.http.PolarHttpClient;
@@ -16,19 +16,13 @@ import java.util.Map;
 import java.util.Optional;
 
 @Service
+@Slf4j
+@RequiredArgsConstructor
 public class PolarMeterService {
-
-	private static final Logger log = LoggerFactory.getLogger(PolarMeterService.class);
 
 	private final PolarHttpClient polarHttpClient;
 	private final PolarIdProperties polarIdProperties;
 	private final Polar polar;
-
-	public PolarMeterService(PolarHttpClient polarHttpClient, PolarIdProperties polarIdProperties, Polar polar) {
-		this.polarHttpClient = polarHttpClient;
-		this.polarIdProperties = polarIdProperties;
-		this.polar = polar;
-	}
 
 	public long getRemainingSubmissionsBalance(Tenant tenant) {
 		String externalUserId = tenant.getId().toString();
@@ -40,7 +34,9 @@ public class PolarMeterService {
 			Optional<PolarCustomerMeterResponse> matchedMeter = Optional.ofNullable(response).map(PolarListResponse::items).stream().flatMap(List::stream).filter(meter -> meter.meterId().toString().equalsIgnoreCase(polarIdProperties.getSubmissionMeterId())).filter(meter -> meter.balance() != null).findFirst();
 
 			if (matchedMeter.isPresent()) {
-				return matchedMeter.get().balance().longValue();
+				long balance = matchedMeter.get().balance().longValue();
+				log.debug("Polar customer meter match verified. Balance for ID [{}]: {}", externalUserId, balance);
+				return balance;
 			} else {
 				log.warn("No submission meter configuration initialized on Polar for user: {}", externalUserId);
 				return 0L;
@@ -48,7 +44,7 @@ public class PolarMeterService {
 
 		} catch (Exception e) {
 			log.error("Failed to fetch real-time Polar CustomerMeter balance for user: {}", externalUserId, e);
-			return 0L; // Fail-secure: stop actions if we can't verify limits
+			return 0L;
 		}
 	}
 

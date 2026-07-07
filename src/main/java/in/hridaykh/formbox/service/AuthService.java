@@ -10,70 +10,93 @@ import io.github.jan.supabase.auth.exception.AuthWeakPasswordException;
 import io.github.jan.supabase.auth.user.UserSession;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 
 @Service
+@Slf4j
+@RequiredArgsConstructor
 public class AuthService {
 
-	private static final Logger log = LoggerFactory.getLogger(AuthService.class);
 	private final AuthServiceKt authServiceKt;
 
-	public AuthService(AuthServiceKt authServiceKt) {
-		this.authServiceKt = authServiceKt;
-	}
-
 	public void processLoginPage(String msg, HttpServletResponse response) {
+		log.trace("Processing login page evaluation. Provided message trigger parameter: [{}]", msg);
+
 		if (msg != null && !msg.isBlank()) {
-			log.info("Purging client session cookies context due to path trigger code: '{}'", msg);
+			log.debug("Purging client session cookies context due to explicit path trigger code: '{}'", msg);
 			clearAuthCookies(response);
 		}
 	}
 
 	public void registerUser(SupabaseClient supabaseClient, SignUpRequest request, HttpServletResponse response) throws AuthWeakPasswordException {
+		log.debug("Initiating user registration workflow for email: {}", request.getEmail());
+
 		authServiceKt.signUp(supabaseClient, request);
-		log.info("Registration request completed cleanly for: {}", request.getEmail());
+
+		log.info("Registration request completed cleanly for email: {}", request.getEmail());
 		response.setHeader("HX-Redirect", PathRegistry.Auth.Hx.LOGIN_CHECK_EMAIL);
 	}
 
 	public void authenticateUser(SupabaseClient supabaseClient, LoginRequest request, HttpServletResponse response) {
+		log.debug("Initiating authentication workflow execution for user: {}", request.getEmail());
+
 		AuthResponse auth = authServiceKt.login(supabaseClient, request);
 
 		setAuthCookie(response, "sb_token", auth.getAccessToken(), 3600);
 		setAuthCookie(response, "sb_refresh", auth.getRefreshToken(), 604800);
 
-		log.info("Assigned secure cookie contexts for verified UID payload reference: {}", auth.getUserId());
+		log.info("Authentication successful. Assigned secure cookie contexts for verified UID payload reference: {}", auth.getUserId());
 		response.setHeader("HX-Redirect", PathRegistry.DASHBOARD);
 	}
 
 	public void terminateSession(SupabaseClient supabaseClient, String accessToken, String refreshToken, HttpServletResponse response) {
+		log.debug("Initiating secure session termination sequence.");
+
 		if (accessToken != null && refreshToken != null) {
-			authServiceKt.logout(supabaseClient, accessToken, refreshToken);
+			try {
+				authServiceKt.logout(supabaseClient, accessToken, refreshToken);
+				log.debug("Successfully invalidated active session tokens against upstream provider.");
+			} catch (Exception e) {
+				log.warn("Upstream session invalidation failed during logout execution. Proceeding with local cookie purge.", e);
+			}
 		}
+
 		clearAuthCookies(response);
-		log.info("User cookie persistence matrices successfully flushed.");
+		log.info("User session successfully terminated. Cookie persistence matrices successfully flushed.");
 		response.setHeader("HX-Redirect", PathRegistry.Auth.Hx.LOGIN_LOGGED_OUT);
 	}
 
 	public void resendVerification(SupabaseClient supabaseClient, String email) {
+		log.debug("Dispatching confirmation email resend request for address: {}", email);
+
 		authServiceKt.resendConfirmation(supabaseClient, email);
+
+		log.info("Verification email resend workflow dispatched successfully for: {}", email);
 	}
 
 	public void handleOAuthCallback(String accessToken, String refreshToken, int expiresInSeconds, HttpServletResponse response) {
+		log.debug("Processing incoming OAuth callback payload. Setting local session cookies with expiration: {}s", expiresInSeconds);
+
 		setAuthCookie(response, "sb_token", accessToken, expiresInSeconds);
 		setAuthCookie(response, "sb_refresh", refreshToken, (int) Duration.ofDays(7).toSeconds());
+
+		log.info("OAuth session completely established and secure cookies injected successfully.");
 		response.setHeader("HX-Redirect", PathRegistry.DASHBOARD);
 	}
 
 	private void clearAuthCookies(HttpServletResponse response) {
+		log.trace("Executing blanket wipe of local auth session tracking cookies.");
 		setAuthCookie(response, "sb_token", "", 0);
 		setAuthCookie(response, "sb_refresh", "", 0);
 	}
 
 	public void setAuthCookie(HttpServletResponse response, String name, String value, int maxAge) {
+		log.trace("Injecting secure cookie response header attribute -> Name: [{}], MaxAge: [{}]", name, maxAge);
+
 		Cookie cookie = new Cookie(name, value == null ? "" : value);
 		cookie.setHttpOnly(true);
 		cookie.setSecure(true);
@@ -83,10 +106,13 @@ public class AuthService {
 	}
 
 	public UserSession refreshUserSession(SupabaseClient supabaseClient, String refreshToken) {
+		log.debug("Attempting to dynamically refresh user session tokens via upstream provider.");
 		try {
-			return authServiceKt.refreshSession(supabaseClient, refreshToken);
+			UserSession session = authServiceKt.refreshSession(supabaseClient, refreshToken);
+			log.debug("Session credentials successfully rolled and verified for continued access.");
+			return session;
 		} catch (Exception e) {
-			log.error("Failed to silently roll session credentials: {}", e.getMessage());
+			log.error("Failed to silently roll session credentials using provided refresh token.", e);
 			return null;
 		}
 	}

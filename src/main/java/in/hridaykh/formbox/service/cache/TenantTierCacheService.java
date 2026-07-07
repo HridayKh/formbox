@@ -25,6 +25,7 @@ public class TenantTierCacheService {
 
 	@Cacheable(value = "tenantTiers", key = "#tenantId.toString()")
 	public String resolveHighestActiveTierNonNull(UUID tenantId) {
+		log.trace("Resolving guaranteed non-null tier context for tenant ID: {}", tenantId);
 		String tier = resolveHighestActiveTierNullable(tenantId);
 		return tier == null ? "free-v1" : tier;
 	}
@@ -33,32 +34,56 @@ public class TenantTierCacheService {
 
 	@Cacheable(value = "tenantTiers", key = "#tenantId.toString()")
 	public String resolveHighestActiveTierNullable(UUID tenantId) {
-		log.info("Local L1 cache MISS for tenant tier: {}", tenantId);
+		log.trace("Local L1 cache MISS for tenant tier resolution: {}", tenantId);
 		String redisKey = TENANT_TIER_BASE_KEY + tenantId.toString();
 
-		String cachedTier = stringRedisTemplate.opsForValue().get(redisKey);
+		String cachedTier = null;
+		try {
+			cachedTier = stringRedisTemplate.opsForValue().get(redisKey);
+		} catch (Exception e) {
+			log.error("Failed to fetch tenant tier string from Redis cluster configuration for tenant ID: {}", tenantId, e);
+		}
+
 		if (cachedTier != null) {
-			log.info("Redis HIT for tenant tier: {}", tenantId);
+			log.trace("Redis L2 cache HIT for tenant tier data on tenant ID: {}", tenantId);
 			return "NULL".equals(cachedTier) ? null : cachedTier;
 		}
 
-		log.info("Redis MISS for tenant tier: {}. Fetching from DB...", tenantId);
-		List<Purchases> activePurchases = purchasesRepository.findValidUserPurchases(tenantId, OffsetDateTime.now(), SubscriptionState.free, SubscriptionState.active, SubscriptionState.cancelled_grace_period);
+		log.debug("Redis L2 cache MISS for tenant tier mapping on tenant ID: {}. Scanning persistent purchase history logs...", tenantId);
+		List<Purchases> activePurchases;
+		try {
+			activePurchases = purchasesRepository.findValidUserPurchases(tenantId, OffsetDateTime.now(), SubscriptionState.free, SubscriptionState.active, SubscriptionState.cancelled_grace_period);
+		} catch (Exception e) {
+			log.error("Database query crash while resolving active purchases array snapshot for tenant ID: {}", tenantId, e);
+			throw e;
+		}
 
 		String highestTier = "NULL";
-		if (activePurchases != null && !activePurchases.isEmpty())
+		if (activePurchases != null && !activePurchases.isEmpty()) {
 			highestTier = activePurchases.getFirst().getProduct().getSlug().toLowerCase();
+			log.debug("Found active purchase logs. Assigned highest tier rank designation [{}] for tenant ID: {}", highestTier, tenantId);
+		} else {
+			log.debug("No active subscription/purchase records matching constraints found in database storage layers for tenant ID: {}", tenantId);
+		}
 
 		try {
 			stringRedisTemplate.opsForValue().set(redisKey, highestTier, Duration.ofDays(2));
+			log.trace("Successfully updated Redis L2 backfill placeholder allocation state for tenant ID: {}", tenantId);
 		} catch (Exception e) {
-			log.error("Failed to save tenant tier to Redis for tenant: {}", tenantId, e);
+			log.error("Failed to serialize and save resolved tenant tier indicator string to Redis for tenant ID: {}", tenantId, e);
 		}
 
-		return highestTier;
+		return "NULL".equals(highestTier) ? null : highestTier;
 	}
 
 	@CacheEvict(value = "tenantTiers", key = "#ignoredTenantId")
 	public void evictTenantTierCache(String ignoredTenantId) {
+		log.debug("Evicting multi-layer tenant tier records for structural identifier key payload: {}", ignoredTenantId);
+		try {
+			Boolean deleted = stringRedisTemplate.delete(TENANT_TIER_BASE_KEY + ignoredTenantId);
+			log.trace("Explicit removal execution confirmation results mapping inside Redis cluster context for key metadata execution task: {}", deleted);
+		} catch (Exception e) {
+			log.error("Failed to issue string deletion pipeline drop sequence directly into Redis cache cluster layer for target key representation value: {}", ignoredTenantId, e);
+		}
 	}
 }

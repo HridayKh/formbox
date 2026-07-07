@@ -3,26 +3,25 @@ package in.hridaykh.formbox.exception;
 import io.github.jan.supabase.auth.exception.AuthErrorCode;
 import io.github.jan.supabase.auth.exception.AuthRestException;
 import io.github.jan.supabase.auth.exception.TokenExpiredException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.servlet.ModelAndView;
 
 @ControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
-
-	private final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
 	@ExceptionHandler(Exception.class)
 	public ModelAndView genericException(Exception ex) {
-		log.error("Internal Server Error" ,ex);
+		log.error("Unhandled system exception caught: {}", ex.getMessage(), ex);
 		return buildErrorResponse("internal server error occurred", ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 
 	@ExceptionHandler(AuthRestException.class)
 	public ModelAndView handleSupabaseAuthErrors(AuthRestException ex) {
+		log.debug("Supabase AuthRestException occurred", ex);
 		AuthErrorCode typedCode = ex.getErrorCode();
 		String errorTitle = typedCode != null ? typedCode.name().replace("_", " ") : "Auth Error";
 		String description = ex.getErrorDescription();
@@ -30,13 +29,17 @@ public class GlobalExceptionHandler {
 		try {
 			status = HttpStatus.valueOf(ex.getStatusCode());
 		} catch (IllegalArgumentException e) {
+			log.warn("Invalid HTTP status code received from Supabase Auth: {}", ex.getStatusCode());
 			status = HttpStatus.BAD_REQUEST;
 		}
+
+		log.debug("Supabase auth exception processed. Title: [{}], Status: [{}]", errorTitle, status);
 		return buildErrorResponse(errorTitle, description, status);
 	}
 
 	@ExceptionHandler(TokenExpiredException.class)
 	public ModelAndView handleTokenExpired() {
+		log.debug("TokenExpiredException caught. User session has expired.");
 		return buildErrorResponse("Session Expired", "Your session has expired. Please log in again.", HttpStatus.UNAUTHORIZED);
 	}
 

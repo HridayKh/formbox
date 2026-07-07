@@ -3,6 +3,7 @@ package in.hridaykh.formbox.service.cache;
 import in.hridaykh.formbox.model.dto.FormSubmissionsResponse;
 import in.hridaykh.formbox.model.dto.SubmissionItem;
 import in.hridaykh.formbox.repository.SubmissionRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -16,6 +17,7 @@ import java.util.stream.Collectors;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class SubmissionCacheService {
 	public static final String CACHE_KEY_BASE = "formbox:formSubmissions:";
 
@@ -23,35 +25,54 @@ public class SubmissionCacheService {
 	private final StringRedisTemplate redisTemplate;
 	private final ObjectMapper objectMapper;
 
-	public SubmissionCacheService(SubmissionRepository submissionRepository, StringRedisTemplate redisTemplate, ObjectMapper objectMapper) {
-		this.submissionRepository = submissionRepository;
-		this.redisTemplate = redisTemplate;
-		this.objectMapper = objectMapper;
-	}
-
 	public FormSubmissionsResponse getFormSubmissionsGrouped(UUID formId) {
+		log.trace("Request received to fetch grouped form submissions for form ID: {}", formId);
 		String cacheKey = CACHE_KEY_BASE + formId;
 
-		String cachedJson = redisTemplate.opsForValue().get(cacheKey);
+		String cachedJson = null;
+		try {
+			cachedJson = redisTemplate.opsForValue().get(cacheKey);
+		} catch (Exception e) {
+			log.error("Failed to read from Redis during form submissions fetch for key: {}", cacheKey, e);
+		}
+
 		if (cachedJson != null) {
 			try {
+				log.trace("Redis cache HIT for form submissions on form ID: {}", formId);
 				return objectMapper.readValue(cachedJson, FormSubmissionsResponse.class);
 			} catch (Exception e) {
-				log.error("Failed to deserialize form submissions from cache", e);
+				log.error("Failed to deserialize form submissions from Redis cache payload for form ID: {}", formId, e);
 			}
 		}
 
-		Map<Boolean, List<SubmissionItem>> partitioned = submissionRepository.findAllByFormId(formId).stream().collect(Collectors.partitioningBy(SubmissionItem::isSpam));
-		FormSubmissionsResponse response = new FormSubmissionsResponse(partitioned.getOrDefault(false, List.of()), partitioned.getOrDefault(true, List.of()));
+		log.debug("Redis cache MISS for form submissions on form ID: {}. Executing database query...", formId);
+
+		List<SubmissionItem> submissions;
+		try {
+			submissions = submissionRepository.findAllByFormId(formId);
+			log.trace("Database query completed. Fetched {} total submissions for form ID: {}", submissions.size(), formId);
+		} catch (Exception e) {
+			log.error("Database execution failure when listing submissions for form ID: {}", formId, e);
+			throw e;
+		}
+
+		Map<Boolean, List<SubmissionItem>> partitioned = submissions.stream()
+			.collect(Collectors.partitioningBy(SubmissionItem::isSpam));
+
+		List<SubmissionItem> validSubmissions = partitioned.getOrDefault(false, List.of());
+		List<SubmissionItem> spamSubmissions = partitioned.getOrDefault(true, List.of());
+		log.debug("Partitioning logic completed for form ID: {}. Valid submissions: {}, Spam submissions: {}", formId, validSubmissions.size(), spamSubmissions.size());
+
+		FormSubmissionsResponse response = new FormSubmissionsResponse(validSubmissions, spamSubmissions);
 
 		try {
 			String jsonString = objectMapper.writeValueAsString(response);
 			redisTemplate.opsForValue().set(cacheKey, jsonString, Duration.ofHours(1));
+			log.trace("Successfully populated Redis submission cache for form ID: {}", formId);
 		} catch (Exception e) {
-			log.error("Failed to serialize form submissions to cache", e);
+			log.error("Failed to serialize and update form submissions to Redis cache for form ID: {}", formId, e);
 		}
 
 		return response;
 	}
-
 }

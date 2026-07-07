@@ -1,8 +1,5 @@
 package in.hridaykh.formbox.service.polar;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import in.hridaykh.formbox.model.entity.PolarProducts;
 import in.hridaykh.formbox.model.entity.Purchases;
 import in.hridaykh.formbox.model.entity.Tenant;
@@ -10,16 +7,20 @@ import in.hridaykh.formbox.model.enums.SubscriptionState;
 import in.hridaykh.formbox.repository.PurchasesRepository;
 import in.hridaykh.formbox.repository.TenantRepository;
 import in.hridaykh.formbox.service.cache.TenantTierCacheService;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 import java.time.OffsetDateTime;
 import java.util.NoSuchElementException;
 
 @Service
+@RequiredArgsConstructor
 public class PolarWebhooksService {
 
 	private static final Logger log = LoggerFactory.getLogger(PolarWebhooksService.class);
@@ -31,27 +32,18 @@ public class PolarWebhooksService {
 	private final PolarCacheService polarCacheService;
 	private final TenantTierCacheService tenantTierCacheService;
 
-	public PolarWebhooksService(TenantRepository tenantRepository, PurchasesRepository purchasesRepository, PolarMeterService polarMeterService, PolarCacheService polarCacheService, TenantTierCacheService tenantTierCacheService) {
-		this.tenantRepository = tenantRepository;
-		this.purchasesRepository = purchasesRepository;
-		this.objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
-		this.polarMeterService = polarMeterService;
-		this.polarCacheService = polarCacheService;
-		this.tenantTierCacheService = tenantTierCacheService;
-	}
-
 	@Transactional
 	public void processHook(String rawBody) {
 		try {
 			JsonNode root = objectMapper.readTree(rawBody);
-			String eventType = root.path("type").asText();
+			String eventType = root.path("type").asString();
 			JsonNode dataNode = root.path("data");
 
 			log.info("Processing Polar Webhook event: {}", eventType);
 
-			String customerEmail = dataNode.path("customer").path("email").asText();
+			String customerEmail = dataNode.path("customer").path("email").asString();
 			if (customerEmail.isBlank() || "null".equals(customerEmail)) {
-				customerEmail = dataNode.path("user").path("email").asText();
+				customerEmail = dataNode.path("user").path("email").asString();
 			}
 
 			if (customerEmail.isBlank()) {
@@ -121,9 +113,9 @@ public class PolarWebhooksService {
 	}
 
 	private PolarProducts resolveProductFromDataNode(JsonNode dataNode) {
-		String polarProductId = dataNode.path("product_id").asText();
+		String polarProductId = dataNode.path("product_id").asString();
 		if (polarProductId.isBlank()) {
-			polarProductId = dataNode.path("product").path("id").asText();
+			polarProductId = dataNode.path("product").path("id").asString();
 		}
 		if (polarProductId.isBlank()) return null;
 
@@ -148,11 +140,11 @@ public class PolarWebhooksService {
 
 		// Fulfill the DB constraint field if missing
 		if (purchase.getPolarOrderId() == null) {
-			String subId = dataNode.path("id").asText();
+			String subId = dataNode.path("id").asString();
 			purchase.setPolarOrderId(!subId.isBlank() ? subId : "WEBHOOK_PROVISION_" + tenant.getId());
 		}
 
-		String endPeriodStr = dataNode.path("current_period_end").asText();
+		String endPeriodStr = dataNode.path("current_period_end").asString();
 		if (!endPeriodStr.isBlank() && !"null".equals(endPeriodStr)) {
 			OffsetDateTime periodEnd = OffsetDateTime.parse(endPeriodStr);
 			purchase.setCurrentPeriodEnd(periodEnd);

@@ -9,9 +9,9 @@ import jakarta.servlet.*;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -20,30 +20,29 @@ import java.time.Duration;
 import java.util.Arrays;
 
 @Component
+@Slf4j
+@RequiredArgsConstructor
 public class SupabaseSessionFilter extends OncePerRequestFilter {
 
-	private final Logger log = LoggerFactory.getLogger(SupabaseSessionFilter.class);
 	private final AuthService authService;
 	private final AuthServiceKt authServiceKt;
-
-	public SupabaseSessionFilter(AuthService authService, AuthServiceKt authServiceKt) {
-		this.authService = authService;
-		this.authServiceKt = authServiceKt;
-	}
 
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
 		String path = request.getRequestURI();
 
 		if (path.startsWith("/favicon")) {
+			log.trace("Favicon shortcut intercept triggered for path: {}", path);
 			response.setStatus(404);
 			return;
 		}
 		if (path.startsWith("/assets/") || path.startsWith("/f/") || path.startsWith("/polar")) {
+			log.trace("Bypassing filter execution for asset/webhook static route: {}", path);
 			filterChain.doFilter(request, response);
 			return;
 		}
 
+		log.debug("Executing token validation workflow for route: {}", path);
 		SupabaseClient supabaseClient = authServiceKt.createIsolatedClient();
 		request.setAttribute("supabaseClient", supabaseClient);
 
@@ -54,14 +53,15 @@ public class SupabaseSessionFilter extends OncePerRequestFilter {
 		var userMetadata = authServiceKt.getUserMetadata(supabaseClient, oldAccessToken);
 
 		if (userMetadata != null && userMetadata.getSub() != null) {
+			log.debug("Valid active session discovered for user identity payload: {}", userMetadata.getSub());
 			request.setAttribute("userMetadata", userMetadata);
 			filterChain.doFilter(request, response);
 			authServiceKt.closeIsolatedClient(supabaseClient);
 			return;
 		}
 
-		// 3. Path B: Expired Session / Background Token Rotation
 		if (oldRefreshToken != null && !oldRefreshToken.isBlank()) {
+			log.debug("Access token expired or missing. Initializing rotation workflow using refresh token.");
 			UserSession newSession = authService.refreshUserSession(supabaseClient, oldRefreshToken);
 
 			if (newSession != null) {
@@ -73,23 +73,29 @@ public class SupabaseSessionFilter extends OncePerRequestFilter {
 
 				HttpServletRequest wrappedRequest = new RequestWrapper(request, newAccessToken, newRefreshToken);
 
-				wrappedRequest.setAttribute("userMetadata", authServiceKt.getUserMetadata(supabaseClient, newAccessToken));
+				var freshMetadata = authServiceKt.getUserMetadata(supabaseClient, newAccessToken);
+				wrappedRequest.setAttribute("userMetadata", freshMetadata);
+
+				log.debug("Session successfully refreshed for user sub: {}", freshMetadata != null ? freshMetadata.getSub() : "unknown");
 
 				filterChain.doFilter(wrappedRequest, response);
 				authServiceKt.closeIsolatedClient(supabaseClient);
 				return;
 			}
+			log.warn("Refresh token present but server validation process failed.");
 		}
 
 		if (path.startsWith(PathRegistry.Auth.BASE) || "/".equals(path) || path.isBlank()) {
+			log.debug("Allowing unauthenticated access path through filter chain context: {}", path);
 			filterChain.doFilter(request, response);
 			authServiceKt.closeIsolatedClient(supabaseClient);
 			return;
 		}
 
 		authServiceKt.closeIsolatedClient(supabaseClient);
-		log.info("Unauthenticated attempt targeting protected domain path: {}", path);
+		log.warn("Unauthenticated attempt targeting protected domain path: {}", path);
 		if ("true".equals(request.getHeader("HX-Request"))) {
+			log.debug("HTMX request metadata verified. Returning target redirect custom header element.");
 			response.setHeader("HX-Redirect", PathRegistry.Auth.Redirects.TO_LOGIN_UNAUTHORIZED);
 		} else {
 			response.sendRedirect(PathRegistry.Auth.Redirects.TO_LOGIN_UNAUTHORIZED);
