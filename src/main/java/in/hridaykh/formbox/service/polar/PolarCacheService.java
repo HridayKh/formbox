@@ -1,7 +1,7 @@
 package in.hridaykh.formbox.service.polar;
 
 import in.hridaykh.formbox.model.entity.PolarProducts;
-import in.h~/Code/hriday_tech/formbox:ridaykh.formbox.model.entity.Tenant;
+import in.hridaykh.formbox.model.entity.Tenant;
 import in.hridaykh.formbox.repository.PolarProductsRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
