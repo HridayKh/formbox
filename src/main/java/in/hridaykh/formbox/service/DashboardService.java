@@ -4,9 +4,10 @@ import in.hridaykh.formbox.model.entity.PolarProducts;
 import in.hridaykh.formbox.model.entity.Purchases;
 import in.hridaykh.formbox.model.entity.Tenant;
 import in.hridaykh.formbox.model.enums.SubscriptionState;
-import in.hridaykh.formbox.repository.PolarProductsRepository;
 import in.hridaykh.formbox.repository.PurchasesRepository;
 import in.hridaykh.formbox.repository.TenantRepository;
+import in.hridaykh.formbox.service.polar.PolarCacheService;
+import in.hridaykh.formbox.service.cache.TenantTierCacheService;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,25 +28,28 @@ public class DashboardService {
 	private static final Logger log = LoggerFactory.getLogger(DashboardService.class);
 
 	private final TenantRepository tenantRepository;
-	private final PolarProductsRepository polarProductsRepository;
 	private final PurchasesRepository purchasesRepository;
 	private final PolarHttpClient polarHttpClient;
 	private final Polar polar;
-	private final TenantTierService tenantTierService;
+	private final TenantTierCacheService tenantTierCacheService;
+	private final PolarCacheService polarCacheService;
 
-	public DashboardService(TenantRepository tenantRepository, PolarProductsRepository polarProductsRepository, PurchasesRepository purchasesRepository, PolarHttpClient polarHttpClient, Polar polar, TenantTierService tenantTierService) {
+	public DashboardService(TenantRepository tenantRepository, PurchasesRepository purchasesRepository, PolarHttpClient polarHttpClient, Polar polar, TenantTierCacheService tenantTierCacheService, PolarCacheService polarCacheService) {
 		this.tenantRepository = tenantRepository;
-		this.polarProductsRepository = polarProductsRepository;
 		this.purchasesRepository = purchasesRepository;
 		this.polarHttpClient = polarHttpClient;
 		this.polar = polar;
-		this.tenantTierService = tenantTierService;
+		this.tenantTierCacheService = tenantTierCacheService;
+		this.polarCacheService = polarCacheService;
 	}
 
 	@Transactional
-	@Cacheable(value = "tenantTiers", key = "T(java.util.UUID).fromString(#userMetadata.getSub())")
+	@Cacheable(value = "tenantId", key = "#userMetadata.getSub()")
 	public UUID getOrCreateTenantWithFreeSubscription(JwtPayload userMetadata) {
 		UUID userId = UUID.fromString(Objects.requireNonNull(userMetadata.getSub()));
+
+		String tier = tenantTierCacheService.resolveHighestActiveTierNullable(userId);
+		if (tier != null) return userId;
 
 		Tenant tenant = tenantRepository.findById(userId).orElseGet(() -> {
 			Tenant newTenant = new Tenant();
@@ -60,12 +64,12 @@ public class DashboardService {
 	}
 
 	private void ensureFreeSubscriptionProvisioned(Tenant tenant) {
-		if (tenantTierService.resolveHighestActiveTierNullable(tenant.getId()) != null) return;
-
 		log.info("Provisioning Polar Free Subscription for: {}", tenant.getEmail());
 
 		try {
-			PolarProducts freeProduct = polarProductsRepository.findBySlug("free-v1").orElseThrow(() -> new IllegalStateException("Database configuration missing for 'free-v1' slug product"));
+			PolarProducts freeProduct = polarCacheService.productBySlug("free-v1");
+			if (freeProduct == null)
+				throw new IllegalStateException("Database configuration missing for 'free-v1' slug product");
 
 			createCustomer(tenant.getId().toString(), tenant.getEmail());
 
@@ -90,6 +94,7 @@ public class DashboardService {
 			else freePurchase.setCurrentPeriodEnd(OffsetDateTime.now().plusMonths(1));
 
 			purchasesRepository.save(freePurchase);
+			tenantTierCacheService.evictTenantTierCache(tenant.getId().toString());
 			log.info("Successfully provisioned Polar Free Subscription via backfill for: {}", tenant.getEmail());
 		} catch (Exception e) {
 			log.error("Failed to recover or assign dynamic Polar free subscription on active dashboard load: ", e);

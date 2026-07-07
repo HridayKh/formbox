@@ -33,9 +33,7 @@ public class SupabaseSessionFilter extends OncePerRequestFilter {
 
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
-		long start = System.currentTimeMillis();
 		String path = request.getRequestURI();
-		String method = request.getMethod();
 
 		if (path.startsWith("/favicon")) {
 			response.setStatus(404);
@@ -43,7 +41,6 @@ public class SupabaseSessionFilter extends OncePerRequestFilter {
 		}
 		if (path.startsWith("/assets/") || path.startsWith("/f/") || path.startsWith("/polar")) {
 			filterChain.doFilter(request, response);
-			log.info("{} {}: {}", method, path, System.currentTimeMillis() - start);
 			return;
 		}
 
@@ -59,16 +56,12 @@ public class SupabaseSessionFilter extends OncePerRequestFilter {
 		if (userMetadata != null && userMetadata.getSub() != null) {
 			request.setAttribute("userMetadata", userMetadata);
 			filterChain.doFilter(request, response);
-
-
 			authServiceKt.closeIsolatedClient(supabaseClient);
-			log.info("{} {}: {}", method, path, System.currentTimeMillis() - start);
 			return;
 		}
 
 		// 3. Path B: Expired Session / Background Token Rotation
 		if (oldRefreshToken != null && !oldRefreshToken.isBlank()) {
-			log.info("Access token expired/invalid. Attempting background token rotation...");
 			UserSession newSession = authService.refreshUserSession(supabaseClient, oldRefreshToken);
 
 			if (newSession != null) {
@@ -77,7 +70,6 @@ public class SupabaseSessionFilter extends OncePerRequestFilter {
 
 				authService.setAuthCookie(response, "sb_token", newAccessToken, (int) newSession.getExpiresIn());
 				authService.setAuthCookie(response, "sb_refresh", newRefreshToken, (int) Duration.ofDays(7).toSeconds());
-				log.info("OAuth token state exchange generation successful.");
 
 				HttpServletRequest wrappedRequest = new RequestWrapper(request, newAccessToken, newRefreshToken);
 
@@ -85,7 +77,6 @@ public class SupabaseSessionFilter extends OncePerRequestFilter {
 
 				filterChain.doFilter(wrappedRequest, response);
 				authServiceKt.closeIsolatedClient(supabaseClient);
-				log.info("{} {}: {}", method, path, System.currentTimeMillis() - start);
 				return;
 			}
 		}
@@ -93,18 +84,15 @@ public class SupabaseSessionFilter extends OncePerRequestFilter {
 		if (path.startsWith(PathRegistry.Auth.BASE) || "/".equals(path) || path.isBlank()) {
 			filterChain.doFilter(request, response);
 			authServiceKt.closeIsolatedClient(supabaseClient);
-			log.info("{} {}: {}", method, path, System.currentTimeMillis() - start);
 			return;
 		}
 
 		authServiceKt.closeIsolatedClient(supabaseClient);
-		log.warn("Unauthenticated attempt targeting protected domain path: {}", path);
+		log.info("Unauthenticated attempt targeting protected domain path: {}", path);
 		if ("true".equals(request.getHeader("HX-Request"))) {
 			response.setHeader("HX-Redirect", PathRegistry.Auth.Redirects.TO_LOGIN_UNAUTHORIZED);
-			log.info("{} {}: {}", method, path, System.currentTimeMillis() - start);
 		} else {
 			response.sendRedirect(PathRegistry.Auth.Redirects.TO_LOGIN_UNAUTHORIZED);
-			log.info("{} {}: {}", method, path, System.currentTimeMillis() - start);
 		}
 	}
 

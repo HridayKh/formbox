@@ -7,9 +7,9 @@ import in.hridaykh.formbox.model.entity.PolarProducts;
 import in.hridaykh.formbox.model.entity.Purchases;
 import in.hridaykh.formbox.model.entity.Tenant;
 import in.hridaykh.formbox.model.enums.SubscriptionState;
-import in.hridaykh.formbox.repository.PolarProductsRepository;
 import in.hridaykh.formbox.repository.PurchasesRepository;
 import in.hridaykh.formbox.repository.TenantRepository;
+import in.hridaykh.formbox.service.cache.TenantTierCacheService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
+import java.util.NoSuchElementException;
 
 @Service
 public class PolarWebhooksService {
@@ -24,17 +25,19 @@ public class PolarWebhooksService {
 	private static final Logger log = LoggerFactory.getLogger(PolarWebhooksService.class);
 
 	private final TenantRepository tenantRepository;
-	private final PolarProductsRepository polarProductsRepository;
 	private final PurchasesRepository purchasesRepository;
 	private final ObjectMapper objectMapper;
 	private final PolarMeterService polarMeterService;
+	private final PolarCacheService polarCacheService;
+	private final TenantTierCacheService tenantTierCacheService;
 
-	public PolarWebhooksService(TenantRepository tenantRepository, PolarProductsRepository polarProductsRepository, PurchasesRepository purchasesRepository, PolarMeterService polarMeterService) {
+	public PolarWebhooksService(TenantRepository tenantRepository, PurchasesRepository purchasesRepository, PolarMeterService polarMeterService, PolarCacheService polarCacheService, TenantTierCacheService tenantTierCacheService) {
 		this.tenantRepository = tenantRepository;
-		this.polarProductsRepository = polarProductsRepository;
 		this.purchasesRepository = purchasesRepository;
 		this.objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 		this.polarMeterService = polarMeterService;
+		this.polarCacheService = polarCacheService;
+		this.tenantTierCacheService = tenantTierCacheService;
 	}
 
 	@Transactional
@@ -99,17 +102,22 @@ public class PolarWebhooksService {
 	}
 
 	private void removeLowerTiersOnUpgrade(Tenant tenant, PolarProducts newProduct) {
+		PolarProducts free = polarCacheService.productBySlug("free-v1");
+		PolarProducts starter = polarCacheService.productBySlug("starter-v1");
+
+		if (free == null || starter == null)
+			throw new NoSuchElementException("Either free-v1 or starter-v1 is null in db");
+
 		if ("pro-v1".equals(newProduct.getSlug())) {
-			PolarProducts free = polarProductsRepository.findBySlug("free-v1").orElseThrow();
-			PolarProducts starter = polarProductsRepository.findBySlug("starter-v1").orElseThrow();
-			purchasesRepository.deleteByUserIdAndProduct(tenant, free);
-			purchasesRepository.deleteByUserIdAndProduct(tenant, starter);
+			purchasesRepository.deleteByUserId_idAndProduct(tenant.getId(), free);
+			purchasesRepository.deleteByUserId_idAndProduct(tenant.getId(), starter);
 			log.info("Purged lower tiers (free and starter) for upgraded Pro user: {}", tenant.getEmail());
 		} else if ("start-v1".equals(newProduct.getSlug())) {
-			PolarProducts free = polarProductsRepository.findBySlug("free-v1").orElseThrow();
-			purchasesRepository.deleteByUserIdAndProduct(tenant, free);
+			purchasesRepository.deleteByUserId_idAndProduct(tenant.getId(), free);
 			log.info("Purged free tier for upgraded Starter user: {}", tenant.getEmail());
 		}
+
+		tenantTierCacheService.evictTenantTierCache(tenant.getId().toString());
 	}
 
 	private PolarProducts resolveProductFromDataNode(JsonNode dataNode) {
@@ -119,7 +127,7 @@ public class PolarWebhooksService {
 		}
 		if (polarProductId.isBlank()) return null;
 
-		return polarProductsRepository.findByPolarProductId(polarProductId).orElse(null);
+		return polarCacheService.productByPolarProductId(polarProductId);
 	}
 
 	@CacheEvict(value = "tenantTiers", key = "#tenant.id")
@@ -133,7 +141,6 @@ public class PolarWebhooksService {
 			removeLowerTiersOnUpgrade(tenant, product);
 		}
 
-		// Look up purchase database mapping or open new transaction row
 		Purchases purchase = purchasesRepository.findByUserIdAndProduct(tenant, product).orElse(new Purchases());
 		purchase.setUserId(tenant);
 		purchase.setProduct(product);

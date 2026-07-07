@@ -9,7 +9,7 @@ import in.hridaykh.formbox.repository.FormRepository;
 import in.hridaykh.formbox.repository.TenantRepository;
 import in.hridaykh.formbox.service.cache.FormCacheService;
 import in.hridaykh.formbox.service.cache.SubmissionCacheService;
-import in.hridaykh.formbox.service.TenantTierService;
+import in.hridaykh.formbox.service.cache.TenantTierCacheService;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -29,14 +29,14 @@ public class FormController {
 	private final TenantRepository tenantRepository;
 	private final FormRepository formRepository;
 	private final SubmissionCacheService submissionCacheService;
-	private final TenantTierService tenantTierService;
+	private final TenantTierCacheService tenantTierCacheService;
 	private final FormCacheService formCacheService;
 
-	public FormController(TenantRepository tenantRepository, FormRepository formRepository, SubmissionCacheService submissionCacheService, TenantTierService tenantTierService, FormCacheService formCacheService) {
+	public FormController(TenantRepository tenantRepository, FormRepository formRepository, SubmissionCacheService submissionCacheService, TenantTierCacheService tenantTierCacheService, FormCacheService formCacheService) {
 		this.tenantRepository = tenantRepository;
 		this.formRepository = formRepository;
 		this.submissionCacheService = submissionCacheService;
-		this.tenantTierService = tenantTierService;
+		this.tenantTierCacheService = tenantTierCacheService;
 		this.formCacheService = formCacheService;
 	}
 
@@ -46,11 +46,11 @@ public class FormController {
 	public String createForm(@RequestAttribute JwtPayload userMetadata, @RequestParam("name") String name, @RequestParam(value = "redirectUrl", required = false) String redirectUrl, HttpServletResponse response) {
 		String msgParam = "";
 
-		if ("free-v1".equals(tenantTierService.resolveHighestActiveTierNonNull(userMetadata.getSub())) && redirectUrl != null && !redirectUrl.isBlank()) {
+		UUID tenantId = UUID.fromString(Objects.requireNonNull(userMetadata.getSub()));
+		if ("free-v1".equals(tenantTierCacheService.resolveHighestActiveTierNonNull(tenantId)) && redirectUrl != null && !redirectUrl.isBlank()) {
 			redirectUrl = null;
 			msgParam = "?msg=upgrade_required_for_redirect";
 		}
-		UUID tenantId = UUID.fromString(Objects.requireNonNull(userMetadata.getSub()));
 		Form newForm = new Form();
 		newForm.setTenant(tenantRepository.getReferenceById(tenantId));
 		newForm.setName(name);
@@ -86,7 +86,7 @@ public class FormController {
 		FormSubmissionsResponse submissions = submissionCacheService.getFormSubmissionsGrouped(formId);
 
 		model.addAttribute("form", form);
-		model.addAttribute("tier", tenantTierService.resolveHighestActiveTierNonNull(form.tenantId()));
+		model.addAttribute("tier", tenantTierCacheService.resolveHighestActiveTierNonNull(form.tenantId()));
 		model.addAttribute("submissions", submissions.submissions());
 		model.addAttribute("spamSubmissions", submissions.spam());
 
@@ -101,7 +101,7 @@ public class FormController {
 			throw new RuntimeException("Unauthorized access to form system.");
 
 		boolean tierViolationAttempted = false;
-		if ("free-v1".equals(tenantTierService.resolveHighestActiveTierNonNull(form.getTenant().getId())) && redirectUrl != null && !redirectUrl.isBlank()) {
+		if ("free-v1".equals(tenantTierCacheService.resolveHighestActiveTierNonNull(form.getTenant().getId())) && redirectUrl != null && !redirectUrl.isBlank()) {
 			redirectUrl = null;
 			tierViolationAttempted = true;
 		}

@@ -25,6 +25,7 @@ import java.util.UUID;
 @Slf4j
 public class FormCacheService {
 
+	private static final String FORM_BASE_KEY = "formbox:formMetadata:";
 	private static final String TENANT_FORMS_BASE_KEY = "formbox:tenantForms:";
 
 	private final FormRepository formRepository;
@@ -35,19 +36,58 @@ public class FormCacheService {
 	@Transactional(readOnly = true)
 	@Cacheable(value = "formMetadata", key = "#formId")
 	public CachedForm getCachedForm(UUID formId) {
-		log.info("Caffeine MISS for form {}", formId);
+		log.info("formMetadata Caffeine MISS for form {}", formId);
+
+		String redisKey = FORM_BASE_KEY + formId;
+
+		String cachedJson = null;
+		try {
+			cachedJson = redisTemplate.opsForValue().get(redisKey);
+		} catch (Exception e) {
+			log.error("unable to get to redis", e);
+		}
+		if (cachedJson != null) {
+			try {
+				log.info("formMetadata Redis HIT for form {}", formId);
+				return objectMapper.readValue(cachedJson, CachedForm.class);
+			} catch (Exception e) {
+				log.error("formMetadata Failed to parse form from Redis for ID: {}", formId, e);
+			}
+		}
+
+		log.info("formMetadata Redis MISS for form {}. Fetching from DB...", formId);
 		Form form = formRepository.findById(formId).orElseThrow(() -> new IllegalArgumentException("Form not found for ID: " + formId));
-		return form.toCachedFormDto();
+		CachedForm cachedFormDto = form.toCachedFormDto();
+
+		try {
+			redisTemplate.opsForValue().set(redisKey, objectMapper.writeValueAsString(cachedFormDto), Duration.ofDays(2));
+		} catch (Exception e) {
+			log.error("formMetadata Failed to save form to Redis for ID: {}", formId, e);
+		}
+
+		return cachedFormDto;
 	}
 
 	@CachePut(value = "formMetadata", key = "#updatedForm.id")
 	public CachedForm updateFormCache(Form updatedForm) {
-		return updatedForm.toCachedFormDto();
+		CachedForm cachedFormDto = updatedForm.toCachedFormDto();
+		String redisKey = FORM_BASE_KEY + updatedForm.getId();
+
+		try {
+			redisTemplate.opsForValue().set(redisKey, objectMapper.writeValueAsString(cachedFormDto), Duration.ofDays(2));
+			log.info("formMetadata Redis cache updated for form {}", updatedForm.getId());
+		} catch (Exception e) {
+			log.error("formMetadata Failed to update form in Redis for ID: {}", updatedForm.getId(), e);
+		}
+
+		return cachedFormDto;
 	}
 
 	@CacheEvict(value = "formMetadata", key = "#formId")
 	public void evictFormCache(UUID formId) {
-		log.info("Caffeine cache evicted for form {}", formId);
+		log.info("formMetadata Caffeine cache evicted for form {}", formId);
+		redisTemplate.delete(FORM_BASE_KEY + formId);
+		log.info("formMetadata Redis cache evicted for form {}", formId);
 	}
 
 	public List<CachedForm> getTenantForms(UUID tenantId) {

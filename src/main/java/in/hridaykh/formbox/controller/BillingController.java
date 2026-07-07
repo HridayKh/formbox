@@ -3,6 +3,7 @@ package in.hridaykh.formbox.controller;
 import in.hridaykh.formbox.constant.PathRegistry;
 import in.hridaykh.formbox.model.entity.PolarProducts;
 import in.hridaykh.formbox.repository.PolarProductsRepository;
+import in.hridaykh.formbox.service.polar.PolarCacheService;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -24,12 +25,12 @@ public class BillingController {
 
 	private final Polar polar;
 	private final PolarHttpClient polarHttpClient;
-	private final PolarProductsRepository polarProductsRepository;
+	private final PolarCacheService polarCacheService;
 
-	public BillingController(Polar polar, PolarHttpClient polarHttpClient, PolarProductsRepository polarProductsRepository) {
+	public BillingController(Polar polar, PolarHttpClient polarHttpClient, PolarCacheService polarCacheService) {
 		this.polar = polar;
 		this.polarHttpClient = polarHttpClient;
-		this.polarProductsRepository = polarProductsRepository;
+		this.polarCacheService = polarCacheService;
 	}
 
 	@PostMapping("/upgrade/{plan}")
@@ -58,7 +59,9 @@ public class BillingController {
 	private String generateCheckoutUrl(String plan, JwtPayload userMetadata, HttpServletRequest request) {
 		if ("free-v1".equals(plan))
 			return PathRegistry.DASHBOARD;
-		PolarProducts product = polarProductsRepository.findBySlug(plan.toLowerCase()).orElseThrow(() -> new IllegalArgumentException("Unknown plan: " + plan));
+		PolarProducts product = polarCacheService.productBySlug(plan.toLowerCase());
+		if (product == null)
+			throw new IllegalArgumentException("Unknown plan: " + plan);
 		String successUrl = ServletUriComponentsBuilder.fromContextPath(request).path(PathRegistry.DASHBOARD).toUriString();
 
 		Map<String, Object> customBody = new HashMap<>();

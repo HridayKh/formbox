@@ -1,3 +1,9 @@
+buildscript {
+	repositories {
+		mavenCentral()
+	}
+}
+
 plugins {
 	java
 	id("org.springframework.boot") version "4.1.0"
@@ -5,10 +11,13 @@ plugins {
 
 	id("org.jetbrains.kotlin.jvm") version "2.3.21"
 	id("org.jetbrains.kotlin.plugin.spring") version "2.3.21"
+
+	id("io.sentry.jvm.gradle") version "6.14.0"
 }
 
-group = "in.hridaykh"
-version = "0.0.1-SNAPSHOT"
+repositories {
+	mavenCentral()
+}
 
 java {
 	toolchain {
@@ -20,8 +29,12 @@ kotlin {
 	jvmToolchain(25)
 }
 
-repositories {
-	mavenCentral()
+sentry {
+	includeSourceContext = true
+
+	org = "hriday-jg"
+	projectName = "formbox"
+	authToken = System.getenv("SENTRY_AUTH_TOKEN")
 }
 
 dependencies {
@@ -30,6 +43,10 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.postgresql:postgresql")
+
+	// logging
+	implementation("io.sentry:sentry-async-profiler:8.47.0")
+	implementation("io.sentry:sentry-logback:8.47.0")
 
 	// caching
 	implementation("org.springframework.boot:spring-boot-starter-cache")
@@ -52,6 +69,9 @@ dependencies {
 	implementation("com.jsandev.polar:polar-java-sdk:0.1.5")
 	implementation("com.jsandev.polar:polar-spring:0.1.5")
 }
+
+group = "in.hridaykh"
+version = "0.0.1-SNAPSHOT"
 
 tasks.withType<Test> {
 	useJUnitPlatform()

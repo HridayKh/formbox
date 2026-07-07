@@ -3,7 +3,7 @@ package in.hridaykh.formbox.controller;
 import in.hridaykh.formbox.constant.PathRegistry;
 import in.hridaykh.formbox.constant.ViewRegistry;
 import in.hridaykh.formbox.service.DashboardService;
-import in.hridaykh.formbox.service.TenantTierService;
+import in.hridaykh.formbox.service.cache.TenantTierCacheService;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -16,11 +16,11 @@ import java.util.UUID;
 public class DashboardController {
 
 	private final DashboardService dashboardService;
-	private final TenantTierService tenantTierService;
+	private final TenantTierCacheService tenantTierCacheService;
 
-	public DashboardController(DashboardService dashboardService, TenantTierService tenantTierService) {
+	public DashboardController(DashboardService dashboardService, TenantTierCacheService tenantTierCacheService) {
 		this.dashboardService = dashboardService;
-		this.tenantTierService = tenantTierService;
+		this.tenantTierCacheService = tenantTierCacheService;
 	}
 
 	@GetMapping
@@ -30,7 +30,7 @@ public class DashboardController {
 		}
 		UUID tenant = dashboardService.getOrCreateTenantWithFreeSubscription(userMetadata);
 		model.addAttribute("user", userMetadata);
-		model.addAttribute("tier", tenantTierService.resolveHighestActiveTierNonNull(tenant));
+		model.addAttribute("tier", tenantTierCacheService.resolveHighestActiveTierNonNull(tenant));
 
 		if (customerSessionToken != null && !customerSessionToken.isBlank())
 			return "redirect:" + PathRegistry.DASHBOARD;

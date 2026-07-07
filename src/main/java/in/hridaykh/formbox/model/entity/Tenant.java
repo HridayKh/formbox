@@ -2,6 +2,7 @@ package in.hridaykh.formbox.model.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.ToString;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -10,6 +11,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "tenants")
 @Data
+@ToString
 public class Tenant {
 
 	@Id

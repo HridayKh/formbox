@@ -8,8 +8,8 @@ import in.hridaykh.formbox.repository.FormRepository;
 import in.hridaykh.formbox.repository.SubmissionRepository;
 import in.hridaykh.formbox.service.FormService;
 import in.hridaykh.formbox.service.cache.SubmissionCacheService;
-import in.hridaykh.formbox.service.cache.PolarCacheService;
-import in.hridaykh.formbox.service.TenantTierService;
+import in.hridaykh.formbox.service.polar.PolarCacheService;
+import in.hridaykh.formbox.service.cache.TenantTierCacheService;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -29,15 +29,15 @@ public class IndexController {
 	private final FormService formService;
 	private final SubmissionRepository submissionRepository;
 	private final PolarCacheService polarCacheService;
-	private final TenantTierService tenantTierService;
+	private final TenantTierCacheService tenantTierCacheService;
 	private final StringRedisTemplate stringRedisTemplate;
 
-	public IndexController(FormRepository formRepository, FormService formService, SubmissionRepository submissionRepository, PolarCacheService polarCacheService, TenantTierService tenantTierService, StringRedisTemplate stringRedisTemplate) {
+	public IndexController(FormRepository formRepository, FormService formService, SubmissionRepository submissionRepository, PolarCacheService polarCacheService, TenantTierCacheService tenantTierCacheService, StringRedisTemplate stringRedisTemplate) {
 		this.formRepository = formRepository;
 		this.formService = formService;
 		this.submissionRepository = submissionRepository;
 		this.polarCacheService = polarCacheService;
-		this.tenantTierService = tenantTierService;
+		this.tenantTierCacheService = tenantTierCacheService;
 		this.stringRedisTemplate = stringRedisTemplate;
 	}
 
@@ -79,7 +79,7 @@ public class IndexController {
 		stringRedisTemplate.delete(SubmissionCacheService.CACHE_KEY_BASE + formId);
 
 		String redirectUrl = form.getRedirectUrl();
-		String tenantTier = tenantTierService.resolveHighestActiveTierNonNull(tenant.getId());
+		String tenantTier = tenantTierCacheService.resolveHighestActiveTierNonNull(tenant.getId());
 
 		if (redirectUrl == null || redirectUrl.isBlank() || tenantTier == null || "free-v1".equals(tenantTier))
 			return "submit/thanks";
