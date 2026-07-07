@@ -8,8 +8,6 @@
 
 ### Performance, Security & Core Infra
 
-- sentry integration (Crucial to catch errors while optimizing/fixing auth)
-- SENTRY OTEL AGENT
 - auth fixes (link to home page on auth pages, magic links)
 - spam protection pipeline (rate limits, then turnstile)
 - put submissions older than last 100 for every form in cf r2
