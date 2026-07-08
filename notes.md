@@ -6,22 +6,21 @@
 
 ## Form Submission Pipeline
 
-1. ip rate limiting
-2. check _gotcha field
-3. start async request to get form info
-4. check turnstile
-5. 404 if db request says form doesn't exist
-6. per form rate limit (error 429)
-7. get form tenant submissions (error 402)
-8. abort request if files not allowed (error 400)
-9. abort request if invalid mime type on file (error 400)
-10. check custom filters and validations (error 400)
-11. save form payload and metadata
-12. update leftover submission balance
-13. return 200 ok
-14. update form submissions cache
-15. async start upload files/attachments
-16. async (wait for file uploads) 3rd party webhooks and notifs
+1. check _gotcha field
+2. start async request to get form info
+3. check turnstile
+4. 404 if db request says form doesn't exist
+5. per form rate limit (error 429)
+6. get form tenant submissions (error 402)
+7. abort request if files not allowed (error 400)
+8. abort request if invalid mime type on file (error 400)
+9. check custom filters and validations (error 400)
+10. save form payload and metadata
+11. update leftover submission balance
+12. return 200 ok
+13. update form submissions cache
+14. async start upload files/attachments
+15. async (wait for file uploads) 3rd party webhooks and notifs
 
 ## Todo
 
@@ -38,11 +37,10 @@
 
 ### Quick
 
-1. link to home page on auth pages
-2. JSON output
-3. htmx output
-4. csv exports
-5. limit num of forms
+1. JSON output
+2. htmx output
+3. csv exports
+4. limit num of forms
 
 ### Admin, Growth & Public Facing
 

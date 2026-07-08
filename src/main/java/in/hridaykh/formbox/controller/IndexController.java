@@ -43,12 +43,9 @@ public class IndexController {
 		return ViewRegistry.INDEX;
 	}
 
-	@PostMapping(PathRegistry.WAITLIST)
-	public String waitlist(@RequestParam String ignoredEmail) {
-		try {
-			log.error("WHO ENTERED THE WAITLIST BURH\nIncoming request to join product waitlist allocation for email placeholder: {}", ignoredEmail, new Exception("WAITLIST"));
-		} catch (Exception _) {
-		}
+	@GetMapping(PathRegistry.WAITLIST)
+	public String waitlist(@RequestParam(required = false) String ignoredEmail) {
+//		log.error("WHO ENTERED THE WAITLIST BURH\nIncoming request to join product waitlist allocation for email placeholder: {}", ignoredEmail, new Exception("WAITLIST"));
 		return ViewRegistry.Auth.Fragments.EMPTY;
 	}
 

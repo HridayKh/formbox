@@ -19,16 +19,16 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.Arrays;
 
-@Component
 @Slf4j
 @RequiredArgsConstructor
+@Component
 public class SupabaseSessionFilter extends OncePerRequestFilter {
 
 	private final AuthService authService;
 	private final AuthServiceKt authServiceKt;
 
 	@Override
-	protected void doFilterInternal(HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
+	protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
 		String path = request.getRequestURI();
 
 		if (path.startsWith("/favicon")) {

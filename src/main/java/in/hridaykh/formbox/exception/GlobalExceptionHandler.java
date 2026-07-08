@@ -22,7 +22,7 @@ public class GlobalExceptionHandler {
 
 	@ExceptionHandler(NoResourceFoundException.class)
 	public ModelAndView handle404Error(NoResourceFoundException ex) {
-		log.error("Unhandled system exception caught: {}", ex.getMessage(), ex);
+		log.debug("Resource Not Found: {}", ex.getMessage(), ex);
 		return buildErrorResponse("", ex.getMessage(), HttpStatus.NOT_FOUND);
 	}
 
