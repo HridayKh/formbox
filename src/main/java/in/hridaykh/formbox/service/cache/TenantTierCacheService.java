@@ -1,5 +1,6 @@
 package in.hridaykh.formbox.service.cache;
 
+import in.hridaykh.formbox.constant.CacheNames;
 import in.hridaykh.formbox.model.entity.Purchases;
 import in.hridaykh.formbox.model.enums.SubscriptionState;
 import in.hridaykh.formbox.repository.PurchasesRepository;
@@ -23,19 +24,17 @@ public class TenantTierCacheService {
 	private final PurchasesRepository purchasesRepository;
 	private final StringRedisTemplate stringRedisTemplate;
 
-	@Cacheable(value = "tenantTiers", key = "#tenantId.toString()")
+	@Cacheable(value = CacheNames.TENANT_TIERS, key = "#tenantId.toString()")
 	public String resolveHighestActiveTierNonNull(UUID tenantId) {
 		log.trace("Resolving guaranteed non-null tier context for tenant ID: {}", tenantId);
 		String tier = resolveHighestActiveTierNullable(tenantId);
 		return tier == null ? "free-v1" : tier;
 	}
 
-	private static final String TENANT_TIER_BASE_KEY = "formbox:tenantTiers:";
-
-	@Cacheable(value = "tenantTiers", key = "#tenantId.toString()")
+	@Cacheable(value = CacheNames.TENANT_TIERS, key = "#tenantId.toString()")
 	public String resolveHighestActiveTierNullable(UUID tenantId) {
 		log.trace("Local L1 cache MISS for tenant tier resolution: {}", tenantId);
-		String redisKey = TENANT_TIER_BASE_KEY + tenantId.toString();
+		String redisKey = String.format("formbox:%s:%s", CacheNames.TENANT_TIERS, tenantId.toString());
 
 		String cachedTier = null;
 		try {
@@ -76,14 +75,14 @@ public class TenantTierCacheService {
 		return "NULL".equals(highestTier) ? null : highestTier;
 	}
 
-	@CacheEvict(value = "tenantTiers", key = "#ignoredTenantId")
-	public void evictTenantTierCache(String ignoredTenantId) {
-		log.debug("Evicting multi-layer tenant tier records for structural identifier key payload: {}", ignoredTenantId);
+	@CacheEvict(value = CacheNames.TENANT_TIERS, key = "#tenantId")
+	public void evictTenantTierCache(String tenantId) {
+		log.debug("Evicting multi-layer tenant tier records for structural identifier key payload: {}", tenantId);
 		try {
-			Boolean deleted = stringRedisTemplate.delete(TENANT_TIER_BASE_KEY + ignoredTenantId);
+			Boolean deleted = stringRedisTemplate.delete(String.format("formbox:%s:%s", CacheNames.TENANT_TIERS, tenantId));
 			log.trace("Explicit removal execution confirmation results mapping inside Redis cluster context for key metadata execution task: {}", deleted);
 		} catch (Exception e) {
-			log.error("Failed to issue string deletion pipeline drop sequence directly into Redis cache cluster layer for target key representation value: {}", ignoredTenantId, e);
+			log.error("Failed to issue string deletion pipeline drop sequence directly into Redis cache cluster layer for target key representation value: {}", tenantId, e);
 		}
 	}
 }

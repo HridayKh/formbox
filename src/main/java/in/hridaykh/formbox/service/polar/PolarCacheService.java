@@ -1,5 +1,6 @@
 package in.hridaykh.formbox.service.polar;
 
+import in.hridaykh.formbox.constant.CacheNames;
 import in.hridaykh.formbox.model.entity.PolarProducts;
 import in.hridaykh.formbox.model.entity.Tenant;
 import in.hridaykh.formbox.repository.PolarProductsRepository;
@@ -20,9 +21,6 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class PolarCacheService {
 
-	private static final String METER_BALANCE_KEY_PREFIX = "formbox:meterBalance:";
-	private static final String PRODUCT_CACHE_BASE_KEY = "formbox:pojoByPolarProductId:";
-	private static final String PRODUCT_SLUG_CACHE_BASE_KEY = "formbox:productBySlug:";
 	private static final long CACHE_TTL_HOURS = 2;
 
 	private final StringRedisTemplate redisTemplate;
@@ -78,14 +76,15 @@ public class PolarCacheService {
 	}
 
 	private String getRedisKey(Tenant tenant) {
-		return METER_BALANCE_KEY_PREFIX + tenant.getId().toString();
+		return String.format("formbox:%s:%s", CacheNames.METER_BALANCE, tenant.getId());
 	}
 
+	// ================================ UN-CHANGING POLAR PRODUCT METADATA ================================
 
-	@Cacheable(value = "pojoByPolarProductId", key = "#polarProductId")
+	@Cacheable(value = CacheNames.POJO_BY_POLAR_PRODUCT_ID, key = "#polarProductId")
 	public PolarProducts productByPolarProductId(String polarProductId) {
 		log.trace("Local L1 cache MISS for product ID: {}", polarProductId);
-		String redisKey = PRODUCT_CACHE_BASE_KEY + polarProductId;
+		String redisKey = String.format("formbox:%s:%s", CacheNames.POJO_BY_POLAR_PRODUCT_ID, polarProductId);
 
 		String cachedJson = redisTemplate.opsForValue().get(redisKey);
 		if (cachedJson != null) {
@@ -111,10 +110,10 @@ public class PolarCacheService {
 		return product;
 	}
 
-	@Cacheable(value = "productBySlug", key = "#slug")
+	@Cacheable(value = CacheNames.PRODUCT_BY_SLUG, key = "#slug")
 	public PolarProducts productBySlug(String slug) {
 		log.trace("Local L1 cache MISS for product slug: {}", slug);
-		String redisKey = PRODUCT_SLUG_CACHE_BASE_KEY + slug;
+		String redisKey = String.format("formbox:%s:%s", CacheNames.PRODUCT_BY_SLUG, slug);
 
 		String cachedJson = redisTemplate.opsForValue().get(redisKey);
 		if (cachedJson != null) {

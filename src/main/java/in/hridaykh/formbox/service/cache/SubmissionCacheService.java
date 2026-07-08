@@ -1,5 +1,6 @@
 package in.hridaykh.formbox.service.cache;
 
+import in.hridaykh.formbox.constant.CacheNames;
 import in.hridaykh.formbox.model.dto.FormSubmissionsResponse;
 import in.hridaykh.formbox.model.dto.SubmissionItem;
 import in.hridaykh.formbox.repository.SubmissionRepository;
@@ -19,15 +20,13 @@ import java.util.stream.Collectors;
 @Slf4j
 @RequiredArgsConstructor
 public class SubmissionCacheService {
-	public static final String CACHE_KEY_BASE = "formbox:formSubmissions:";
-
 	private final SubmissionRepository submissionRepository;
 	private final StringRedisTemplate redisTemplate;
 	private final ObjectMapper objectMapper;
 
 	public FormSubmissionsResponse getFormSubmissionsGrouped(UUID formId) {
 		log.trace("Request received to fetch grouped form submissions for form ID: {}", formId);
-		String cacheKey = CACHE_KEY_BASE + formId;
+		String cacheKey = String.format("formbox:%s:%s", CacheNames.FORM_SUBMISSIONS, formId);
 
 		String cachedJson = null;
 		try {

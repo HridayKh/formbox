@@ -1,8 +1,8 @@
 # notes
 
-- focus first for submission pipeline
-- file uploads is pro only feature using cf r2
-- Submissions{free: 100, starter: 2k, pro: 30k}
+1. focus first for submission pipeline
+2. file uploads is pro only feature using cf r2
+3. Submissions{free: 100, starter: 2k, pro: 30k}
 
 ## Form Submission Pipeline
 
@@ -25,36 +25,27 @@
 
 ## Todo
 
-### Performance, Security & Core Infra
-
-- Single externally hosted, in app cached JSON file that controls allowed features
-- auth fixes (link to home page on auth pages, magic links)
-- spam protection pipeline (rate limits, then turnstile)
-- put submissions older than last 100 for every form in cf r2
-
-### Form Management & Data Lifecycle
-
-- turnstile
-- custom filters and rules on pro tier for submissions
-- limit num of forms (submissions are already limited)
-- soft deleting old data
-- revamp how forms are displayed and add paging
-
-### Integrations, Exports & Notifications
-
-- discord notifs and custom webhooks
-- email digests
-- JSON output
-- csv exports
-- 3rd party libs (react, etc.)
-- put cache keys and names in properties file
+1. Single externally hosted, in app cached JSON file that controls allowed features
+2. auth improvements (link to home page on auth pages, magic links)
+3. spam protection pipeline (rate limits, then turnstile)
+4. put submissions older than last 100 for every form in cf r2
+5. custom filters and rules on pro tier for submissions
+6. limit num of forms
+7. soft deleting old data
+8. revamp how forms are displayed and add paging
+9. discord notifs and custom webhooks
+10. email digests
+11. JSON output
+12. htmx output
+13. csv exports
+14. 3rd party libs (react, etc.)
 
 ### Admin, Growth & Public Facing
 
-- fix waitlist, use my own form, with ability to return htmx
-- start on admin panel
-- finish admin panel
-- index page
-- knowledge base
-- legal docs
-- auto delete free tier from polar.sh of higher tiers
+1. fix waitlist, use my own form, with ability to return htmx
+2. index page
+3. start on admin panel
+4. finish admin panel
+5. auto delete free tier from polar.sh of higher tiers
+6. knowledge base
+7. legal docs

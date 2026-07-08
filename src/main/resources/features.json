@@ -9,7 +9,13 @@
 		"files_allowed": false,
 		"max_file_size_mb": 0,
 		"total_storage_mb": 0,
-		"field_validations_allowed": false
+		"field_validations_allowed": false,
+		"notifs": {
+			"discord": false,
+			"slack": false,
+			"telegram": false
+		},
+		"webhooks_allowed": false
 	},
 	"starter-v1": {
 		"max_forms": 10,
@@ -21,7 +27,13 @@
 		"files_allowed": true,
 		"max_file_size_mb": 5,
 		"total_storage_mb": 512,
-		"field_validations_allowed": true
+		"field_validations_allowed": true,
+		"notifs": {
+			"discord": true,
+			"slack": true,
+			"telegram": true
+		},
+		"webhooks_allowed": false
 	},
 	"pro-v1": {
 		"max_forms": -1,
@@ -33,6 +45,12 @@
 		"files_allowed": true,
 		"max_file_size_mb": 25,
 		"total_storage_mb": 10240,
-		"field_validations_allowed": true
+		"field_validations_allowed": true,
+		"notifs": {
+			"discord": true,
+			"slack": true,
+			"telegram": true
+		},
+		"webhooks_allowed": true
 	}
 }

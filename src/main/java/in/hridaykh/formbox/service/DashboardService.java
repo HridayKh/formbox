@@ -1,5 +1,6 @@
 package in.hridaykh.formbox.service;
 
+import in.hridaykh.formbox.constant.CacheNames;
 import in.hridaykh.formbox.model.entity.PolarProducts;
 import in.hridaykh.formbox.model.entity.Purchases;
 import in.hridaykh.formbox.model.entity.Tenant;
@@ -35,7 +36,7 @@ public class DashboardService {
 	private final PolarCacheService polarCacheService;
 
 	@Transactional
-	@Cacheable(value = "tenantId", key = "#userMetadata.getSub()")
+	@Cacheable(value = CacheNames.TENANT_ID_VALID, key = "#userMetadata.getSub()")
 	public UUID getOrCreateTenantWithFreeSubscription(JwtPayload userMetadata) {
 		UUID userId = UUID.fromString(Objects.requireNonNull(userMetadata.getSub()));
 		log.trace("Initiating tenant onboarding check or dynamic synchronization context for user ID: {}", userId);

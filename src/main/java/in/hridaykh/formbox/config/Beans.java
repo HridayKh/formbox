@@ -1,10 +1,15 @@
 package in.hridaykh.formbox.config;
 
+import in.hridaykh.formbox.filter.SupabaseSessionFilter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import sh.polar.sdk.http.PolarHttpClient;
 import sh.polar.spring.PolarProperties;
+
+import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @Slf4j
@@ -42,5 +47,20 @@ public class Beans {
 			log.error("Failed to construct PolarHttpClient. Critical property validation failure.", e);
 			throw e;
 		}
+	}
+
+	@Bean
+	public FilterRegistrationBean<SupabaseSessionFilter> loggingFilter(SupabaseSessionFilter sessionFilter) {
+		log.info("Initializing SupabaseSessionFilter registration...");
+
+		FilterRegistrationBean<SupabaseSessionFilter> registrationBean = new FilterRegistrationBean<>();
+		registrationBean.setFilter(sessionFilter);
+
+		List<String> urlPatterns = Arrays.asList("/", "/*", "/**");
+		registrationBean.setUrlPatterns(urlPatterns);
+
+		log.debug("SupabaseSessionFilter mapped to URL patterns: {}", urlPatterns);
+		log.info("SupabaseSessionFilter registration complete.");
+		return registrationBean;
 	}
 }

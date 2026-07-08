@@ -8,9 +8,7 @@ import in.hridaykh.formbox.repository.PurchasesRepository;
 import in.hridaykh.formbox.repository.TenantRepository;
 import in.hridaykh.formbox.service.cache.TenantTierCacheService;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.cache.annotation.CacheEvict;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.JsonNode;
@@ -21,9 +19,8 @@ import java.util.NoSuchElementException;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PolarWebhooksService {
-
-	private static final Logger log = LoggerFactory.getLogger(PolarWebhooksService.class);
 
 	private final TenantRepository tenantRepository;
 	private final PurchasesRepository purchasesRepository;
@@ -39,7 +36,8 @@ public class PolarWebhooksService {
 			String eventType = root.path("type").asString();
 			JsonNode dataNode = root.path("data");
 
-			log.info("Processing Polar Webhook event: {}", eventType);
+			// Demoted to DEBUG to prevent log flooding on high-volume webhooks
+			log.debug("Processing Polar Webhook event: {}", eventType);
 
 			String customerEmail = dataNode.path("customer").path("email").asString();
 			if (customerEmail.isBlank() || "null".equals(customerEmail)) {
@@ -53,7 +51,8 @@ public class PolarWebhooksService {
 
 			PolarProducts product = resolveProductFromDataNode(dataNode);
 			String finalCustomerEmail = customerEmail;
-			Tenant tenant = tenantRepository.findByEmailIgnoreCase(customerEmail).orElseThrow(() -> new IllegalStateException("Tenant missing for: " + finalCustomerEmail));
+			Tenant tenant = tenantRepository.findByEmailIgnoreCase(customerEmail)
+				.orElseThrow(() -> new IllegalStateException("Tenant missing for: " + finalCustomerEmail));
 
 			switch (eventType) {
 				case "benefit_grant.cycled":
@@ -84,11 +83,13 @@ public class PolarWebhooksService {
 					break;
 
 				default:
-					log.warn("Unmanaged event passed validation: {}", eventType);
+					// Demoted to DEBUG/INFO because ignoring unhandled events is standard behavior
+					log.debug("Unmanaged event passed validation: {}", eventType);
 					break;
 			}
 
 		} catch (Exception e) {
+			// SLF4J correctly logs the exception stack trace when passed as the last isolated argument
 			log.error("Failed to process Polar webhook payload", e);
 		}
 	}
@@ -122,10 +123,9 @@ public class PolarWebhooksService {
 		return polarCacheService.productByPolarProductId(polarProductId);
 	}
 
-	@CacheEvict(value = "tenantTiers", key = "#tenant.id")
 	public void handleDynamicSubscription(Tenant tenant, PolarProducts product, JsonNode dataNode, SubscriptionState newState) {
 		if (product == null) {
-			log.error("Webhook payload matching failed due to missing product context for tenant: {}", tenant.getEmail());
+			log.warn("Webhook payload matching failed due to missing product context for tenant: {}", tenant.getEmail());
 			return;
 		}
 
@@ -138,7 +138,6 @@ public class PolarWebhooksService {
 		purchase.setProduct(product);
 		purchase.setStatus(newState);
 
-		// Fulfill the DB constraint field if missing
 		if (purchase.getPolarOrderId() == null) {
 			String subId = dataNode.path("id").asString();
 			purchase.setPolarOrderId(!subId.isBlank() ? subId : "WEBHOOK_PROVISION_" + tenant.getId());
@@ -156,6 +155,7 @@ public class PolarWebhooksService {
 		purchasesRepository.save(purchase);
 		log.info("Successfully updated purchase state to {} for tenant: {} on product: {}", newState, tenant.getEmail(), product.getName());
 
+		tenantTierCacheService.evictTenantTierCache(tenant.getId().toString());
 		polarMeterService.getRemainingSubmissionsBalance(tenant);
 	}
 }

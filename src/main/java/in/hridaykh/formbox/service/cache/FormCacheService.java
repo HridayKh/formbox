@@ -1,5 +1,6 @@
 package in.hridaykh.formbox.service.cache;
 
+import in.hridaykh.formbox.constant.CacheNames;
 import in.hridaykh.formbox.model.dto.CachedForm;
 import in.hridaykh.formbox.model.entity.Form;
 import in.hridaykh.formbox.model.entity.Tenant;
@@ -25,20 +26,17 @@ import java.util.UUID;
 @Slf4j
 public class FormCacheService {
 
-	private static final String FORM_BASE_KEY = "formbox:formMetadata:";
-	private static final String TENANT_FORMS_BASE_KEY = "formbox:tenantForms:";
-
 	private final FormRepository formRepository;
 	private final StringRedisTemplate redisTemplate;
 	private final ObjectMapper objectMapper;
 	private final TenantRepository tenantRepository;
 
 	@Transactional(readOnly = true)
-	@Cacheable(value = "formMetadata", key = "#formId")
+	@Cacheable(value = CacheNames.FORM_METADATA, key = "#formId")
 	public CachedForm getCachedForm(UUID formId) {
 		log.trace("Caffeine L1 cache MISS for form ID: {}", formId);
 
-		String redisKey = FORM_BASE_KEY + formId;
+		String redisKey = String.format("formbox:%s:%s", CacheNames.FORM_METADATA, formId);
 		String cachedJson = null;
 		try {
 			cachedJson = redisTemplate.opsForValue().get(redisKey);
@@ -73,13 +71,13 @@ public class FormCacheService {
 		return cachedFormDto;
 	}
 
-	@CachePut(value = "formMetadata", key = "#updatedForm.id")
+	@CachePut(value = CacheNames.FORM_METADATA, key = "#updatedForm.id")
 	public CachedForm updateFormCache(Form updatedForm) {
 		UUID formId = updatedForm.getId();
 		log.debug("Synchronizing state updates to cache layers for form ID: {}", formId);
 
 		CachedForm cachedFormDto = updatedForm.toCachedFormDto();
-		String redisKey = FORM_BASE_KEY + formId;
+		String redisKey = String.format("formbox:%s:%s", CacheNames.FORM_METADATA, formId);
 
 		try {
 			redisTemplate.opsForValue().set(redisKey, objectMapper.writeValueAsString(cachedFormDto), Duration.ofDays(2));
@@ -91,11 +89,11 @@ public class FormCacheService {
 		return cachedFormDto;
 	}
 
-	@CacheEvict(value = "formMetadata", key = "#formId")
+	@CacheEvict(value = CacheNames.FORM_METADATA, key = "#formId")
 	public void evictFormCache(UUID formId) {
 		log.debug("Evicting multi-layer form metadata caches for form ID: {}", formId);
 		try {
-			Boolean deleted = redisTemplate.delete(FORM_BASE_KEY + formId);
+			Boolean deleted = redisTemplate.delete(String.format("formbox:%s:%s", CacheNames.FORM_METADATA, formId));
 			log.trace("Redis L2 cache eviction completion status for form ID {}: {}", formId, deleted);
 		} catch (Exception e) {
 			log.error("Failed to purge key from Redis L2 layer during explicit eviction for form ID: {}", formId, e);
@@ -103,13 +101,14 @@ public class FormCacheService {
 	}
 
 	public List<CachedForm> getTenantForms(UUID tenantId) {
-		String cacheKey = TENANT_FORMS_BASE_KEY + tenantId;
+		String cacheKey = String.format("formbox:%s:%s", CacheNames.TENANT_FORMS, tenantId);
 
 		String cachedJson = redisTemplate.opsForValue().get(cacheKey);
 		if (cachedJson != null) {
 			try {
 				log.trace("Redis L2 cache HIT for tenant forms list on tenant ID: {}", tenantId);
-				return objectMapper.readValue(cachedJson, new TypeReference<>() {});
+				return objectMapper.readValue(cachedJson, new TypeReference<>() {
+				});
 			} catch (Exception e) {
 				log.error("Failed to parse tenant forms collection payload from Redis context for tenant: {}", tenantId, e);
 			}
@@ -133,7 +132,7 @@ public class FormCacheService {
 	public void evictTenantForms(UUID tenantId) {
 		log.debug("Request received to drop tenant forms collection cache for tenant ID: {}", tenantId);
 		try {
-			Boolean deleted = redisTemplate.delete(TENANT_FORMS_BASE_KEY + tenantId);
+			Boolean deleted = redisTemplate.delete(String.format("formbox:%s:%s", CacheNames.TENANT_FORMS, tenantId));
 			log.trace("Tenant forms clear task evaluated for tenant ID {}: {}", tenantId, deleted);
 		} catch (Exception e) {
 			log.error("Failed to purge tenant forms cache collection tracker from Redis cluster for tenant: {}", tenantId, e);
