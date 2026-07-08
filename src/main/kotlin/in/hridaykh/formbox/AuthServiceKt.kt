@@ -18,6 +18,7 @@ import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.auth.user.UserInfo
 import io.github.jan.supabase.auth.user.UserSession
 import io.github.jan.supabase.createSupabaseClient
+import io.github.jan.supabase.logging.LogLevel
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -32,7 +33,7 @@ class AuthServiceKt(private val supabaseProps: SupabaseProperties) {
 	private val log = LoggerFactory.getLogger(AuthServiceKt::class.java)
 
 	fun createIsolatedClient() = createSupabaseClient(supabaseProps.url, supabaseProps.secretKey) {
-		logging = false
+		defaultLogLevel = LogLevel.WARNING
 		install(Auth.Companion) {
 			autoLoadFromStorage = false
 			autoSaveToStorage = false

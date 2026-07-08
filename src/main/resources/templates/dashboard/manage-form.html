@@ -964,12 +964,12 @@
                 <div class="form-block">
                     <label class="form-label">Custom Redirect URL (Optional)</label>
                     <input class="input" type="url" name="redirectUrl" th:value="${form.redirectUrl}"
-                           placeholder="https://your-site.com/thanks" th:disabled="${tier == 'free'}"/>
+                           placeholder="https://your-site.com/thanks" th:disabled="${tier == 'free-v1'}"/>
 
-                    <p class="upgrade-message" th:if="${tier == 'free'}"
+                    <p class="upgrade-message" th:if="${tier == 'free-v1'}"
                        style="color: #ef4444; font-size: 0.875rem; margin-top: 0.25rem;">
                         Custom redirects are a premium feature.
-                        <a href="/billing/upgrade" style="text-decoration: underline;">Upgrade your plan</a> to unlock.
+                        <a href="#" style="text-decoration: underline;">Upgrade your plan</a> to unlock.
                     </p>
                 </div>
 

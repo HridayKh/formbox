@@ -750,12 +750,12 @@
 ════════════════════════════════════════════ -->
 <div class="modal" id="create-form-modal">
     <div class="modal__content">
+
         <div class="modal__header">
-            <h2 class="modal__title">Create New Endpoint</h2>
+            <h2 class="modal__title">Create New Form</h2>
             <button class="modal__close" onclick="closeModal('create-form-modal')">×</button>
         </div>
 
-        <!-- Standard Form Setup + HTMX Submission -->
         <form hx-post="/forms" hx-target="#endpoints-tbody" hx-swap="beforeend"
               onsubmit="closeModal('create-form-modal')">
             <div class="modal__body">
@@ -768,12 +768,12 @@
 
                     <input class="input" id="form-redirect" name="redirectUrl" type="url"
                            placeholder="https://yoursite.com/thank-you"
-                           th:disabled="${tier == 'free'}"/>
+                           th:disabled="${tier == 'free-v1'}"/>
 
-                    <p class="upgrade-message" th:if="${tier == 'free'}"
+                    <p class="upgrade-message" th:if="${tier == 'free-v1'}"
                        style="color: #ef4444; font-size: 0.875rem; margin-top: 0.25rem;">
                         Custom redirects are a premium feature.
-                        <a href="/billing/upgrade" style="text-decoration: underline;">Upgrade your plan</a> to unlock.
+                        <a href="#" style="text-decoration: underline;">Upgrade your plan</a> to unlock.
                     </p>
                 </div>
             </div>
@@ -787,6 +787,7 @@
                 </button>
             </div>
         </form>
+
     </div>
 </div>
 

@@ -1,5 +1,6 @@
 package in.hridaykh.formbox.controller;
 
+import in.hridaykh.formbox.constant.CacheNames;
 import in.hridaykh.formbox.constant.PathRegistry;
 import in.hridaykh.formbox.constant.ViewRegistry;
 import in.hridaykh.formbox.model.entity.Form;
@@ -7,7 +8,6 @@ import in.hridaykh.formbox.model.entity.Submission;
 import in.hridaykh.formbox.repository.FormRepository;
 import in.hridaykh.formbox.repository.SubmissionRepository;
 import in.hridaykh.formbox.service.FormService;
-import in.hridaykh.formbox.service.cache.SubmissionCacheService;
 import in.hridaykh.formbox.service.polar.PolarCacheService;
 import in.hridaykh.formbox.service.cache.TenantTierCacheService;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
@@ -89,7 +89,7 @@ public class IndexController {
 		log.info("Successfully persisted incoming submission record ID: {} for form context mapping: {}", submission.getId(), formId);
 
 		try {
-			stringRedisTemplate.delete(SubmissionCacheService.CACHE_KEY_BASE + formId);
+			stringRedisTemplate.delete(String.format("formbox:%s:%s", CacheNames.FORM_SUBMISSIONS, formId));
 			log.trace("Evicted submission aggregates collection buffer from Redis for form ID: {}", formId);
 		} catch (Exception e) {
 			log.error("Failed to invalidate group view cache string bindings for form ID matching key payload: {}", formId, e);

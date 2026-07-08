@@ -7,7 +7,7 @@
         </div>
         <div class="submissions-actions">
             <button class="btn btn--secondary btn--sm" id="export-csv-btn"
-                    th:disabled="${tier == 'free'}"
+                    th:disabled="${tier == 'free-v1'}"
                     th:attr="hx-get='/forms/${form.id}/submissions/export',hx-target='#submissions-card',hx-swap='none'"
                     onclick="exportSubmissions()">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -21,9 +21,9 @@
         </div>
     </div>
 
-    <div th:if="${tier == 'free'}" class="premium-info">
+    <div th:if="${tier == 'free-v1'}" class="premium-info">
         <strong>📊 Export to CSV is available on premium plans.</strong>
-        <a href="/billing/upgrade">Upgrade your plan</a> to export submissions and unlock other advanced features.
+        <a href="#">Upgrade your plan</a> to export submissions and unlock other advanced features.
     </div>
 
     <div class="tabs">

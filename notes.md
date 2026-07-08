@@ -25,7 +25,7 @@
 
 ## Todo
 
-1. Single externally hosted, in app cached JSON file that controls allowed features
+1. Use `features.json` to restrict/allow tier limits
 2. auth improvements (link to home page on auth pages, magic links)
 3. spam protection pipeline (rate limits, then turnstile)
 4. put submissions older than last 100 for every form in cf r2
