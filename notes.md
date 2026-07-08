@@ -26,19 +26,23 @@
 ## Todo
 
 1. Use `features.json` to restrict/allow tier limits
-2. auth improvements (link to home page on auth pages, magic links)
-3. spam protection pipeline (rate limits, then turnstile)
-4. put submissions older than last 100 for every form in cf r2
-5. custom filters and rules on pro tier for submissions
-6. limit num of forms
-7. soft deleting old data
-8. revamp how forms are displayed and add paging
-9. discord notifs and custom webhooks
-10. email digests
-11. JSON output
-12. htmx output
-13. csv exports
-14. 3rd party libs (react, etc.)
+2. spam protection pipeline (rate limits, then turnstile)
+3. custom filters and rules on pro tier for submissions
+4. auth improvements (password reset, password forget)
+5. revamp how forms are displayed and add paging
+6. put submissions older than last 100 for every form in cf r2
+7. soft deleting forms
+8. discord notifs and custom webhooks
+9. email digests
+10. 3rd party libs (react, etc.)
+
+### Quick
+
+1. link to home page on auth pages
+2. JSON output
+3. htmx output
+4. csv exports
+5. limit num of forms
 
 ### Admin, Growth & Public Facing
 

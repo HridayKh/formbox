@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @ControllerAdvice
 @Slf4j
@@ -17,6 +18,12 @@ public class GlobalExceptionHandler {
 	public ModelAndView genericException(Exception ex) {
 		log.error("Unhandled system exception caught: {}", ex.getMessage(), ex);
 		return buildErrorResponse("internal server error occurred", ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+	}
+
+	@ExceptionHandler(NoResourceFoundException.class)
+	public ModelAndView handle404Error(NoResourceFoundException ex) {
+		log.error("Unhandled system exception caught: {}", ex.getMessage(), ex);
+		return buildErrorResponse("", ex.getMessage(), HttpStatus.NOT_FOUND);
 	}
 
 	@ExceptionHandler(AuthRestException.class)

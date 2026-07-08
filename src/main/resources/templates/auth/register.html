@@ -135,11 +135,41 @@
         .auth-footer a:hover {
             text-decoration: underline;
         }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-2);
+            color: var(--color-accent-bright);
+            text-decoration: none;
+            font-size: 0.92rem;
+            margin-bottom: var(--space-6);
+            transition: color 0.15s ease;
+        }
+
+        .back-link:hover {
+            color: var(--color-accent);
+        }
+
+        .back-link svg {
+            width: 16px;
+            height: 16px;
+        }
+
     </style>
 </head>
 <body>
 
 <main class="auth-container">
+
+    <a href="/" class="back-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+             stroke-linejoin="round">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+        Back to Home Page
+    </a>
+
     <h2>Create your FormBox Account</h2>
 
     <div id="alert-container"></div>
@@ -157,6 +187,8 @@
     </form>
 
     <p class="auth-footer">Already have an account? <a href="/auth/login">Login here</a></p>
+
+    <div th:replace="~{auth/fragments :: resend-form}"></div>
 </main>
 </body>
 </html>

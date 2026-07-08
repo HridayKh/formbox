@@ -2,30 +2,31 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Login | FormBox</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+          rel="stylesheet"/>
     <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.10/dist/htmx.min.js"></script>
 
     <style>
         :root {
-            --color-bg:           #09090B;
-            --color-bg-raised:    #0E0E12;
-            --color-surface:      #121218;
-            --color-surface-2:    #16161D;
-            --color-border:       #1E1E24;
-            --color-border-2:     #27272A;
-            --color-text:         #F4F4F6;
-            --color-text-dim:     #A3A3AE;
-            --color-text-faint:   #6C6C77;
-            --color-accent:       #7C5CFC;
-            --color-accent-bright:#9B7CFF;
-            --gradient-accent:    linear-gradient(135deg, #7C5CFC 0%, #5B3FE0 100%);
-            --font-display:       'Inter', system-ui, -apple-system, sans-serif;
-            --font-body:          'Inter', system-ui, -apple-system, sans-serif;
-            --font-mono:          'JetBrains Mono', monospace;
+            --color-bg: #09090B;
+            --color-bg-raised: #0E0E12;
+            --color-surface: #121218;
+            --color-surface-2: #16161D;
+            --color-border: #1E1E24;
+            --color-border-2: #27272A;
+            --color-text: #F4F4F6;
+            --color-text-dim: #A3A3AE;
+            --color-text-faint: #6C6C77;
+            --color-accent: #7C5CFC;
+            --color-accent-bright: #9B7CFF;
+            --gradient-accent: linear-gradient(135deg, #7C5CFC 0%, #5B3FE0 100%);
+            --font-display: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
             --space-2: 8px;
             --space-3: 12px;
             --space-4: 16px;
@@ -37,7 +38,13 @@
             --shadow-glow-sm: 0 0 0 1px rgba(124, 92, 252, 0.45), 0 0 16px rgba(124, 92, 252, 0.25);
             --border-2: 1px solid var(--color-border-2);
         }
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
             background: var(--color-bg);
             color: var(--color-text);
@@ -48,6 +55,7 @@
             min-height: 100vh;
             padding: var(--space-4);
         }
+
         .auth-container {
             background: var(--color-surface);
             border: var(--border-2);
@@ -57,6 +65,7 @@
             width: 100%;
             max-width: 420px;
         }
+
         h2 {
             font-family: var(--font-display);
             font-weight: 700;
@@ -65,16 +74,19 @@
             margin-bottom: var(--space-6);
             text-align: center;
         }
+
         .form-block {
             display: flex;
             flex-direction: column;
             gap: var(--space-4);
         }
+
         .form-group {
             display: flex;
             flex-direction: column;
             gap: var(--space-2);
         }
+
         .form-label {
             font-family: var(--font-mono);
             font-size: 0.72rem;
@@ -82,6 +94,7 @@
             text-transform: uppercase;
             color: var(--color-text-faint);
         }
+
         .input {
             width: 100%;
             background: var(--color-bg-raised);
@@ -92,11 +105,13 @@
             font-size: 0.92rem;
             transition: border-color 0.15s ease, box-shadow 0.15s ease;
         }
+
         .input:focus {
             outline: none;
             border-color: var(--color-accent);
             box-shadow: 0 0 0 3px rgba(124, 92, 252, 0.18);
         }
+
         .btn {
             display: inline-flex;
             align-items: center;
@@ -111,6 +126,7 @@
             text-decoration: none;
             transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, border-color 0.15s ease;
         }
+
         .btn--primary {
             background: var(--gradient-accent);
             color: #FFFFFF;
@@ -118,29 +134,35 @@
             width: 100%;
             margin-top: var(--space-2);
         }
+
         .btn--primary:hover {
             transform: translateY(-1px);
         }
+
         .btn--secondary {
             background: var(--color-surface-2);
             color: var(--color-text);
             border-color: var(--color-border-2);
         }
+
         .btn--secondary:hover {
             border-color: var(--color-accent);
             background: var(--color-surface);
         }
+
         .auth-footer {
             text-align: center;
             margin-top: var(--space-6);
             font-size: 0.9rem;
             color: var(--color-text-dim);
         }
+
         .auth-footer a {
             color: var(--color-accent-bright);
             text-decoration: none;
             font-weight: 500;
         }
+
         .auth-footer a:hover {
             text-decoration: underline;
         }
@@ -153,14 +175,59 @@
             line-height: 1.5;
             margin-bottom: var(--space-4);
         }
-        .alert--danger { background: rgba(243, 100, 100, 0.1); border: 1px solid #F36464; color: #F36464; }
-        .alert--success { background: rgba(52, 211, 153, 0.1); border: 1px solid #34D399; color: #34D399; }
-        .alert--info { background: rgba(45, 216, 196, 0.1); border: 1px solid #2DD8C4; color: #2DD8C4; }
+
+        .alert--danger {
+            background: rgba(243, 100, 100, 0.1);
+            border: 1px solid #F36464;
+            color: #F36464;
+        }
+
+        .alert--success {
+            background: rgba(52, 211, 153, 0.1);
+            border: 1px solid #34D399;
+            color: #34D399;
+        }
+
+        .alert--info {
+            background: rgba(45, 216, 196, 0.1);
+            border: 1px solid #2DD8C4;
+            color: #2DD8C4;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-2);
+            color: var(--color-accent-bright);
+            text-decoration: none;
+            font-size: 0.92rem;
+            margin-bottom: var(--space-6);
+            transition: color 0.15s ease;
+        }
+
+        .back-link:hover {
+            color: var(--color-accent);
+        }
+
+        .back-link svg {
+            width: 16px;
+            height: 16px;
+        }
+
     </style>
 </head>
 <body>
 
 <main class="auth-container">
+
+    <a href="/" class="back-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+             stroke-linejoin="round">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+        Back to Home Page
+    </a>
+
     <h2>Login to FormBox</h2>
 
     <div id="alert-container">
@@ -182,7 +249,8 @@
         </div>
         <div class="form-group">
             <label for="login-password" class="form-label">Password</label>
-            <input type="password" id="login-password" class="input" name="password" required autocomplete="current-password"/>
+            <input type="password" id="login-password" class="input" name="password" required
+                   autocomplete="current-password"/>
         </div>
         <button type="submit" class="btn btn--primary">Sign In</button>
     </form>

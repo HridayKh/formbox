@@ -59,7 +59,7 @@ public class IndexController {
 		Form form = formRepository.findById(formId).orElse(null);
 		if (form == null) {
 			log.warn("Submission rejected. Form destination completely missing from structural records for ID: {}", formId);
-			return "form-not-found";
+			return "submit/form-not-found";
 		}
 
 		var tenant = form.getTenant();
