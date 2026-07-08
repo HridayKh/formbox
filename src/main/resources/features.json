@@ -1,0 +1,38 @@
+{
+	"free-v1": {
+		"max_forms": 3,
+		"turnstile_allowed": false,
+		"redirect_url_allowed": false,
+		"max_rate_limit_rpm": 10,
+		"htmx_allowed": false,
+		"json_allowed": false,
+		"files_allowed": false,
+		"max_file_size_mb": 0,
+		"total_storage_mb": 0,
+		"field_validations_allowed": false
+	},
+	"starter-v1": {
+		"max_forms": 10,
+		"turnstile_allowed": true,
+		"redirect_url_allowed": true,
+		"max_rate_limit_rpm": 30,
+		"htmx_allowed": true,
+		"json_allowed": true,
+		"files_allowed": true,
+		"max_file_size_mb": 5,
+		"total_storage_mb": 512,
+		"field_validations_allowed": true
+	},
+	"pro-v1": {
+		"max_forms": -1,
+		"turnstile_allowed": true,
+		"redirect_url_allowed": true,
+		"max_rate_limit_rpm": 90,
+		"htmx_allowed": true,
+		"json_allowed": true,
+		"files_allowed": true,
+		"max_file_size_mb": 25,
+		"total_storage_mb": 10240,
+		"field_validations_allowed": true
+	}
+}
