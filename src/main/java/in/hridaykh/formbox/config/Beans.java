@@ -37,7 +37,6 @@ public class Beans {
 			log.info("Loading tier features map");
 			assert tierFeaturesFile != null;
 			String file = tierFeaturesFile.getContentAsString(Charset.defaultCharset());
-			log.info(file);
 			Map<String, TierFeatures> feature = objectMapper.readValue(file, new TypeReference<>() {
 			});
 			Tiers.initialize(feature, context);

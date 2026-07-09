@@ -156,6 +156,6 @@ public class PolarWebhooksService {
 		log.info("Successfully updated purchase state to {} for tenant: {} on product: {}", newState, tenant.getEmail(), product.getName());
 
 		tenantTierCacheService.evictTenantTierCache(tenant.getId().toString());
-		polarMeterService.getRemainingSubmissionsBalance(tenant);
+		polarMeterService.getRemainingSubmissionsBalance(tenant.getId());
 	}
 }

@@ -2,7 +2,6 @@ package in.hridaykh.formbox.service.polar;
 
 import in.hridaykh.formbox.constant.CacheNames;
 import in.hridaykh.formbox.model.entity.PolarProducts;
-import in.hridaykh.formbox.model.entity.Tenant;
 import in.hridaykh.formbox.repository.PolarProductsRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,6 +12,7 @@ import org.springframework.stereotype.Service;
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.Duration;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -28,55 +28,55 @@ public class PolarCacheService {
 	private final PolarProductsRepository polarProductsRepository;
 	private final ObjectMapper objectMapper;
 
-	public long getCachedSubmissionBalance(Tenant tenant) {
-		String key = getRedisKey(tenant);
+	public long getCachedSubmissionBalance(UUID tenantId) {
+		String key = getRedisKey(tenantId);
 		String cachedValue = redisTemplate.opsForValue().get(key);
 
 		if (cachedValue != null) {
 			try {
 				long balance = Long.parseLong(cachedValue);
-				log.trace("Redis meter balance cache HIT for tenant ID: {}. Balance: {}", tenant.getId(), balance);
+				log.trace("Redis meter balance cache HIT for tenant ID: {}. Balance: {}", tenantId, balance);
 				return balance;
 			} catch (NumberFormatException e) {
 				log.error("Corrupted meter cache value discovered for key: {}", key, e);
 			}
 		}
-		log.debug("Redis meter balance cache MISS for tenant ID: {}. Syncing live state...", tenant.getId());
-		return syncAndCacheMeterBalance(tenant);
+		log.debug("Redis meter balance cache MISS for tenant ID: {}. Syncing live state...", tenantId);
+		return syncAndCacheMeterBalance(tenantId);
 	}
 
-	public void decrementCachedSubmissionBalance(Tenant tenant) {
-		String key = getRedisKey(tenant);
-		getCachedSubmissionBalance(tenant);
+	public void decrementCachedSubmissionBalance(UUID tenantId) {
+		String key = getRedisKey(tenantId);
+		getCachedSubmissionBalance(tenantId);
 		Long remaining = redisTemplate.opsForValue().decrement(key, 1L);
 		if (remaining == null) {
 			log.warn("Atomically requested decrement failed to return a value for key: {}", key);
 			return;
 		}
-		log.debug("Atomically consumed 1 submission locally. Remaining: {} for tenant: {}", remaining, tenant.getId());
-		CompletableFuture.runAsync(() -> polarMeterService.reportSubmissionUsageEvent(tenant)).exceptionally(ex -> {
-			log.error("Async usage reporting failed for tenant: {}", tenant.getId(), ex);
+		log.debug("Atomically consumed 1 submission locally. Remaining: {} for tenant: {}", remaining, tenantId);
+		CompletableFuture.runAsync(() -> polarMeterService.reportSubmissionUsageEvent(tenantId)).exceptionally(ex -> {
+			log.error("Async usage reporting failed for tenant: {}", tenantId, ex);
 			return null;
 		});
 	}
 
-	public long syncAndCacheMeterBalance(Tenant tenant) {
-		String key = getRedisKey(tenant);
+	public long syncAndCacheMeterBalance(UUID tenantId) {
+		String key = getRedisKey(tenantId);
 		try {
-			long liveBalance = polarMeterService.getRemainingSubmissionsBalance(tenant);
+			long liveBalance = polarMeterService.getRemainingSubmissionsBalance(tenantId);
 
 			redisTemplate.opsForValue().set(key, String.valueOf(liveBalance), Expiration.from(CACHE_TTL_HOURS, TimeUnit.HOURS));
 
-			log.debug("Synchronized Redis meter balance cache to Polar ground-truth ({}) for tenant: {}", liveBalance, tenant.getId());
+			log.debug("Synchronized Redis meter balance cache to Polar ground-truth ({}) for tenant: {}", liveBalance, tenantId);
 			return liveBalance;
 		} catch (Exception e) {
-			log.error("Failed to sync updated Polar meter balance to Redis cache for tenant: {}", tenant.getId(), e);
+			log.error("Failed to sync updated Polar meter balance to Redis cache for tenant: {}", tenantId, e);
 			return 0L;
 		}
 	}
 
-	private String getRedisKey(Tenant tenant) {
-		return String.format("formbox:%s:%s", CacheNames.METER_BALANCE, tenant.getId());
+	private String getRedisKey(UUID tenantId) {
+		return String.format("formbox:%s:%s", CacheNames.METER_BALANCE, tenantId);
 	}
 
 	// ================================ UN-CHANGING POLAR PRODUCT METADATA ================================

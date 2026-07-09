@@ -2,7 +2,6 @@ package in.hridaykh.formbox.service.polar;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import in.hridaykh.formbox.config.PolarIdProperties;
-import in.hridaykh.formbox.model.entity.Tenant;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -14,6 +13,7 @@ import sh.polar.sdk.models.meter.PolarCustomerMeterResponse;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -24,8 +24,8 @@ public class PolarMeterService {
 	private final PolarIdProperties polarIdProperties;
 	private final Polar polar;
 
-	public long getRemainingSubmissionsBalance(Tenant tenant) {
-		String externalUserId = tenant.getId().toString();
+	public long getRemainingSubmissionsBalance(UUID tenantId) {
+		String externalUserId = tenantId.toString();
 		try {
 			String url = "/customer-meters/?external_customer_id=" + externalUserId;
 			PolarListResponse<PolarCustomerMeterResponse> response = polarHttpClient.get(url, new TypeReference<>() {
@@ -48,10 +48,10 @@ public class PolarMeterService {
 		}
 	}
 
-	public void reportSubmissionUsageEvent(Tenant tenant) {
-		String externalUserId = tenant.getId().toString();
+	public void reportSubmissionUsageEvent(UUID tenantId) {
+		String externalUserId = tenantId.toString();
 		try {
-			polar.events().ingest(Map.of("events", List.of(Map.of("name", "form_submissions", "external_customer_id", tenant.getId()))));
+			polar.events().ingest(Map.of("events", List.of(Map.of("name", "form_submissions", "external_customer_id", tenantId))));
 			log.debug("Successfully reported 1 submission event to Polar for user: {}", externalUserId);
 
 		} catch (Exception e) {

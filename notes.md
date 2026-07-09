@@ -6,21 +6,21 @@
 
 ## Form Submission Pipeline
 
-1. check _gotcha field
-2. start async request to get form info
-3. check turnstile
-4. 404 if db request says form doesn't exist
-5. per form rate limit (error 429)
-6. get form tenant submissions (error 402)
+1. get form (404 if db request says form doesn't exist)
+2. per form rate limit (error 429)
+3. check submissions quota
+4. check if content type allowed
+5. check honeypot
+6. check turnstile
 7. abort request if files not allowed (error 400)
 8. abort request if invalid mime type on file (error 400)
 9. check custom filters and validations (error 400)
 10. save form payload and metadata
 11. update leftover submission balance
-12. return 200 ok
-13. update form submissions cache
+12. update form submissions cache
+13. return 200 ok
 14. async start upload files/attachments
-15. async (wait for file uploads) 3rd party webhooks and notifs
+15. async 3rd party webhooks and notifs
 
 ## Todo
 

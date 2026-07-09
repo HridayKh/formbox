@@ -1,5 +1,7 @@
 package in.hridaykh.formbox.model.dto;
 
+import org.springframework.boot.context.properties.bind.DefaultValue;
+
 import java.io.Serializable;
 import java.util.List;
 import java.util.UUID;
@@ -11,7 +13,7 @@ public record CachedForm(
 	String redirectUrl,
 	Boolean isActive,
 	String turnstileSecretKey,
-	String honeypotName,
+	@DefaultValue("_gotcha") String honeypotName,
 	Integer rateLimitRpm,
 	Boolean allowFiles,
 	Boolean allowHtmx,

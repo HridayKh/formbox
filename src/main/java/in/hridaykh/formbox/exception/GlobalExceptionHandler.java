@@ -28,6 +28,12 @@ public class GlobalExceptionHandler {
 		return buildErrorResponse("", ex.getMessage(), HttpStatus.NOT_FOUND);
 	}
 
+	@ExceptionHandler(FormNotFoundException.class)
+	public ModelAndView handle404FormError(FormNotFoundException ex) {
+		log.debug("Form Not Found: {}", ex.getMessage());
+		return buildErrorResponse("", ex.getMessage(), HttpStatus.NOT_FOUND);
+	}
+
 	@ExceptionHandler(HttpRequestMethodNotSupportedException.class)
 	public ModelAndView handle40Error(HttpRequestMethodNotSupportedException ex) {
 		log.info("Invalid Request Method: {}", ex.getMethod());

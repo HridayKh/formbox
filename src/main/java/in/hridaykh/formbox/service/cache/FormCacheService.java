@@ -1,6 +1,7 @@
 package in.hridaykh.formbox.service.cache;
 
 import in.hridaykh.formbox.constant.CacheNames;
+import in.hridaykh.formbox.exception.FormNotFoundException;
 import in.hridaykh.formbox.model.dto.CachedForm;
 import in.hridaykh.formbox.model.entity.Form;
 import in.hridaykh.formbox.model.entity.Tenant;
@@ -56,7 +57,7 @@ public class FormCacheService {
 		log.debug("Redis L2 cache MISS for form ID: {}. Fetching from persistent database...", formId);
 		Form form = formRepository.findById(formId).orElseThrow(() -> {
 			log.warn("Form retrieval failed. Record not found in database for ID: {}", formId);
-			return new IllegalArgumentException("Form not found for ID: " + formId);
+			return new FormNotFoundException(formId);
 		});
 
 		CachedForm cachedFormDto = form.toCachedFormDto();
