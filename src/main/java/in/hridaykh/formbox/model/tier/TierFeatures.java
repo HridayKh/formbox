@@ -3,6 +3,7 @@ package in.hridaykh.formbox.model.tier;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public record TierFeatures(
+	@JsonProperty("name") String name,
 	@JsonProperty("max_forms") int maxForms,
 	@JsonProperty("turnstile_allowed") boolean turnstileAllowed,
 	@JsonProperty("redirect_url_allowed") boolean redirectUrlAllowed,

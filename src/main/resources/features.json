@@ -1,5 +1,6 @@
 {
 	"free-v1": {
+		"name": "free-v1",
 		"max_forms": 3,
 		"turnstile_allowed": false,
 		"redirect_url_allowed": false,
@@ -18,6 +19,7 @@
 		"webhooks_allowed": false
 	},
 	"starter-v1": {
+		"name": "starter-v1",
 		"max_forms": 10,
 		"turnstile_allowed": true,
 		"redirect_url_allowed": true,
@@ -36,6 +38,7 @@
 		"webhooks_allowed": false
 	},
 	"pro-v1": {
+		"name": "pro-v1",
 		"max_forms": -1,
 		"turnstile_allowed": true,
 		"redirect_url_allowed": true,

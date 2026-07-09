@@ -1,7 +1,9 @@
 package in.hridaykh.formbox.controller;
 
 import in.hridaykh.formbox.constant.PathRegistry;
+import in.hridaykh.formbox.constant.Tiers;
 import in.hridaykh.formbox.model.entity.PolarProducts;
+import in.hridaykh.formbox.service.cache.TenantTierCacheService;
 import in.hridaykh.formbox.service.polar.PolarCacheService;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
 import lombok.RequiredArgsConstructor;
@@ -16,9 +18,11 @@ import sh.polar.sdk.Polar;
 import sh.polar.sdk.http.PolarHttpClient;
 import sh.polar.sdk.models.customer.PolarCustomerSessionResponse;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Controller
 @RequestMapping(PathRegistry.Billing.BASE)
@@ -29,6 +33,7 @@ public class BillingController {
 	private final Polar polar;
 	private final PolarHttpClient polarHttpClient;
 	private final PolarCacheService polarCacheService;
+	private final TenantTierCacheService tenantTierCacheService;
 
 	@PostMapping("/upgrade/{plan}")
 	@ResponseBody
@@ -55,6 +60,17 @@ public class BillingController {
 			return;
 		}
 
+		String tier = tenantTierCacheService.resolveHighestActiveTierNonNull(UUID.fromString(userId));
+		if (Tiers.isFree(tier)) {
+			log.warn("Customer {} attempted to redirect to checkout on free tier!", userId);
+			try {
+				response.getWriter().write("Cannot manage subscription on free tier!");
+			} catch (IOException e) {
+				log.error("unable to write to response after tier check", e);
+			}
+			return;
+		}
+
 		try {
 			var session = polarHttpClient.post("/customer-sessions/", Map.of("external_customer_id", userId), PolarCustomerSessionResponse.class);
 			log.info("Customer portal billing session successfully generated for user ID: {}", userId);
@@ -68,7 +84,7 @@ public class BillingController {
 	private String generateCheckoutUrl(String plan, JwtPayload userMetadata, HttpServletRequest request) {
 		log.trace("Initiating checkout URL generation workflow for requested plan token: {}", plan);
 
-		if ("free-v1".equals(plan)) {
+		if (Tiers.isFree(plan)) {
 			log.debug("Plan parameter detected as tier baseline default [free-v1]. Skipping checkout routing, redirecting straight to dashboard.");
 			return PathRegistry.DASHBOARD;
 		}

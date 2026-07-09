@@ -1,6 +1,7 @@
 package in.hridaykh.formbox.controller;
 
 import in.hridaykh.formbox.constant.PathRegistry;
+import in.hridaykh.formbox.constant.Tiers;
 import in.hridaykh.formbox.constant.ViewRegistry;
 import in.hridaykh.formbox.model.dto.CachedForm;
 import in.hridaykh.formbox.model.dto.FormSubmissionsResponse;
@@ -42,7 +43,7 @@ public class FormController {
 		UUID tenantId = UUID.fromString(Objects.requireNonNull(userMetadata.getSub()));
 		String highestTier = tenantTierCacheService.resolveHighestActiveTierNonNull(tenantId);
 
-		if ("free-v1".equals(highestTier) && redirectUrl != null && !redirectUrl.isBlank()) {
+		if (!Tiers.t(highestTier).redirectUrlAllowed() && redirectUrl != null && !redirectUrl.isBlank()) {
 			log.warn("Tier constraint violation intercepted. Free tier tenant: {} attempted custom redirect validation rules.", tenantId);
 			redirectUrl = null;
 			msgParam = "?msg=upgrade_required_for_redirect";
@@ -124,11 +125,13 @@ public class FormController {
 		}
 
 		boolean tierViolationAttempted = false;
+
 		String subscriptionTier = tenantTierCacheService.resolveHighestActiveTierNonNull(form.getTenant().getId());
-		if ("free-v1".equals(subscriptionTier) && redirectUrl != null && !redirectUrl.isBlank()) {
+		if (!Tiers.t(subscriptionTier).redirectUrlAllowed() && redirectUrl != null && !redirectUrl.isBlank()) {
 			log.warn("Intercepted invalid configuration upgrade tier parameter state. Dropping restricted input field variables for form: {}", formId);
 			redirectUrl = null;
 			tierViolationAttempted = true;
+			model.addAttribute("warningMessage", "Settings updated, but custom redirects require a premium upgrade!");
 		}
 
 		form.setName(name);
@@ -143,11 +146,8 @@ public class FormController {
 
 		model.addAttribute("form", savedForm);
 
-		if (tierViolationAttempted) {
-			model.addAttribute("warningMessage", "Settings updated, but custom redirects require a premium upgrade!");
-		} else {
+		if (!tierViolationAttempted)
 			model.addAttribute("message", "Form configurations updated successfully!");
-		}
 
 		return ViewRegistry.Fragments.SETTINGS;
 	}
