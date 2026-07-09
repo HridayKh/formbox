@@ -4,6 +4,7 @@ import in.hridaykh.formbox.constant.CacheNames;
 import in.hridaykh.formbox.model.entity.Purchases;
 import in.hridaykh.formbox.model.enums.SubscriptionState;
 import in.hridaykh.formbox.repository.PurchasesRepository;
+import io.sentry.spring7.tracing.SentrySpan;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -25,6 +26,7 @@ public class TenantTierCacheService {
 	private final StringRedisTemplate stringRedisTemplate;
 
 	@Cacheable(value = CacheNames.TENANT_TIERS, key = "#tenantId.toString()")
+	@SentrySpan
 	public String resolveHighestActiveTierNonNull(UUID tenantId) {
 		log.trace("Resolving guaranteed non-null tier context for tenant ID: {}", tenantId);
 		String tier = resolveHighestActiveTierNullable(tenantId);

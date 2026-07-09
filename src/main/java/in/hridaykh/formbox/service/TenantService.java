@@ -1,6 +1,5 @@
 package in.hridaykh.formbox.service;
 
-import in.hridaykh.formbox.constant.CacheNames;
 import in.hridaykh.formbox.model.entity.PolarProducts;
 import in.hridaykh.formbox.model.entity.Purchases;
 import in.hridaykh.formbox.model.entity.Tenant;
@@ -12,7 +11,6 @@ import in.hridaykh.formbox.service.cache.TenantTierCacheService;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sh.polar.sdk.Polar;
@@ -26,7 +24,7 @@ import java.util.*;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class DashboardService {
+public class TenantService {
 
 	private final TenantRepository tenantRepository;
 	private final PurchasesRepository purchasesRepository;
@@ -36,18 +34,9 @@ public class DashboardService {
 	private final PolarCacheService polarCacheService;
 
 	@Transactional
-	@Cacheable(value = CacheNames.TENANT_ID_VALID, key = "#userMetadata.getSub()")
-	public UUID getOrCreateTenantWithFreeSubscription(JwtPayload userMetadata) {
+	public void getOrCreateTenantWithFreeSubscription(JwtPayload userMetadata) {
 		UUID userId = UUID.fromString(Objects.requireNonNull(userMetadata.getSub()));
-		log.trace("Initiating tenant onboarding check or dynamic synchronization context for user ID: {}", userId);
-
-		String tier = tenantTierCacheService.resolveHighestActiveTierNullable(userId);
-		if (tier != null) {
-			log.trace("Tenant workspace validation hit. Active product tier metadata [{}] present for user: {}", tier, userId);
-			return userId;
-		}
-
-		log.debug("No active subscription tier found for user ID: {}. Initiating onboarding or free fallback backfill process.", userId);
+		log.debug("Initiating onboarding after auth callback for: {}", userId);
 		Tenant tenant = tenantRepository.findById(userId).orElseGet(() -> {
 			log.info("Tenant workspace record missing from local database storage. Registering new tenant row for ID: {}", userId);
 			Tenant newTenant = new Tenant();
@@ -57,8 +46,6 @@ public class DashboardService {
 		});
 
 		ensureFreeSubscriptionProvisioned(tenant);
-
-		return tenant.getId();
 	}
 
 	private void ensureFreeSubscriptionProvisioned(Tenant tenant) {

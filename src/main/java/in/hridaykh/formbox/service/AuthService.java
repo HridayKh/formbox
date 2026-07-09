@@ -22,6 +22,7 @@ import java.time.Duration;
 public class AuthService {
 
 	private final AuthServiceKt authServiceKt;
+	private final TenantService tenantService;
 
 	public void processLoginPage(String msg, HttpServletResponse response) {
 		log.trace("Processing login page evaluation. Provided message trigger parameter: [{}]", msg);
@@ -41,15 +42,15 @@ public class AuthService {
 		response.setHeader("HX-Redirect", PathRegistry.Auth.Hx.LOGIN_CHECK_EMAIL);
 	}
 
-	public void authenticateUser(SupabaseClient supabaseClient, LoginRequest request, HttpServletResponse response) {
-		log.debug("Initiating authentication workflow execution for user: {}", request.getEmail());
+	public void loginUser(SupabaseClient supabaseClient, LoginRequest request, HttpServletResponse response) {
+		log.debug("Initiating login for user: {}", request.getEmail());
 
 		AuthResponse auth = authServiceKt.login(supabaseClient, request);
 
 		setAuthCookie(response, "sb_token", auth.getAccessToken(), 3600);
 		setAuthCookie(response, "sb_refresh", auth.getRefreshToken(), 604800);
 
-		log.info("Authentication successful. Assigned secure cookie contexts for verified UID payload reference: {}", auth.getUserId());
+		log.info("Login successful. Assigned secure cookie contexts for verified UID payload reference: {}", auth.getUserId());
 		response.setHeader("HX-Redirect", PathRegistry.DASHBOARD);
 	}
 
@@ -78,11 +79,15 @@ public class AuthService {
 		log.info("Verification email resend workflow dispatched successfully for: {}", email);
 	}
 
-	public void handleOAuthCallback(String accessToken, String refreshToken, int expiresInSeconds, HttpServletResponse response) {
+	public void handleOAuthCallback(SupabaseClient supabaseClient, String accessToken, String refreshToken, int expiresInSeconds, HttpServletResponse response) {
 		log.debug("Processing incoming OAuth callback payload. Setting local session cookies with expiration: {}s", expiresInSeconds);
 
 		setAuthCookie(response, "sb_token", accessToken, expiresInSeconds);
 		setAuthCookie(response, "sb_refresh", refreshToken, (int) Duration.ofDays(7).toSeconds());
+
+		var userMetadata = authServiceKt.getUserMetadata(supabaseClient, accessToken);
+		assert userMetadata != null;
+		tenantService.getOrCreateTenantWithFreeSubscription(userMetadata);
 
 		log.info("OAuth session completely established and secure cookies injected successfully.");
 		response.setHeader("HX-Redirect", PathRegistry.DASHBOARD);

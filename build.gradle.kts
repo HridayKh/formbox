@@ -36,7 +36,7 @@ sentry {
 	projectName = "formbox"
 	authToken = System.getenv("SENTRY_AUTH_TOKEN")
 }
-
+extra["opentelemetry.version"] = "1.63.0"
 dependencies {
 	// Standard Spring Boot dependencies
 	implementation("org.springframework.boot:spring-boot-starter-webmvc")
@@ -45,8 +45,16 @@ dependencies {
 	implementation("org.postgresql:postgresql")
 
 	// logging
-	implementation("io.sentry:sentry-async-profiler:8.47.0")
-	implementation("io.sentry:sentry-logback:8.47.0")
+
+	// logging
+//	implementation(platform("io.sentry:sentry-bom:8.48.0"))
+	implementation("io.sentry:sentry-spring-boot-4:8.48.0")
+	implementation("io.sentry:sentry-async-profiler:8.48.0")
+	implementation("io.sentry:sentry-logback:8.48.0")
+	implementation("io.sentry:sentry-opentelemetry-agentless-spring:8.48.0")
+	implementation(platform("io.opentelemetry:opentelemetry-bom:1.63.0"))
+	implementation(platform("io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:2.29.0"))
+	implementation("io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter")
 
 	// caching
 	implementation("org.springframework.boot:spring-boot-starter-cache")

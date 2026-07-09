@@ -100,10 +100,10 @@ public class SupabaseSessionFilter extends OncePerRequestFilter {
 
 		if ("true".equals(request.getHeader("HX-Request"))) {
 			log.debug("HTMX request metadata verified. Returning target redirect custom header element.");
-			response.setHeader("HX-Redirect", PathRegistry.Auth.Redirects.TO_LOGIN_UNAUTHORIZED);
 			response.setStatus(HttpServletResponse.SC_OK);
+			response.setHeader("HX-Redirect", PathRegistry.Auth.Hx.LOGIN_UNAUTHORIZED);
 		} else {
-			response.sendRedirect(PathRegistry.Auth.Redirects.TO_LOGIN_UNAUTHORIZED);
+			response.sendRedirect(PathRegistry.Auth.Hx.LOGIN_UNAUTHORIZED);
 		}
 	}
 

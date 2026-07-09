@@ -17,6 +17,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletResponse;
+
 @Controller
 @RequestMapping(PathRegistry.Auth.BASE)
 @Slf4j
@@ -71,7 +72,7 @@ public class AuthController {
 	public String handleLogin(@RequestParam String email, @RequestParam String password, @RequestAttribute SupabaseClient supabaseClient, HttpServletResponse response, Model model) {
 		log.debug("Processing HTTP POST authentication payload submission for email: {}", email);
 		try {
-			authService.authenticateUser(supabaseClient, new LoginRequest(email, password), response);
+			authService.loginUser(supabaseClient, new LoginRequest(email, password), response);
 			return ViewRegistry.Auth.Fragments.EMPTY;
 		} catch (InvalidCredentialsException e) {
 			log.warn("Authentication clearance challenge failed for target identifier: {}", email);
@@ -107,10 +108,10 @@ public class AuthController {
 
 	@PostMapping(PathRegistry.Auth.SESSION_CALLBACK)
 	@ResponseBody
-	public void handleSessionCallback(@RequestParam("access_token") String accessToken, @RequestParam("refresh_token") String refreshToken, @RequestParam("expires_in") int expiresInSeconds, HttpServletResponse response) {
+	public void handleSessionCallback(@RequestParam("access_token") String accessToken, @RequestParam("refresh_token") String refreshToken, @RequestParam("expires_in") int expiresInSeconds, @RequestAttribute SupabaseClient supabaseClient, HttpServletResponse response) {
 		log.debug("Processing HTTP POST OAuth session callback hook. Evaluated expiration lifecycle limit: {}s", expiresInSeconds);
 		try {
-			authService.handleOAuthCallback(accessToken, refreshToken, expiresInSeconds, response);
+			authService.handleOAuthCallback(supabaseClient, accessToken, refreshToken, expiresInSeconds, response);
 		} catch (Exception e) {
 			log.error("Critical token initialization breakdown running security payload validation callback.", e);
 			response.setHeader("HX-Redirect", PathRegistry.Auth.LOGIN + "?error=callback_failed");
