@@ -5,8 +5,10 @@ import io.github.jan.supabase.auth.exception.AuthRestException;
 import io.github.jan.supabase.auth.exception.TokenExpiredException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
@@ -24,6 +26,24 @@ public class GlobalExceptionHandler {
 	public ModelAndView handle404Error(NoResourceFoundException ex) {
 		log.debug("Resource Not Found: {}", ex.getMessage(), ex);
 		return buildErrorResponse("", ex.getMessage(), HttpStatus.NOT_FOUND);
+	}
+
+	@ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+	public ModelAndView handle40Error(HttpRequestMethodNotSupportedException ex) {
+		log.info("Invalid Request Method: {}", ex.getMethod());
+		return buildErrorResponse("", ex.getMessage(), HttpStatus.NOT_FOUND);
+	}
+
+	@ExceptionHandler(MultipartException.class)
+	public ModelAndView handleMultipartException(MultipartException ex) {
+		Throwable rootCause = ex.getRootCause();
+		if (rootCause instanceof java.io.EOFException || ex.getMessage().contains("parse multipart")) {
+			log.info("Client disconnected or sent malformed data during multipart upload: {}", ex.getMessage());
+			return buildErrorResponse("Incomplete multipart request", "", HttpStatus.BAD_REQUEST);
+		}
+
+		log.info("Multipart exception encountered: ", ex);
+		return buildErrorResponse("Malformed request", "", HttpStatus.BAD_REQUEST);
 	}
 
 	@ExceptionHandler(AuthRestException.class)
