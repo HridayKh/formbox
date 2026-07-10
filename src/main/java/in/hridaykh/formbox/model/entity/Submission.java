@@ -1,19 +1,33 @@
 package in.hridaykh.formbox.model.entity;
 
+import in.hridaykh.formbox.model.dto.CachedForm;
+import in.hridaykh.formbox.model.dto.SubmissionItem;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 @Entity
 @Table(name = "submissions", indexes = {@Index(name = "idx_submissions_form_id", columnList = "form_id")})
-@Data
+@Getter
+@NoArgsConstructor
 public class Submission {
+
+	public Submission(Form form, Map<String, String> payload, String senderIp, Boolean isSpam) {
+		this.form = form;
+		this.payload = payload;
+		this.senderIp = senderIp;
+		this.isSpam = isSpam;
+	}
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.UUID)
@@ -37,5 +51,9 @@ public class Submission {
 	@Column(name = "created_at")
 	@ColumnDefault("NOW()")
 	private OffsetDateTime createdAt = OffsetDateTime.now();
+
+	public SubmissionItem toSubmissionItem() {
+		return new SubmissionItem(this.id, this.payload, this.senderIp, this.createdAt, this.isSpam);
+	}
 
 }

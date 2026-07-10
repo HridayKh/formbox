@@ -1,6 +1,7 @@
 package in.hridaykh.formbox.filter;
 
 import in.hridaykh.formbox.constant.CacheNames;
+import in.hridaykh.formbox.util.CloudflareIpValidator;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,13 +20,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HexFormat;
 import java.util.List;
 
 @Slf4j
@@ -94,25 +91,29 @@ public class IpRateLimitFilter extends OncePerRequestFilter {
 	}
 
 	private String getClientIp(HttpServletRequest request) {
+		String cfIp = request.getHeader("CF-Connecting-IP");
+		if (cfIp != null && !cfIp.isBlank()) {
+			String cleanCfIp = cfIp.trim();
+			return isCloudflareIp(cleanCfIp) ? null : cleanCfIp;
+		}
+
 		String xff = request.getHeader("X-Forwarded-For");
-		if (xff != null && !xff.isBlank()) return hashIp(xff.split(",")[0].trim());
-		log.warn("no ip in xff");
+		if (xff != null && !xff.isBlank()) {
+			String firstXffIp = xff.split(",")[0].trim();
+			return isCloudflareIp(firstXffIp) ? null : firstXffIp;
+		}
+
+		String remoteAddr = request.getRemoteAddr();
+		if (remoteAddr != null && isCloudflareIp(remoteAddr.trim())) {
+			return null;
+		}
+
+		log.warn("No valid client IP address found in request headers.");
 		return null;
 	}
 
-	private String hashIp(String ip) {
-		try {
-			MessageDigest digest = MessageDigest.getInstance("SHA-256");
-
-			String salt = System.getenv("IP_RATE_LIMIT_SECRET_SALT");
-			String saltedIp = ip + (salt != null ? salt : "dev-fallback-salt");
-
-			byte[] hashBytes = digest.digest(saltedIp.getBytes(StandardCharsets.UTF_8));
-			return HexFormat.of().formatHex(hashBytes);
-		} catch (NoSuchAlgorithmException e) {
-			log.error("SHA-256 algorithm not found, falling back to raw IP tracking", e);
-			return ip;
-		}
+	private boolean isCloudflareIp(String ip) {
+		return ip != null && !ip.isBlank() && CloudflareIpValidator.contains(ip);
 	}
 
 	private void handleRateLimitViolation(boolean json, HttpServletResponse response) throws IOException {
