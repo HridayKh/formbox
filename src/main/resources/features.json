@@ -28,7 +28,7 @@
 		"json_allowed": true,
 		"files_allowed": true,
 		"max_file_size_mb": 5,
-		"total_storage_mb": 512,
+		"total_storage_mb": 1024,
 		"field_validations_allowed": true,
 		"notifs": {
 			"discord": true,
