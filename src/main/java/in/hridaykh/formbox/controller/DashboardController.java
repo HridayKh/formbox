@@ -2,7 +2,7 @@ package in.hridaykh.formbox.controller;
 
 import in.hridaykh.formbox.constant.PathRegistry;
 import in.hridaykh.formbox.constant.ViewRegistry;
-import in.hridaykh.formbox.service.cache.TenantTierCacheService;
+import in.hridaykh.formbox.service.cache.TenantCacheService;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -16,14 +16,14 @@ import java.util.UUID;
 @Slf4j
 public class DashboardController {
 
-	private final TenantTierCacheService tenantTierCacheService;
+	private final TenantCacheService tenantCacheService;
 
-	public DashboardController(TenantTierCacheService tenantTierCacheService) {
-		this.tenantTierCacheService = tenantTierCacheService;
+	public DashboardController(TenantCacheService tenantCacheService) {
+		this.tenantCacheService = tenantCacheService;
 	}
 
 	@GetMapping
-	public String showDashboard(@RequestAttribute JwtPayload userMetadata, @RequestParam(name = "customer_session_token", required = false) String customerSessionToken, Model model) {
+	public String showDashboard(@RequestAttribute JwtPayload userMetadata, @RequestParam(name = "customer_session_token", required = false) String customerSessionToken, @RequestParam(required = false) String msg, Model model) {
 		log.trace("Initiating dashboard view generation request routing context.");
 
 		if (userMetadata == null || userMetadata.getSub() == null) {
@@ -32,11 +32,12 @@ public class DashboardController {
 		}
 
 		UUID tenantId = UUID.fromString(userMetadata.getSub());
-		String activeTier = tenantTierCacheService.resolveHighestActiveTierNonNull(tenantId);
+		String activeTier = tenantCacheService.resolveHighestActiveTierNonNull(tenantId);
 		log.debug("Resolved active workspace references for Tenant ID: {}, Service Tier: {}", tenantId, activeTier);
 
 		model.addAttribute("user", userMetadata);
 		model.addAttribute("tier", activeTier);
+		model.addAttribute("msg", msg);
 
 		if (customerSessionToken != null && !customerSessionToken.isBlank()) {
 			log.info("Detected Polar query string authentication fallback parameter payload. Cleaning execution URL state via dynamic client-side refresh redirect loop.");

@@ -21,7 +21,7 @@ import java.util.UUID;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class TenantTierCacheService {
+public class TenantCacheService {
 
 	private final PurchasesRepository purchasesRepository;
 	private final StringRedisTemplate stringRedisTemplate;

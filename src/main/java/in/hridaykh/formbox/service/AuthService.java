@@ -93,7 +93,7 @@ public class AuthService {
 		response.setHeader("HX-Redirect", PathRegistry.DASHBOARD);
 	}
 
-	private void clearAuthCookies(HttpServletResponse response) {
+	public void clearAuthCookies(HttpServletResponse response) {
 		log.trace("Executing blanket wipe of local auth session tracking cookies.");
 		setAuthCookie(response, "sb_token", "", 0);
 		setAuthCookie(response, "sb_refresh", "", 0);
@@ -108,17 +108,5 @@ public class AuthService {
 		cookie.setPath("/");
 		cookie.setMaxAge(maxAge);
 		response.addCookie(cookie);
-	}
-
-	public UserSession refreshUserSession(SupabaseClient supabaseClient, String refreshToken) {
-		log.debug("Attempting to dynamically refresh user session tokens via upstream provider.");
-		try {
-			UserSession session = authServiceKt.refreshSession(supabaseClient, refreshToken);
-			log.debug("Session credentials successfully rolled and verified for continued access.");
-			return session;
-		} catch (Exception e) {
-			log.error("Failed to silently roll session credentials using provided refresh token.", e);
-			return null;
-		}
 	}
 }

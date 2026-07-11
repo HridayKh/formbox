@@ -3,7 +3,7 @@ package in.hridaykh.formbox.controller;
 import in.hridaykh.formbox.constant.PathRegistry;
 import in.hridaykh.formbox.constant.Tiers;
 import in.hridaykh.formbox.model.entity.PolarProducts;
-import in.hridaykh.formbox.service.cache.TenantTierCacheService;
+import in.hridaykh.formbox.service.cache.TenantCacheService;
 import in.hridaykh.formbox.service.polar.PolarCacheService;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +33,7 @@ public class BillingController {
 	private final Polar polar;
 	private final PolarHttpClient polarHttpClient;
 	private final PolarCacheService polarCacheService;
-	private final TenantTierCacheService tenantTierCacheService;
+	private final TenantCacheService tenantCacheService;
 
 	@PostMapping("/upgrade/{plan}")
 	@ResponseBody
@@ -60,7 +60,7 @@ public class BillingController {
 			return;
 		}
 
-		String tier = tenantTierCacheService.resolveHighestActiveTierNonNull(UUID.fromString(userId));
+		String tier = tenantCacheService.resolveHighestActiveTierNonNull(UUID.fromString(userId));
 		if (Tiers.isFree(tier)) {
 			log.warn("Customer {} attempted to redirect to checkout on free tier!", userId);
 			try {

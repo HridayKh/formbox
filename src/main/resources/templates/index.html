@@ -1,2004 +1,412 @@
-<!-- index.html -->
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Formbox — Forms for people who'd rather not build a backend</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FormBox — A form backend for sites with no backend</title>
     <meta name="description"
-          content="Formbox is a fast, secure form backend for developers. One action URL, no servers, spam filtering, Discord alerts, and CSV exports built in."/>
-
-    <link rel="preconnect" href="https://fonts.googleapis.com"/>
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
-          rel="stylesheet"/>
-    <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.10/dist/htmx.min.js" defer></script>
-    <link rel="shortcut icon"
-          href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMCAzMCIgd2lkdGg9IjMwIiBoZWlnaHQ9IjMwIj4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iZ3JhZGllbnQtYWNjZW50IiB4MT0iMCUiIHkxPSIwJSIgeDI9IjEwMCUiIHkyPSIxMDAlIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzRmNDZlNSIgLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMDZiNmQ0IiAvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIAogICAgPGZpbHRlciBpZD0ic2hhZG93LWdsb3ctc20iIHg9Ii0yMCUiIHk9Ii0yMCUiIHdpZHRoPSIxNDAlIiBoZWlnaHQ9IjE0MCUiPgogICAgICA8ZmVEcm9wU2hhZG93IGR4PSIwIiBkeT0iMiIgc3RkRGV2aWF0aW9uPSIzIiBmbG9vZC1jb2xvcj0iIzRmNDZlNSIgZmxvb2Qtb3BhY2l0eT0iMC4zIi8+CiAgICA8L2ZpbHRlcj4KICA8L2RlZnM+CgogIDxyZWN0IHdpZHRoPSIzMCIgaGVpZ2h0PSIzMCIgcng9IjYiIHJ5PSI2IiBmaWxsPSJ1cmwoI2dyYWRpZW50LWFjY2VudCkiIGZpbHRlcj0idXJsKCNzaGFkb3ctZ2xvdy1zbSkiLz4KCiAgPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNywgNykiPgogICAgPHN2ZyB2aWV3Qm94PSIwIDAgMjQgMjQiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+CiAgICAgIDxwYXRoIGQ9Ik00IDZoMTZNNCAxMmgxME00IDE4aDE2Ii8+CiAgICA8L3N2Zz4KICA8L2c+Cjwvc3ZnPgo="/>
-
-    <style>
-        /* ════════════════════════════════════════════════════
-           DESIGN TOKENS
-        ════════════════════════════════════════════════════ */
-        :root {
-            /* Canvas & surfaces */
-            --color-bg: #09090B;
-            --color-bg-raised: #0E0E12;
-            --color-surface: #121218;
-            --color-surface-2: #16161D;
-            --color-border: #1E1E24;
-            --color-border-2: #27272A;
-
-            /* Text */
-            --color-text: #F4F4F6;
-            --color-text-dim: #A3A3AE;
-            --color-text-faint: #6C6C77;
-
-            /* Accents */
-            --color-accent: #7C5CFC;
-            --color-accent-bright: #9B7CFF;
-            --color-accent-soft: rgba(124, 92, 252, 0.12);
-            --color-teal: #2DD8C4;
-            --color-teal-soft: rgba(45, 216, 196, 0.12);
-            --color-danger: #F36464;
-            --color-warning: #F2B84B;
-            --color-success: #34D399;
-
-            /* Gradients */
-            --gradient-accent: linear-gradient(135deg, #7C5CFC 0%, #5B3FE0 100%);
-            --gradient-glow: radial-gradient(circle at 30% 20%, rgba(124, 92, 252, 0.25), transparent 60%);
-
-            /* Typography */
-            --font-display: 'Inter', system-ui, -apple-system, sans-serif;
-            --font-body: 'Inter', system-ui, -apple-system, sans-serif;
-            --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
-
-            /* Spacing scale */
-            --space-1: 4px;
-            --space-2: 8px;
-            --space-3: 12px;
-            --space-4: 16px;
-            --space-5: 20px;
-            --space-6: 24px;
-            --space-8: 32px;
-            --space-10: 40px;
-            --space-12: 48px;
-            --space-16: 64px;
-            --space-20: 80px;
-            --space-24: 96px;
-
-            /* Radius */
-            --radius-sm: 6px;
-            --radius-md: 8px;
-            --radius-lg: 14px;
-            --radius-full: 999px;
-
-            /* Shadows */
-            --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.02) inset, 0 12px 32px -16px rgba(0, 0, 0, 0.6);
-            --shadow-glow: 0 0 0 1px rgba(124, 92, 252, 0.35), 0 0 32px rgba(124, 92, 252, 0.18);
-            --shadow-glow-sm: 0 0 0 1px rgba(124, 92, 252, 0.45), 0 0 16px rgba(124, 92, 252, 0.25);
-            --shadow-teal-glow: 0 0 0 1px rgba(45, 216, 196, 0.35), 0 0 28px rgba(45, 216, 196, 0.15);
-
-            --border: 1px solid var(--color-border);
-            --border-2: 1px solid var(--color-border-2);
-        }
-
-        /* ════════════════════════════════════════════════════
-           RESET & BASE
-        ════════════════════════════════════════════════════ */
-        *, *::before, *::after {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        html {
-            scroll-behavior: smooth;
-        }
-
-        body {
-            background: var(--color-bg);
-            color: var(--color-text);
-            font-family: var(--font-body);
-            font-size: 16px;
-            line-height: 1.6;
-            -webkit-font-smoothing: antialiased;
-            min-height: 100vh;
-        }
-
-        img, svg {
-            display: block;
-            max-width: 100%;
-        }
-
-        a {
-            color: inherit;
-        }
-
-        button, input, select, textarea {
-            font-family: inherit;
-            color: inherit;
-        }
-
-        ul {
-            list-style: none;
-        }
-
-        :focus-visible {
-            outline: 2px solid var(--color-accent-bright);
-            outline-offset: 2px;
-            border-radius: 4px;
-        }
-
-        /* ════════════════════════════════════════════════════
-           UTILITIES
-        ════════════════════════════════════════════════════ */
-        .container {
-            max-width: 1140px;
-            margin-inline: auto;
-            padding-inline: var(--space-6);
-        }
-
-        .section {
-            padding-block: var(--space-24);
-        }
-
-        .section--tight {
-            padding-block: var(--space-16);
-        }
-
-        .section--bordered {
-            border-top: var(--border);
-        }
-
-        .eyebrow {
-            font-family: var(--font-mono);
-            font-size: 0.72rem;
-            font-weight: 500;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            color: var(--color-accent-bright);
-            display: inline-flex;
-            align-items: center;
-            gap: var(--space-2);
-        }
-
-        .eyebrow::before {
-            content: '';
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: var(--color-accent-bright);
-            box-shadow: 0 0 8px var(--color-accent-bright);
-        }
-
-        .section-head {
-            max-width: 620px;
-            margin-bottom: var(--space-12);
-        }
-
-        .section-head h2 {
-            font-family: var(--font-display);
-            font-weight: 700;
-            font-size: clamp(1.8rem, 3.4vw, 2.5rem);
-            letter-spacing: -0.02em;
-            margin-top: var(--space-3);
-            line-height: 1.15;
-        }
-
-        .section-head p {
-            color: var(--color-text-dim);
-            font-size: 1.02rem;
-            margin-top: var(--space-4);
-            max-width: 56ch;
-        }
-
-        .section-head--center {
-            margin-inline: auto;
-            text-align: center;
-        }
-
-        .section-head--center .eyebrow {
-            justify-content: center;
-        }
-
-        .section-head--center p {
-            margin-inline: auto;
-        }
-
-        .text-mono {
-            font-family: var(--font-mono);
-        }
-
-        .text-dim {
-            color: var(--color-text-dim);
-        }
-
-        .text-faint {
-            color: var(--color-text-faint);
-        }
-
-        .visually-hidden {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            overflow: hidden;
-            clip: rect(0 0 0 0);
-            white-space: nowrap;
-        }
-
-        /* ════════════════════════════════════════════════════
-           BUTTONS
-        ════════════════════════════════════════════════════ */
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: var(--space-2);
-            font-family: var(--font-display);
-            font-weight: 600;
-            font-size: 0.92rem;
-            padding: 11px 22px;
-            border-radius: var(--radius-md);
-            border: 1px solid transparent;
-            cursor: pointer;
-            text-decoration: none;
-            white-space: nowrap;
-            transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, border-color 0.15s ease;
-        }
-
-        .btn--primary {
-            background: var(--gradient-accent);
-            color: #FFFFFF;
-            box-shadow: var(--shadow-glow-sm);
-        }
-
-        .btn--primary:hover {
-            transform: translateY(-1px);
-            box-shadow: var(--shadow-glow);
-        }
-
-        .btn--primary:active {
-            transform: translateY(0);
-        }
-
-        .btn--secondary {
-            background: var(--color-surface-2);
-            color: var(--color-text);
-            border-color: var(--color-border-2);
-        }
-
-        .btn--secondary:hover {
-            border-color: var(--color-accent);
-            background: var(--color-surface);
-        }
-
-        .btn--ghost {
-            background: transparent;
-            color: var(--color-text-dim);
-            border-color: transparent;
-        }
-
-        .btn--ghost:hover {
-            color: var(--color-text);
-            background: var(--color-surface-2);
-        }
-
-        .btn--outline-teal {
-            background: transparent;
-            color: var(--color-teal);
-            border-color: rgba(45, 216, 196, 0.35);
-        }
-
-        .btn--outline-teal:hover {
-            background: var(--color-teal-soft);
-            border-color: var(--color-teal);
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        .btn--lg {
-            padding: 14px 28px;
-            font-size: 1rem;
-        }
-
-        .btn--sm {
-            padding: 8px 16px;
-            font-size: 0.82rem;
-        }
-
-        .btn--full {
-            width: 100%;
-        }
-
-        .btn svg {
-            width: 16px;
-            height: 16px;
-            flex-shrink: 0;
-        }
-
-        /* ════════════════════════════════════════════════════
-           BADGES
-        ════════════════════════════════════════════════════ */
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-family: var(--font-mono);
-            font-size: 0.68rem;
-            font-weight: 500;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            padding: 4px 10px;
-            border-radius: var(--radius-full);
-            border: 1px solid var(--color-border-2);
-            background: var(--color-surface-2);
-            color: var(--color-text-dim);
-        }
-
-        .badge--pro {
-            color: #1A1A1A;
-            background: var(--color-teal);
-            border-color: var(--color-teal);
-            font-weight: 600;
-        }
-
-        .badge--accent {
-            color: var(--color-accent-bright);
-            background: var(--color-accent-soft);
-            border-color: rgba(124, 92, 252, 0.35);
-        }
-
-        .badge--live {
-            color: var(--color-success);
-            background: rgba(52, 211, 153, 0.1);
-            border-color: rgba(52, 211, 153, 0.3);
-        }
-
-        .badge--live::before {
-            content: '';
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: var(--color-success);
-            box-shadow: 0 0 6px var(--color-success);
-        }
-
-        /* ════════════════════════════════════════════════════
-           NAVBAR
-        ════════════════════════════════════════════════════ */
-        .navbar {
-            position: sticky;
-            top: 0;
-            z-index: 50;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: var(--space-4) var(--space-6);
-            background: rgba(9, 9, 11, 0.75);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-bottom: var(--border);
-        }
-
-        .navbar__inner {
-            max-width: 1140px;
-            margin-inline: auto;
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .navbar__logo {
-            display: flex;
-            align-items: center;
-            gap: var(--space-2);
-            text-decoration: none;
-            color: var(--color-text);
-        }
-
-        .navbar__logo-mark {
-            width: 30px;
-            height: 30px;
-            border-radius: var(--radius-sm);
-            background: var(--gradient-accent);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: var(--shadow-glow-sm);
-        }
-
-        .navbar__logo-mark svg {
-            width: 16px;
-            height: 16px;
-            color: #fff;
-        }
-
-        .navbar__wordmark {
-            font-family: var(--font-display);
-            font-weight: 700;
-            font-size: 1.05rem;
-            letter-spacing: -0.01em;
-        }
-
-        .navbar__links {
-            display: flex;
-            align-items: center;
-            gap: var(--space-8);
-        }
-
-        .navbar__link {
-            font-size: 0.92rem;
-            color: var(--color-text-dim);
-            text-decoration: none;
-            transition: color 0.15s ease;
-        }
-
-        .navbar__link:hover {
-            color: var(--color-text);
-        }
-
-        .navbar__actions {
-            display: flex;
-            align-items: center;
-            gap: var(--space-3);
-        }
-
-        .navbar__menu-toggle {
-            display: none;
-        }
-
-        @media (max-width: 760px) {
-            /*.navbar__links { display: none; }*/
-            /*.navbar__menu-toggle {*/
-            /*    display: inline-flex;*/
-            /*    align-items: center;*/
-            /*    justify-content: center;*/
-            /*    width: 38px; height: 38px;*/
-            /*    background: var(--color-surface-2);*/
-            /*    border: var(--border-2);*/
-            /*    border-radius: var(--radius-sm);*/
-            /*}*/
-        }
-
-        /* ════════════════════════════════════════════════════
-           HERO
-        ════════════════════════════════════════════════════ */
-        .hero {
-            position: relative;
-            overflow: hidden;
-            padding-block: var(--space-24) var(--space-20);
-        }
-
-        .hero::before {
-            content: '';
-            position: absolute;
-            inset: -20% -10% auto -10%;
-            height: 600px;
-            background: var(--gradient-glow);
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        .hero__grid {
-            position: relative;
-            z-index: 1;
-            display: grid;
-            grid-template-columns: 1.05fr 0.95fr;
-            gap: var(--space-16);
-            align-items: center;
-        }
-
-        .hero__badge-row {
-            display: flex;
-            align-items: center;
-            gap: var(--space-3);
-            margin-bottom: var(--space-5);
-        }
-
-        .hero h1 {
-            font-family: var(--font-display);
-            font-weight: 800;
-            font-size: clamp(2.5rem, 5vw, 3.6rem);
-            letter-spacing: -0.03em;
-            line-height: 1.05;
-            margin-bottom: var(--space-5);
-        }
-
-        .hero h1 .accent-text {
-            background: linear-gradient(90deg, var(--color-accent-bright), var(--color-teal));
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-        }
-
-        .hero__lede {
-            font-size: 1.12rem;
-            color: var(--color-text-dim);
-            max-width: 50ch;
-            margin-bottom: var(--space-8);
-        }
-
-        .hero__actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: var(--space-4);
-            margin-bottom: var(--space-8);
-        }
-
-        .hero__meta {
-            display: flex;
-            flex-wrap: wrap;
-            gap: var(--space-6);
-            font-size: 0.85rem;
-            color: var(--color-text-faint);
-        }
-
-        .hero__meta span {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .hero__meta svg {
-            width: 14px;
-            height: 14px;
-            color: var(--color-success);
-        }
-
-        /* Hero terminal — signature element */
-        .terminal {
-            background: var(--color-bg-raised);
-            border: var(--border-2);
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-card);
-            overflow: hidden;
-        }
-
-        .terminal__chrome {
-            display: flex;
-            align-items: center;
-            gap: var(--space-2);
-            padding: var(--space-3) var(--space-4);
-            border-bottom: var(--border);
-            background: var(--color-surface);
-        }
-
-        .terminal__dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-        }
-
-        .terminal__dot--red {
-            background: #F36464;
-        }
-
-        .terminal__dot--yellow {
-            background: #F2B84B;
-        }
-
-        .terminal__dot--green {
-            background: #34D399;
-        }
-
-        .terminal__title {
-            margin-left: var(--space-2);
-            font-family: var(--font-mono);
-            font-size: 0.75rem;
-            color: var(--color-text-faint);
-        }
-
-        .terminal__body {
-            padding: var(--space-5);
-            font-family: var(--font-mono);
-            font-size: 0.84rem;
-            line-height: 1.75;
-            min-height: 220px;
-        }
-
-        .terminal__prompt {
-            color: var(--color-text-faint);
-        }
-
-        .terminal__cmd {
-            color: var(--color-text);
-        }
-
-        .tok-key {
-            color: var(--color-teal);
-        }
-
-        .tok-str {
-            color: #E8C97B;
-        }
-
-        .tok-num {
-            color: #9B7CFF;
-        }
-
-        .tok-bool {
-            color: #F36464;
-        }
-
-        .tok-punc {
-            color: var(--color-text-faint);
-        }
-
-        .tok-comment {
-            color: var(--color-text-faint);
-        }
-
-        .terminal__line-resp {
-            color: var(--color-text);
-            white-space: pre-wrap;
-        }
-
-        .terminal__caret {
-            display: inline-block;
-            width: 7px;
-            height: 16px;
-            background: var(--color-accent-bright);
-            vertical-align: -3px;
-            animation: blink 1s steps(1) infinite;
-        }
-
-        @keyframes blink {
-            50% {
-                opacity: 0;
-            }
-        }
-
-        /* ════════════════════════════════════════════════════
-           LOGO / TRUST STRIP
-        ════════════════════════════════════════════════════ */
-        .trust-strip {
-            border-block: var(--border);
-            padding-block: var(--space-6);
-        }
-
-        .trust-strip__row {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: space-between;
-            gap: var(--space-6);
-        }
-
-        .trust-strip__label {
-            font-family: var(--font-mono);
-            font-size: 0.72rem;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            color: var(--color-text-faint);
-        }
-
-        .trust-strip__items {
-            display: flex;
-            flex-wrap: wrap;
-            gap: var(--space-8);
-            align-items: center;
-            color: var(--color-text-faint);
-            font-size: 0.88rem;
-        }
-
-        .trust-strip__items span {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .trust-strip__items svg {
-            width: 16px;
-            height: 16px;
-        }
-
-        /* ════════════════════════════════════════════════════
-           WAITLIST / EMAIL CAPTURE (HTMX)
-        ════════════════════════════════════════════════════ */
-        .waitlist {
-            background: var(--color-surface);
-            border: var(--border-2);
-            border-radius: var(--radius-lg);
-            padding: var(--space-10) var(--space-10);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: var(--space-10);
-            flex-wrap: wrap;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .waitlist::after {
-            content: '';
-            position: absolute;
-            right: -60px;
-            top: -60px;
-            width: 240px;
-            height: 240px;
-            background: radial-gradient(circle, rgba(124, 92, 252, 0.18), transparent 70%);
-        }
-
-        .waitlist__copy {
-            max-width: 420px;
-            position: relative;
-            z-index: 1;
-        }
-
-        .waitlist__copy h3 {
-            font-family: var(--font-display);
-            font-weight: 700;
-            font-size: 1.4rem;
-            margin-top: var(--space-2);
-            margin-bottom: var(--space-2);
-        }
-
-        .waitlist__copy p {
-            color: var(--color-text-dim);
-            font-size: 0.95rem;
-        }
-
-        .waitlist-form {
-            display: flex;
-            gap: var(--space-3);
-            flex-wrap: wrap;
-            position: relative;
-            z-index: 1;
-            flex: 1;
-            min-width: 280px;
-            max-width: 440px;
-        }
-
-        .waitlist-form__field {
-            flex: 1;
-            min-width: 200px;
-            position: relative;
-        }
-
-        .waitlist-form .input {
-            width: 100%;
-        }
-
-        .waitlist-form .btn {
-            flex-shrink: 0;
-        }
-
-        .htmx-indicator {
-            display: none;
-        }
-
-        .htmx-request .htmx-indicator {
-            display: inline-flex;
-        }
-
-        .htmx-request .btn-label {
-            display: none;
-        }
-
-        .success-card {
-            display: flex;
-            align-items: center;
-            gap: var(--space-4);
-            background: var(--color-teal-soft);
-            border: 1px solid rgba(45, 216, 196, 0.35);
-            border-radius: var(--radius-md);
-            padding: var(--space-5) var(--space-6);
-            flex: 1;
-            min-width: 280px;
-            max-width: 440px;
-        }
-
-        .success-card__icon {
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            background: var(--color-teal);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .success-card__icon svg {
-            width: 18px;
-            height: 18px;
-            color: #06231F;
-        }
-
-        .success-card strong {
-            display: block;
-            font-size: 0.96rem;
-            margin-bottom: 2px;
-        }
-
-        .success-card span {
-            color: var(--color-text-dim);
-            font-size: 0.85rem;
-        }
-
-        /* ════════════════════════════════════════════════════
-           FORM INPUTS
-        ════════════════════════════════════════════════════ */
-        .form-block {
-            display: flex;
-            flex-direction: column;
-            gap: var(--space-2);
-        }
-
-        .form-label {
-            font-family: var(--font-mono);
-            font-size: 0.72rem;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: var(--color-text-faint);
-        }
-
-        .input, .textarea, .select {
-            width: 100%;
-            background: var(--color-bg-raised);
-            color: var(--color-text);
-            border: var(--border-2);
-            border-radius: var(--radius-md);
-            padding: 12px 16px;
-            font-size: 0.92rem;
-            transition: border-color 0.15s ease, box-shadow 0.15s ease;
-            appearance: none;
-        }
-
-        .input::placeholder, .textarea::placeholder {
-            color: var(--color-text-faint);
-        }
-
-        .input:focus, .textarea:focus, .select:focus {
-            outline: none;
-            border-color: var(--color-accent);
-            box-shadow: 0 0 0 3px rgba(124, 92, 252, 0.18);
-        }
-
-        .textarea {
-            resize: vertical;
-            min-height: 96px;
-            font-family: var(--font-mono);
-            font-size: 0.85rem;
-        }
-
-        .select-wrap {
-            position: relative;
-        }
-
-        .select-wrap::after {
-            content: '';
-            position: absolute;
-            right: 16px;
-            top: 50%;
-            width: 9px;
-            height: 9px;
-            border-right: 2px solid var(--color-text-faint);
-            border-bottom: 2px solid var(--color-text-faint);
-            transform: translateY(-65%) rotate(45deg);
-            pointer-events: none;
-        }
-
-        .select {
-            cursor: pointer;
-            padding-right: 40px;
-        }
-
-        .input--error {
-            border-color: var(--color-danger);
-            box-shadow: 0 0 0 3px rgba(243, 100, 100, 0.15);
-        }
-
-        .form-error {
-            font-family: var(--font-mono);
-            font-size: 0.72rem;
-            color: var(--color-danger);
-        }
-
-        .input:disabled, .input--disabled {
-            opacity: 0.45;
-            cursor: not-allowed;
-        }
-
-        .spinner {
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-top-color: #fff;
-            animation: spin 0.7s linear infinite;
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        /* ════════════════════════════════════════════════════
-           FORM SIMULATOR
-        ════════════════════════════════════════════════════ */
-        .simulator {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: var(--space-6);
-            align-items: stretch;
-        }
-
-        .sim-panel {
-            background: var(--color-surface);
-            border: var(--border-2);
-            border-radius: var(--radius-lg);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .sim-panel__head {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: var(--space-4) var(--space-5);
-            border-bottom: var(--border);
-            background: var(--color-surface-2);
-        }
-
-        .sim-panel__head h4 {
-            font-family: var(--font-mono);
-            font-size: 0.78rem;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            color: var(--color-text-dim);
-        }
-
-        .sim-panel__body {
-            padding: var(--space-5);
-            flex: 1;
-        }
-
-        .code-block {
-            font-family: var(--font-mono);
-            font-size: 0.82rem;
-            line-height: 1.8;
-            color: var(--color-text-dim);
-            overflow-x: auto;
-            white-space: pre;
-        }
-
-        .code-block .tag {
-            color: var(--color-teal);
-        }
-
-        .code-block .attr {
-            color: #9B7CFF;
-        }
-
-        .code-block .val {
-            color: #E8C97B;
-        }
-
-        .code-block .punc {
-            color: var(--color-text-faint);
-        }
-
-        .sim-preview-fields {
-            display: flex;
-            flex-direction: column;
-            gap: var(--space-4);
-            margin-bottom: var(--space-5);
-        }
-
-        .sim-fake-input {
-            background: var(--color-bg-raised);
-            border: var(--border-2);
-            border-radius: var(--radius-md);
-            padding: 11px 14px;
-            font-size: 0.88rem;
-            color: var(--color-text-faint);
-        }
-
-        .sim-log {
-            background: var(--color-bg-raised);
-            border: var(--border-2);
-            border-radius: var(--radius-md);
-            padding: var(--space-4);
-            font-family: var(--font-mono);
-            font-size: 0.78rem;
-            color: var(--color-text-dim);
-            min-height: 120px;
-            max-height: 220px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .sim-log__placeholder {
-            color: var(--color-text-faint);
-        }
-
-        .sim-log__line {
-            display: flex;
-            gap: var(--space-2);
-            align-items: flex-start;
-        }
-
-        .sim-log__line .lt {
-            color: var(--color-text-faint);
-            flex-shrink: 0;
-        }
-
-        .sim-log__line--ok .lv {
-            color: var(--color-success);
-        }
-
-        .sim-log__line--meta {
-            color: var(--color-text-faint);
-        }
-
-        /* ════════════════════════════════════════════════════
-           FEATURE GRID
-        ════════════════════════════════════════════════════ */
-        .feature-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-            gap: var(--space-5);
-        }
-
-        .feature-card {
-            background: var(--color-surface);
-            border: var(--border-2);
-            border-radius: var(--radius-lg);
-            padding: var(--space-6);
-            display: flex;
-            flex-direction: column;
-            gap: var(--space-4);
-            transition: border-color 0.15s ease, transform 0.15s ease;
-        }
-
-        .feature-card:hover {
-            border-color: var(--color-border-2);
-            transform: translateY(-2px);
-        }
-
-        .feature-card__top {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: var(--space-3);
-        }
-
-        .feature-card__icon {
-            width: 42px;
-            height: 42px;
-            border-radius: var(--radius-md);
-            background: var(--color-accent-soft);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--color-accent-bright);
-        }
-
-        .feature-card--pro .feature-card__icon {
-            background: var(--color-teal-soft);
-            color: var(--color-teal);
-        }
-
-        .feature-card__icon svg {
-            width: 21px;
-            height: 21px;
-        }
-
-        .feature-card h3 {
-            font-family: var(--font-display);
-            font-weight: 600;
-            font-size: 1.04rem;
-        }
-
-        .feature-card p {
-            color: var(--color-text-dim);
-            font-size: 0.9rem;
-            line-height: 1.6;
-        }
-
-        /* ════════════════════════════════════════════════════
-           PRICING
-        ════════════════════════════════════════════════════ */
-        .pricing-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: var(--space-6);
-            max-width: 860px;
-            margin-inline: auto;
-        }
-
-        .pricing-card {
-            background: var(--color-surface);
-            border: var(--border-2);
-            border-radius: var(--radius-lg);
-            padding: var(--space-8);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .pricing-card--featured {
-            border-color: rgba(124, 92, 252, 0.5);
-            background: linear-gradient(180deg, rgba(124, 92, 252, 0.08), var(--color-surface) 40%);
-            box-shadow: var(--shadow-glow);
-            position: relative;
-        }
-
-        .pricing-card__badge {
-            position: absolute;
-            top: -13px;
-            left: var(--space-8);
-            background: var(--gradient-accent);
-            color: #fff;
-            font-family: var(--font-mono);
-            font-size: 0.66rem;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            padding: 5px 12px;
-            border-radius: var(--radius-full);
-        }
-
-        .pricing-card__plan {
-            font-family: var(--font-mono);
-            font-size: 0.78rem;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: var(--color-text-dim);
-            margin-bottom: var(--space-3);
-        }
-
-        .pricing-card__price {
-            display: flex;
-            align-items: baseline;
-            gap: 6px;
-            margin-bottom: var(--space-2);
-        }
-
-        .pricing-card__price strong {
-            font-family: var(--font-display);
-            font-size: 2.6rem;
-            font-weight: 800;
-            letter-spacing: -0.02em;
-        }
-
-        .pricing-card__price span {
-            color: var(--color-text-faint);
-            font-size: 0.92rem;
-        }
-
-        .pricing-card__sub {
-            color: var(--color-text-dim);
-            font-size: 0.9rem;
-            margin-bottom: var(--space-6);
-        }
-
-        .pricing-card__cta {
-            margin-bottom: var(--space-8);
-        }
-
-        .pricing-list {
-            display: flex;
-            flex-direction: column;
-            gap: var(--space-3);
-        }
-
-        .pricing-list li {
-            display: flex;
-            align-items: flex-start;
-            gap: var(--space-3);
-            font-size: 0.9rem;
-            color: var(--color-text);
-        }
-
-        .pricing-list svg {
-            width: 17px;
-            height: 17px;
-            color: var(--color-teal);
-            flex-shrink: 0;
-            margin-top: 2px;
-        }
-
-        .pricing-list--muted li {
-            color: var(--color-text-dim);
-        }
-
-        .pricing-list--muted svg {
-            color: var(--color-text-faint);
-        }
-
-        @media (max-width: 720px) {
-            .pricing-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .hero__grid {
-                grid-template-columns: 1fr;
-            }
-
-            .simulator {
-                grid-template-columns: 1fr;
-            }
-
-            .feature-grid {
-                grid-template-columns: 1fr 1fr;
-            }
-
-            .waitlist {
-                flex-direction: column;
-                align-items: stretch;
-            }
-        }
-
-        @media (max-width: 520px) {
-            .feature-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /* ════════════════════════════════════════════════════
-           FOOTER
-        ════════════════════════════════════════════════════ */
-        .site-footer {
-            border-top: var(--border);
-            padding-block: var(--space-12) var(--space-8);
-        }
-
-        .footer-grid {
-            display: grid;
-            grid-template-columns: 1.4fr 1fr 1fr 1fr;
-            gap: var(--space-10);
-            margin-bottom: var(--space-10);
-        }
-
-        .footer-brand p {
-            color: var(--color-text-dim);
-            font-size: 0.88rem;
-            margin-top: var(--space-3);
-            max-width: 32ch;
-        }
-
-        .footer-col h5 {
-            font-family: var(--font-mono);
-            font-size: 0.7rem;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            color: var(--color-text-faint);
-            margin-bottom: var(--space-4);
-        }
-
-        .footer-col ul {
-            display: flex;
-            flex-direction: column;
-            gap: var(--space-3);
-        }
-
-        .footer-col a {
-            color: var(--color-text-dim);
-            text-decoration: none;
-            font-size: 0.9rem;
-        }
-
-        .footer-col a:hover {
-            color: var(--color-text);
-        }
-
-        .footer-bottom {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: var(--space-4);
-            padding-top: var(--space-8);
-            border-top: var(--border);
-            font-size: 0.82rem;
-            color: var(--color-text-faint);
-        }
-
-        .footer-bottom__links {
-            display: flex;
-            gap: var(--space-6);
-        }
-
-        .footer-bottom a {
-            color: var(--color-text-faint);
-            text-decoration: none;
-        }
-
-        .footer-bottom a:hover {
-            color: var(--color-text-dim);
-        }
-
-        @media (max-width: 760px) {
-            .footer-grid {
-                grid-template-columns: 1fr 1fr;
-            }
-        }
-    </style>
+          content="FormBox catches submissions from any static site's HTML form. No server, no database, no glue code. Cloudflare-powered edge. Public beta — join the waitlist.">
+    <link rel="stylesheet" href="/assets/styles.css">
 </head>
 <body>
 
-<!-- ════════════════════════════════════════════
-     NAVIGATION
-════════════════════════════════════════════ -->
-<header class="navbar">
-    <div class="navbar__inner">
-        <a href="#" class="navbar__logo">
-      <span class="navbar__logo-mark">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-             stroke-linejoin="round" aria-hidden="true">
-          <path d="M4 6h16M4 12h10M4 18h16"/>
-        </svg>
-      </span>
-            <span class="navbar__wordmark">Formbox</span>
-        </a>
-        <nav class="navbar__links" aria-label="Primary">
-            <a class="navbar__link" href="#features">Features</a>
-            <a class="navbar__link" href="#pricing">Pricing</a>
-            <a class="navbar__link" href="#simulator">How it works</a>
-        </nav>
-        <div th:if="${loggedIn}" class="navbar__actions">
-            <a href="/dashboard" class="btn btn--primary btn--sm">Dashboard</a>
-        </div>
-        <div th:unless="${loggedIn}" class="navbar__actions">
-            <a href="/auth/login" class="btn btn--ghost btn--sm">Sign in</a>
-            <a href="#pricing" class="btn btn--primary btn--sm">Get your endpoint</a>
-        </div>
+<a class="skip-link" href="#main">Skip to content</a>
 
-        <button class="navbar__menu-toggle" aria-label="Open menu">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                 stroke-linecap="round">
-                <path d="M3 6h18M3 12h18M3 18h18"/>
-            </svg>
-        </button>
+<header class="site-header">
+    <div class="wrap header-inner">
+        <a class="logo" href="#top" aria-label="FormBox home">
+        <span class="logo-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" width="28" height="28"><rect x="2" y="8" width="28" height="20" rx="2"
+                                                                class="logo-box"/><path d="M2 10 L16 20 L30 10"
+                                                                                        class="logo-flap"/></svg>
+        </span>
+            <span class="logo-word">FormBox</span>
+        </a>
+
+        <nav class="main-nav" aria-label="Primary">
+            <ul>
+                <li><a href="#how-it-works">How it works</a></li>
+                <li><a href="#pricing">Pricing</a></li>
+                <li><a href="#faq">FAQ</a></li>
+            </ul>
+        </nav>
+
+        <div class="header-actions">
+            <div th:if="${loggedIn}">
+                <a class="btn btn-primary btn-small" href="/dashboard">Dashboard</a>
+            </div>
+            <div th:unless="${loggedIn}">
+                <a class="btn btn-secondary btn-small" href="/auth/signin">Sign in</a>
+                <a class="btn btn-primary btn-small" href="/auth/register">Register</a>
+            </div>
+            <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="mobileNav"
+                    aria-label="Open menu">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
     </div>
+
+    <nav class="mobile-nav" id="mobileNav" aria-label="Mobile">
+        <ul>
+            <li><a href="#how-it-works">How it works</a></li>
+            <li><a href="#pricing">Pricing</a></li>
+            <li><a href="#faq">FAQ</a></li>
+            <li th:if="${loggedIn}"><a class="btn btn-primary" href="/dashboard">Dashboard</a></li>
+            <li th:unless="${loggedIn}"><a class="btn btn-secondary" href="/auth/signin">Sign in</a></li>
+            <li th:unless="${loggedIn}"><a class="btn btn-primary" href="/auth/register">Register</a></li>
+        </ul>
+    </nav>
 </header>
 
-<!-- ════════════════════════════════════════════
-     HERO
-════════════════════════════════════════════ -->
-<section class="hero">
-    <div class="container">
-        <div class="hero__grid">
-            <div>
-                <div class="hero__badge-row">
-                    <span class="eyebrow">Now in public beta</span>
-                </div>
-                <h1>Forms for people who'd&nbsp;rather not build a&nbsp;<span class="accent-text">backend</span>.</h1>
-                <p class="hero__lede">Point an HTML form at a Formbox endpoint and you're done. Spam filtering, Discord
-                    alerts, CSV exports, and edge-grade security are already running — no server, no database, no glue
-                    code.</p>
-                <div class="hero__actions">
-                    <a href="#pricing" class="btn btn--primary btn--lg">
-                        Get your free endpoint
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                             stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M5 12h14M13 6l6 6-6 6"/>
-                        </svg>
-                    </a>
-                    <a href="#simulator" class="btn btn--secondary btn--lg">See it work</a>
-                </div>
-                <div class="hero__meta">
-                    <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
-                               stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> No credit card to start</span>
-                    <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
-                               stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> 200 free submissions / mo</span>
-                    <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
-                               stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Live in under a minute</span>
-                </div>
+<main id="main">
+
+    <!-- HERO -->
+    <section class="hero" id="top" aria-labelledby="hero-heading">
+        <div class="wrap hero-inner">
+            <div class="hero-copy">
+                <p class="stamp-badge">
+                    <span class="stamp-ring" aria-hidden="true"></span>
+                    Public beta &mdash; waitlist open
+                </p>
+
+                <h1 id="hero-heading">
+                    Point your <code>&lt;form&gt;</code> at us.<br>
+                    We'll take it from there.
+                </h1>
+
+                <p class="hero-sub">
+                    FormBox is a form backend for sites that don't have one. Add an endpoint to any HTML form and start
+                    receiving submissions &mdash; filtered, stored, and delivered from Cloudflare's edge network. No
+                    server. No database. No glue code.
+                </p>
+
+                <form class="waitlist-form" id="heroWaitlist" novalidate>
+                    <label class="visually-hidden" for="heroEmail">Email address</label>
+                    <input type="email" id="heroEmail" name="email" placeholder="you@yourdomain.com" required
+                           autocomplete="email">
+                    <button type="submit" class="btn btn-primary">Reserve my spot</button>
+                    <p class="form-note" role="status" aria-live="polite"></p>
+                </form>
+
+                <p class="hero-microcopy">No spam. One email when the public beta opens.</p>
             </div>
 
-            <div class="terminal" aria-hidden="true">
-                <div class="terminal__chrome">
-                    <span class="terminal__dot terminal__dot--red"></span>
-                    <span class="terminal__dot terminal__dot--yellow"></span>
-                    <span class="terminal__dot terminal__dot--green"></span>
-                    <span class="terminal__title">curl — formbox.dev</span>
+            <div class="hero-visual" aria-hidden="true">
+                <div class="code-card">
+                    <div class="code-card-head">
+                        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                        <span class="code-card-title">contact.html</span>
+                    </div>
+                    <pre class="code-card-body"><code><span class="tok-tag">&lt;form</span> <span class="tok-attr">action</span>=<span
+                            class="tok-str">"https://formbox.dev/f/abcd1234"</span> <span
+                            class="tok-attr">method</span>=<span class="tok-str">"POST"</span><span
+                            class="tok-tag">&gt;</span>
+  <span class="tok-tag">&lt;input</span> <span class="tok-attr">type</span>=<span class="tok-str">"email"</span> <span
+                                class="tok-attr">name</span>=<span class="tok-str">"email"</span> <span
+                                class="tok-attr">required</span><span class="tok-tag">&gt;</span>
+  <span class="tok-tag">&lt;textarea</span> <span class="tok-attr">name</span>=<span
+                                class="tok-str">"message"</span><span class="tok-tag">&gt;&lt;/textarea&gt;</span>
+  <span class="tok-tag">&lt;button&gt;</span>Send<span class="tok-tag">&lt;/button&gt;</span>
+<span class="tok-tag">&lt;/form&gt;</span></code></pre>
+                    <div class="code-card-foot">
+                        <span>200 OK</span>
+                        <span>delivered instantly</span>
+                        <span>multistep spam prevention</span>
+                    </div>
                 </div>
-                <div class="terminal__body">
-                    <div><span class="terminal__prompt">$</span> <span class="terminal__cmd">curl -X POST https://formbox.dev/f/8k2p9q \</span>
-                    </div>
-                    <div>&nbsp;&nbsp;-F <span class="tok-key">"email"</span><span class="tok-punc">=</span><span
-                            class="tok-str">"jamie@usepilot.dev"</span> \
-                    </div>
-                    <div>&nbsp;&nbsp;-F <span class="tok-key">"message"</span><span class="tok-punc">=</span><span
-                            class="tok-str">"loving the new dashboard"</span></div>
-                    <div>&nbsp;</div>
-                    <div class="terminal__line-resp"><span class="tok-punc">{</span></div>
-                    <div class="terminal__line-resp">&nbsp;&nbsp;<span class="tok-key">"ok"</span><span
-                            class="tok-punc">:</span> <span class="tok-bool">true</span><span class="tok-punc">,</span>
-                    </div>
-                    <div class="terminal__line-resp">&nbsp;&nbsp;<span class="tok-key">"id"</span><span
-                            class="tok-punc">:</span> <span class="tok-str">"sub_4f8a2c1e"</span><span class="tok-punc">,</span>
-                    </div>
-                    <div class="terminal__line-resp">&nbsp;&nbsp;<span class="tok-key">"spam_score"</span><span
-                            class="tok-punc">:</span> <span class="tok-num">0.01</span><span class="tok-punc">,</span>
-                    </div>
-                    <div class="terminal__line-resp">&nbsp;&nbsp;<span class="tok-key">"notified"</span><span
-                            class="tok-punc">:</span> <span class="tok-punc">[</span><span
-                            class="tok-str">"discord"</span><span class="tok-punc">]</span></div>
-                    <div class="terminal__line-resp"><span class="tok-punc">}</span></div>
-                    <div>&nbsp;</div>
-                    <div><span class="terminal__prompt">$</span> <span class="terminal__caret"></span></div>
+                <div class="postmark" aria-hidden="true">
+                    <span>PUBLIC</span> <span>BETA</span>
                 </div>
             </div>
         </div>
-    </div>
-</section>
+    </section>
 
-<!-- Trust strip -->
-<div class="trust-strip">
-    <div class="container trust-strip__row">
-        <span class="trust-strip__label">Built on infrastructure you already trust</span>
-        <div class="trust-strip__items">
-            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-                       stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.4 8.5-8 10-4.6-1.5-8-5-8-10V6l8-4z"/></svg> Edge network security</span>
-            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-                       stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/></svg> Sub-200ms response times</span>
-            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-                       stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> 99.95% uptime</span>
+    <!-- COMPATIBILITY STRIP -->
+    <section class="compat" aria-labelledby="compat-heading">
+        <div class="wrap">
+            <p id="compat-heading" class="compat-label">Ships with anything that renders a form tag</p>
+            <ul class="compat-list">
+                <li>Plain HTML</li>
+                <li>Astro</li>
+                <li>Hugo</li>
+                <li>Eleventy</li>
+                <li>Jekyll</li>
+                <li>Next.js static export</li>
+                <li>Webflow</li>
+                <li>Squarespace</li>
+            </ul>
         </div>
-    </div>
-</div>
+    </section>
 
-<!-- ════════════════════════════════════════════
-     WAITLIST / UPDATES (HTMX)
-════════════════════════════════════════════ -->
-<section class="section--tight">
-    <div class="container">
-        <div class="waitlist">
-            <div class="waitlist__copy">
-                <span class="eyebrow">Changelog</span>
-                <h3>Enter the waitlist</h3>
+    <!-- HOW IT WORKS -->
+    <section class="how" id="how-it-works" aria-labelledby="how-heading">
+        <div class="wrap">
+            <div class="section-head">
+                <p class="eyebrow">The route your data takes</p>
+                <h2 id="how-heading">Three stops between your visitor and your inbox</h2>
             </div>
 
-            <form id="waitlist-form"
-                  class="waitlist-form"
-                  hx-post=""
-                  hx-target="this"
-                  hx-swap="outerHTML"
-                  hx-indicator="#waitlist-indicator">
-                <div class="waitlist-form__field">
-                    <label class="visually-hidden" for="waitlist-email">Email address</label>
-                    <input class="input" id="waitlist-email" name="email" type="email" placeholder="you@company.com"
-                           required/>
-                </div>
-                <button class="btn btn--primary" type="submit">
-                    <span class="btn-label">Notify me</span>
-                    <span class="spinner htmx-indicator" id="waitlist-indicator" aria-hidden="true"></span>
-                </button>
+            <ol class="steps">
+                <li class="step">
+                    <span class="step-num">01</span>
+                    <h3>Point your form</h3>
+                    <p>Set the <code>action</code> attribute on any HTML form to your FormBox endpoint. No SDK, no npm
+                        install, no build step.</p>
+                </li>
+                <li class="step">
+                    <span class="step-num">02</span>
+                    <h3>We catch it at the edge</h3>
+                    <p>Cloudflare's network receives and validates every submission close to your visitor, wherever in
+                        the world they are.</p>
+                </li>
+                <li class="step">
+                    <span class="step-num">03</span>
+                    <h3>It lands in your inbox</h3>
+                    <p>Get pinged on Discord the moment someone submits &mdash; spam already filtered out before it
+                        reaches you.</p>
+                </li>
+            </ol>
+        </div>
+    </section>
+
+    <!-- PRICING / COMPARISON -->
+    <section class="pricing" id="pricing" aria-labelledby="pricing-heading">
+        <div class="wrap">
+            <div class="plans">
+
+                <!-- FREE -->
+                <article class="plan-card">
+                    <div class="tag-hole" aria-hidden="true"></div>
+                    <header class="plan-head">
+                        <h3>Free</h3>
+                        <p class="plan-tagline">For personal sites and side projects</p>
+                        <p class="plan-price"><span class="price-amount">$0</span><span
+                                class="price-period">/month</span></p>
+                    </header>
+                    <ul class="plan-features">
+                        <li><span class="icon-check" aria-hidden="true"></span>Cloudflare-powered edge</li>
+                        <li><span class="icon-check" aria-hidden="true"></span>100 submissions / month</li>
+                        <li><span class="icon-check" aria-hidden="true"></span>3 forms</li>
+                        <li class="is-limit"><span class="icon-x" aria-hidden="true"></span>No file uploads</li>
+                        <li><span class="icon-check" aria-hidden="true"></span>Discord notifications</li>
+                        <li><span class="icon-check" aria-hidden="true"></span>Honeypot spam protection</li>
+                    </ul>
+                    <a class="btn btn-secondary" href="#join">Join the waitlist</a>
+                </article>
+
+                <!-- STARTER -->
+                <article class="plan-card">
+                    <div class="tag-hole" aria-hidden="true"></div>
+                    <header class="plan-head">
+                        <h3>Starter</h3>
+                        <p class="plan-tagline">For freelancers shipping client sites</p>
+                        <p class="plan-price"><span class="price-amount">$2.99</span><span
+                                class="price-period">/month</span></p>
+                    </header>
+                    <ul class="plan-features">
+                        <li><span class="icon-check" aria-hidden="true"></span>Cloudflare-powered edge</li>
+                        <li><span class="icon-check" aria-hidden="true"></span>Redirect URLs &amp; AJAX/JSON endpoints
+                        </li>
+                        <li><span class="icon-check" aria-hidden="true"></span>1,000 submissions / month</li>
+                        <li><span class="icon-check" aria-hidden="true"></span>Unlimited forms</li>
+                        <li><span class="icon-check" aria-hidden="true"></span>1GB file storage <span
+                                class="feature-note">(10MB file limit)</span></li>
+                        <li><span class="icon-check" aria-hidden="true"></span>Cloudflare Turnstile integration</li>
+                        <li><span class="icon-check" aria-hidden="true"></span>Discord notifications</li>
+                        <li class="is-soon"><span class="icon-check" aria-hidden="true"></span>CSV exports <span
+                                class="badge-soon">Coming soon</span></li>
+                        <li class="is-soon"><span class="icon-check" aria-hidden="true"></span>Email digests <span
+                                class="badge-soon">Coming soon</span></li>
+                    </ul>
+                    <a class="btn btn-secondary" href="#join">Join the waitlist</a>
+                </article>
+
+                <!-- PRO -->
+                <article class="plan-card plan-featured">
+                    <p class="plan-ribbon">Most popular</p>
+                    <div class="tag-hole" aria-hidden="true"></div>
+                    <header class="plan-head">
+                        <h3>Pro</h3>
+                        <p class="plan-tagline">For teams running multiple properties</p>
+                        <p class="plan-price"><span class="price-amount">$7.99</span><span
+                                class="price-period">/month</span></p>
+                    </header>
+                    <ul class="plan-features">
+                        <li><span class="icon-check" aria-hidden="true"></span>Cloudflare-powered edge</li>
+                        <li><span class="icon-check" aria-hidden="true"></span>Redirect URLs &amp; AJAX/JSON endpoints
+                        </li>
+                        <li><span class="icon-check" aria-hidden="true"></span>10,000 submissions / month</li>
+                        <li><span class="icon-check" aria-hidden="true"></span>10GB file storage <span
+                                class="feature-note">(100MB file limit)</span></li>
+                        <li><span class="icon-check" aria-hidden="true"></span>Cloudflare Turnstile integration</li>
+                        <li><span class="icon-check" aria-hidden="true"></span>Discord notifications</li>
+                        <li class="is-soon"><span class="icon-check" aria-hidden="true"></span>CSV exports <span
+                                class="badge-soon">Coming soon</span></li>
+                        <li class="is-soon"><span class="icon-check" aria-hidden="true"></span>Email digests <span
+                                class="badge-soon">Coming soon</span></li>
+                        <li class="is-soon"><span class="icon-check" aria-hidden="true"></span>Slack integration <span
+                                class="badge-soon">Coming soon</span></li>
+                        <li class="is-soon"><span class="icon-check" aria-hidden="true"></span>Telegram integration
+                            <span class="badge-soon">Coming soon</span></li>
+                        <li class="is-soon"><span class="icon-check" aria-hidden="true"></span>Custom webhooks <span
+                                class="badge-soon">Coming soon</span></li>
+                    </ul>
+                    <a class="btn btn-primary" href="#join">Join the waitlist</a>
+                </article>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="faq" id="faq" aria-labelledby="faq-heading">
+        <div class="wrap">
+            <div class="section-head">
+                <p class="eyebrow">Questions</p>
+                <h2 id="faq-heading">Before you join the list</h2>
+            </div>
+
+            <div class="faq-list">
+                <details class="faq-item">
+                    <summary>Do I need to change my HTML?</summary>
+                    <p>Barely. Add one <code>action</code> attribute pointing at your FormBox endpoint. That's the
+                        entire integration &mdash; the rest of your form stays exactly as you wrote it.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>What happens when the public beta opens?</summary>
+                    <p>Everyone on the waitlist gets an invitation in signup order, along with an extended trial of
+                        whichever paid tier they reserved.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>Is there a hard cap on submissions?</summary>
+                    <p>Each tier's submission count resets monthly. If your forms outgrow your plan, you can upgrade at
+                        any point &mdash; nothing you've already collected is affected.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>Why Cloudflare's edge specifically?</summary>
+                    <p>Submissions are received by the data center nearest your visitor rather than a single origin
+                        server, so the round trip stays fast no matter where your traffic comes from.</p>
+                </details>
+            </div>
+        </div>
+    </section>
+
+    <!-- FINAL CTA -->
+    <section class="cta-final" id="join" aria-labelledby="cta-heading">
+        <div class="wrap cta-inner">
+            <div class="postmark postmark-final" aria-hidden="true">
+                <span>PUBLIC</span> <span>BETA</span>
+            </div>
+            <h2 id="cta-heading">Be first through the door</h2>
+            <p>Join the waitlist, and we'll email you the moment the public beta opens &mdash; with your reserved tier
+                already waiting.</p>
+
+            <form class="waitlist-form waitlist-form-final" id="finalWaitlist" novalidate>
+                <label class="visually-hidden" for="finalEmail">Email address</label>
+                <input type="email" id="finalEmail" name="email" placeholder="you@yourdomain.com" required
+                       autocomplete="email">
+                <button type="submit" class="btn btn-primary">Join the waitlist</button>
+                <p class="form-note" role="status" aria-live="polite"></p>
             </form>
-
-            <template id="waitlist-success-template">
-                <div class="success-card" role="status">
-          <span class="success-card__icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"
-                 stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-          </span>
-                    <div>
-                        <strong>You're on the list! 🚀</strong>
-                    </div>
-                </div>
-            </template>
         </div>
-    </div>
-</section>
+    </section>
 
-<!-- ════════════════════════════════════════════
-     INTERACTIVE FORM SIMULATOR
-════════════════════════════════════════════ -->
-<section class="section section--bordered" id="simulator">
-    <div class="container">
-        <div class="section-head">
-            <span class="eyebrow">How it works</span>
-            <h2>One form attribute. That's the whole integration.</h2>
-            <p>Point any HTML form at your Formbox endpoint, submit it, and watch the request land below — exactly what
-                happens in production.</p>
-        </div>
+</main>
 
-        <div class="simulator">
-            <div class="sim-panel">
-                <div class="sim-panel__head">
-                    <h4>your-site/contact.html</h4>
-                    <span class="badge">HTML</span>
-                </div>
-                <div class="sim-panel__body">
-          <pre class="code-block"><span class="punc">&lt;</span><span class="tag">form</span> <span
-                  class="attr">action</span><span class="punc">=</span><span
-                  class="val">"https://formbox.dev/f/8k2p9q"</span>
-      <span class="attr">method</span><span class="punc">=</span><span class="val">"POST"</span><span
-                      class="punc">&gt;</span>
-
-  <span class="punc">&lt;</span><span class="tag">input</span> <span class="attr">type</span><span class="punc">=</span><span
-                      class="val">"email"</span>
-         <span class="attr">name</span><span class="punc">=</span><span class="val">"email"</span> <span class="attr">required</span><span
-                      class="punc">&gt;</span>
-
-  <span class="punc">&lt;</span><span class="tag">textarea</span> <span class="attr">name</span><span
-                      class="punc">=</span><span class="val">"message"</span><span class="punc">&gt;&lt;/</span><span
-                      class="tag">textarea</span><span class="punc">&gt;</span>
-
-  <span class="punc">&lt;!-- invisible honeypot, no JS needed --&gt;</span>
-  <span class="punc">&lt;</span><span class="tag">input</span> <span class="attr">type</span><span class="punc">=</span><span
-                      class="val">"text"</span>
-         <span class="attr">name</span><span class="punc">=</span><span class="val">"_gotcha"</span>
-         <span class="attr">style</span><span class="punc">=</span><span class="val">"display:none"</span><span
-                      class="punc">&gt;</span>
-
-  <span class="punc">&lt;</span><span class="tag">button</span> <span class="attr">type</span><span
-                      class="punc">=</span><span class="val">"submit"</span><span class="punc">&gt;</span>Send<span
-                      class="punc">&lt;/</span><span class="tag">button</span><span class="punc">&gt;</span>
-<span class="punc">&lt;/</span><span class="tag">form</span><span class="punc">&gt;</span></pre>
-                </div>
-            </div>
-
-            <div class="sim-panel">
-                <div class="sim-panel__head">
-                    <h4>Live preview</h4>
-                    <span class="badge badge--live" id="sim-status">Idle</span>
-                </div>
-                <div class="sim-panel__body">
-                    <div class="sim-preview-fields">
-                        <div class="sim-fake-input" id="sim-email-preview">email — waiting for input</div>
-                        <div class="sim-fake-input" id="sim-message-preview">message — waiting for input</div>
-                    </div>
-                    <button class="btn btn--secondary btn--full" id="sim-trigger" type="button">Send a test submission
-                    </button>
-                    <div class="sim-log" id="sim-log" style="margin-top: var(--space-4);">
-                        <span class="sim-log__placeholder">Submissions will appear here as they arrive…</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- ════════════════════════════════════════════
-     FEATURE GRID
-════════════════════════════════════════════ -->
-<section class="section section--bordered" id="features">
-    <div class="container">
-        <div class="section-head">
-            <span class="eyebrow">Features</span>
-            <h2>Everything a form backend should do, and nothing it shouldn't.</h2>
-            <p>Formbox handles the parts of form handling nobody wants to rebuild — spam, storage, and notifications —
-                so you can ship the rest of your product.</p>
-        </div>
-
-        <div class="feature-grid">
-            <article class="feature-card">
-                <div class="feature-card__top">
-          <span class="feature-card__icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-                 stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path
-                    d="M7 9h10M7 13h6"/></svg>
-          </span>
-                </div>
-                <h3>Plain HTML forms</h3>
-                <p>Set the <code class="text-mono">action</code> attribute to your endpoint URL. No SDK, no build step,
-                    no JavaScript required.</p>
-            </article>
-
-            <article class="feature-card">
-                <div class="feature-card__top">
-          <span class="feature-card__icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-                 stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/></svg>
-          </span>
-                </div>
-                <h3>AJAX &amp; JSON endpoints</h3>
-                <p>Submit with <code class="text-mono">fetch</code> and Formbox responds in JSON, ready for any modern
-                    frontend stack.</p>
-            </article>
-
-            <article class="feature-card">
-                <div class="feature-card__top">
-          <span class="feature-card__icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-                 stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.4 8.5-8 10-4.6-1.5-8-5-8-10V6l8-4z"/><circle cx="12"
-                                                                                                                 cy="11"
-                                                                                                                 r="2"/></svg>
-          </span>
-                </div>
-                <h3>Built-in honeypot</h3>
-                <p>An invisible trap field filters out bots before they ever touch your inbox — zero configuration
-                    required.</p>
-            </article>
-
-            <article class="feature-card">
-                <div class="feature-card__top">
-          <span class="feature-card__icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-                 stroke-linejoin="round"><path
-                    d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-          </span>
-                </div>
-                <h3>Discord notifications</h3>
-                <p>New submissions route straight to a channel of your choice, batched at most once a minute so it stays
-                    readable.</p>
-            </article>
-
-            <article class="feature-card">
-                <div class="feature-card__top">
-          <span class="feature-card__icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-                 stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path
-                    d="M12 15V3"/></svg>
-          </span>
-                </div>
-                <h3>One-click CSV export</h3>
-                <p>Pull every submission into a spreadsheet whenever you need it — no API call, no waiting on a data
-                    export job.</p>
-            </article>
-
-            <article class="feature-card">
-                <div class="feature-card__top">
-          <span class="feature-card__icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-                 stroke-linejoin="round"><path d="M14 3h7v7"/><path d="M21 3l-9 9"/><path
-                    d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></svg>
-          </span>
-                </div>
-                <h3>Custom redirect URLs</h3>
-                <p>Send people to a thank-you page, a pricing page, or wherever your funnel needs them to land next.</p>
-            </article>
-
-            <article class="feature-card">
-                <div class="feature-card__top">
-          <span class="feature-card__icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-                 stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/><path
-                    d="M12 12v4M10 14h4"/></svg>
-          </span>
-                </div>
-                <h3>Cloudflare-powered edge</h3>
-                <p>Every endpoint runs behind enterprise-grade DDoS mitigation and edge security by default — no setup
-                    needed.</p>
-            </article>
-
-            <article class="feature-card feature-card--pro">
-                <div class="feature-card__top">
-          <span class="feature-card__icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-                 stroke-linejoin="round"><path d="M21 7L13 15l-4-4-6 6"/><path d="M14 7h7v7"/></svg>
-          </span>
-                    <span class="badge badge--pro">Pro</span>
-                </div>
-                <h3>Custom webhooks</h3>
-                <p>Forward every submission to your own endpoint in real time — pipe it into Slack, a CRM, or your own
-                    database.</p>
-            </article>
-
-            <article class="feature-card feature-card--pro">
-                <div class="feature-card__top">
-          <span class="feature-card__icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-                 stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.4 8.5-8 10-4.6-1.5-8-5-8-10V6l8-4z"/><path
-                    d="M9 12l2 2 4-4"/></svg>
-          </span>
-                    <span class="badge badge--pro">Pro</span>
-                </div>
-                <h3>Turnstile protection (future, coming soon)</h3>
-                <p>Layer in invisible, privacy-friendly CAPTCHA verification for forms that attract more determined
-                    spam.</p>
-            </article>
-
-            <article class="feature-card feature-card--pro">
-                <div class="feature-card__top">
-          <span class="feature-card__icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-                 stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
-          </span>
-                    <span class="badge badge--pro">Pro</span>
-                </div>
-                <h3>Email digests</h3>
-                <p>A rolled-up summary lands in your inbox every three hours, only when there's something new to
-                    read.</p>
-            </article>
-        </div>
-    </div>
-</section>
-
-<!-- ════════════════════════════════════════════
-     PRICING
-════════════════════════════════════════════ -->
-<section class="section section--bordered" id="pricing">
-    <div class="container">
-        <div class="section-head section-head--center">
-            <span class="eyebrow">Pricing</span>
-            <h2>Start free. Upgrade when you outgrow it.</h2>
-            <p>No seat fees, no surprise overages — just two plans, priced for a side project as easily as a
-                startup.</p>
-        </div>
-
-        <div class="pricing-grid">
-            <div class="pricing-card">
-                <div class="pricing-card__plan">Free</div>
-                <div class="pricing-card__price"><strong>$0</strong><span>/month</span></div>
-                <p class="pricing-card__sub">Everything you need to ship a contact form today.</p>
-                <div class="pricing-card__cta">
-                    <a href="/auth/login" class="btn btn--secondary btn--full">Start for free</a>
-                </div>
-                <ul class="pricing-list">
-                    <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
-                             stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M20 6L9 17l-5-5"/>
-                        </svg>
-                        200 submissions / month
-                    </li>
-                    <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
-                             stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M20 6L9 17l-5-5"/>
-                        </svg>
-                        50MB total file uploads
-                    </li>
-                    <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
-                             stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M20 6L9 17l-5-5"/>
-                        </svg>
-                        1MB limit per file
-                    </li>
-                    <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
-                             stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M20 6L9 17l-5-5"/>
-                        </svg>
-                        Honeypot spam filtering
-                    </li>
-                    <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
-                             stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M20 6L9 17l-5-5"/>
-                        </svg>
-                        Discord notifications
-                    </li>
-                    <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
-                             stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M20 6L9 17l-5-5"/>
-                        </svg>
-                        CSV exports
-                    </li>
-                </ul>
-                <ul class="pricing-list pricing-list--muted" style="margin-top: var(--space-3);">
-                    <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
-                             stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M18 6L6 18M6 6l12 12"/>
-                        </svg>
-                        Custom webhooks
-                    </li>
-                    <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
-                             stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M18 6L6 18M6 6l12 12"/>
-                        </svg>
-                        Turnstile protection (future, coming soon)
-                    </li>
-                </ul>
-            </div>
-
-            <div class="pricing-card pricing-card--featured">
-                <span class="pricing-card__badge">Most popular</span>
-                <div class="pricing-card__plan">Pro</div>
-                <div class="pricing-card__price"><strong>$2.99</strong><span>/month</span></div>
-                <p class="pricing-card__sub">For products that need more headroom and deeper integrations.</p>
-                <div class="pricing-card__cta">
-                    <a href="/auth/login" class="btn btn--primary btn--full">Upgrade to Pro</a>
-                </div>
-                <ul class="pricing-list">
-                    <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
-                             stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M20 6L9 17l-5-5"/>
-                        </svg>
-                        2,000 submissions / month
-                    </li>
-                    <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
-                             stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M20 6L9 17l-5-5"/>
-                        </svg>
-                        1GB total file uploads
-                    </li>
-                    <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
-                             stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M20 6L9 17l-5-5"/>
-                        </svg>
-                        50MB limit per file
-                    </li>
-                    <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
-                             stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M20 6L9 17l-5-5"/>
-                        </svg>
-                        Custom webhooks
-                    </li>
-                    <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
-                             stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M20 6L9 17l-5-5"/>
-                        </svg>
-                        Turnstile spam protection (future, coming soon)
-                    </li>
-                    <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
-                             stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M20 6L9 17l-5-5"/>
-                        </svg>
-                        Email digest every 3 hours
-                    </li>
-                    <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
-                             stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M20 6L9 17l-5-5"/>
-                        </svg>
-                        Everything in Free
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- ════════════════════════════════════════════
-     FOOTER
-════════════════════════════════════════════ -->
 <footer class="site-footer">
-    <div class="container">
-        <div class="footer-grid">
-            <div class="footer-brand">
-                <a href="" class="navbar__logo">
-          <span class="navbar__logo-mark">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                 stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h16"/></svg>
+    <div class="wrap footer-inner">
+        <div class="footer-brand">
+            <a class="logo" href="#top" aria-label="FormBox home">
+          <span class="logo-mark" aria-hidden="true">
+            <svg viewBox="0 0 32 32" width="24" height="24"><rect x="2" y="8" width="28" height="20" rx="2"
+                                                                  class="logo-box"/><path d="M2 10 L16 20 L30 10"
+                                                                                          class="logo-flap"/></svg>
           </span>
-                    <span class="navbar__wordmark">Formbox</span>
-                </a>
-                <p>A fast, lightweight form backend for developers who'd rather ship product than maintain
-                    infrastructure.</p>
-            </div>
+                <span class="logo-word">FormBox</span>
+            </a>
+            <p>A form backend for sites that don't have one.</p>
+        </div>
+
+        <nav class="footer-nav" aria-label="Footer">
             <div class="footer-col">
-                <h5>Product</h5>
+                <h4>Product</h4>
                 <ul>
-                    <li><a href="#features">Features</a></li>
+                    <li><a href="#how-it-works">How it works</a></li>
                     <li><a href="#pricing">Pricing</a></li>
-                    <li><a href="#">Status</a></li>
+                    <li><a href="#faq">FAQ</a></li>
                 </ul>
             </div>
             <div class="footer-col">
-                <h5>Developers</h5>
+                <h4>Follow along</h4>
                 <ul>
-                    <li><a href="#">Documentation</a></li>
-                    <li><a href="#">API reference</a></li>
-                    <li><a href="#">Changelog</a></li>
+                    <li><a href="#">X / Twitter</a></li>
+                    <li><a href="#">GitHub</a></li>
+                    <li><a href="#">Email us</a></li>
                 </ul>
             </div>
-            <div class="footer-col">
-                <h5>Company</h5>
-                <ul>
-                    <li><a href="#">About</a></li>
-                    <li><a href="#">Contact</a></li>
-                    <li><a href="#">Terms</a></li>
-                </ul>
-            </div>
-        </div>
-        <div class="footer-bottom">
-            <span>© 2026 Formbox. All rights reserved.</span>
-            <div class="footer-bottom__links">
-                <a href="#">Privacy</a>
-                <a href="#">Terms</a>
-                <a href="#">Security</a>
-            </div>
-        </div>
+        </nav>
+    </div>
+    <div class="wrap footer-bottom">
+        <p>&copy; 2026 FormBox. All rights reserved.</p>
+        <p>Currently, in waitlist &mdash; public beta coming soon.</p>
     </div>
 </footer>
 
 <script>
-    // ──────────────────────────────────────────
-    // Waitlist: htmx success/error fallback.
-    // The real backend (hx-post="/api/waitlist") returns the
-    // success card HTML and htmx swaps it in automatically.
-    // This listener provides a graceful fallback so the demo
-    // works identically when no backend is present (e.g. a
-    // static preview), and keeps the htmx wiring authentic.
-    // ──────────────────────────────────────────
-    document.body.addEventListener('htmx:responseError', function (evt) {
-        if (evt.target && evt.target.id === 'waitlist-form') {
-            var template = document.getElementById('waitlist-success-template');
-            if (template) {
-                evt.target.replaceWith(template.content.cloneNode(true));
-            }
-        }
-    });
-    document.body.addEventListener('htmx:sendError', function (evt) {
-        if (evt.target && evt.target.id === 'waitlist-form') {
-            var template = document.getElementById('waitlist-success-template');
-            if (template) {
-                evt.target.replaceWith(template.content.cloneNode(true));
-            }
-        }
-    });
-
-    // ──────────────────────────────────────────
-    // Interactive form simulator
-    // ──────────────────────────────────────────
     (function () {
-        var trigger = document.getElementById('sim-trigger');
-        var log = document.getElementById('sim-log');
-        var status = document.getElementById('sim-status');
-        var emailPreview = document.getElementById('sim-email-preview');
-        var messagePreview = document.getElementById('sim-message-preview');
+        "use strict";
 
-        var sampleSubmissions = [
-            {email: 'amelia@northwind.dev', message: 'Question about the API rate limit'},
-            {email: 'devon@stackforge.io', message: 'Loving the new dashboard, one bug to report'},
-            {email: 'priya@lumenlabs.co', message: 'Interested in the Pro plan, a few questions'}
-        ];
-        var i = 0;
+        /* Mobile nav toggle */
+        const navToggle = document.getElementById("navToggle");
+        const mobileNav = document.getElementById("mobileNav");
 
-        function appendLog(text, variant) {
-            var placeholder = log.querySelector('.sim-log__placeholder');
-            if (placeholder) placeholder.remove();
-            var line = document.createElement('div');
-            line.className = 'sim-log__line' + (variant ? ' sim-log__line--' + variant : '');
-            var time = document.createElement('span');
-            time.className = 'lt';
-            time.textContent = new Date().toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit'
+        if (navToggle && mobileNav) {
+            navToggle.addEventListener("click", function () {
+                const isOpen = mobileNav.classList.toggle("is-open");
+                navToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+                navToggle.setAttribute("aria-label", isOpen ? "Close menu" : "Open menu");
             });
-            var val = document.createElement('span');
-            val.className = 'lv';
-            val.textContent = text;
-            line.appendChild(time);
-            line.appendChild(val);
-            log.appendChild(line);
-            log.scrollTop = log.scrollHeight;
-        }
 
-        if (trigger) {
-            trigger.addEventListener('click', function () {
-                var sample = sampleSubmissions[i % sampleSubmissions.length];
-                i++;
-
-                emailPreview.textContent = 'email — ' + sample.email;
-                emailPreview.style.color = 'var(--color-text)';
-                messagePreview.textContent = 'message — ' + sample.message;
-                messagePreview.style.color = 'var(--color-text)';
-
-                status.textContent = 'Sending…';
-                status.style.color = 'var(--color-warning)';
-
-                appendLog('POST /f/8k2p9q received', 'meta');
-
-                trigger.disabled = true;
-                setTimeout(function () {
-                    appendLog('honeypot check passed, spam_score 0.01', 'ok');
-                    appendLog('notified discord channel #form-submissions', 'ok');
-                    status.textContent = 'Delivered';
-                    status.style.color = '';
-                    trigger.disabled = false;
-                }, 650);
+            mobileNav.querySelectorAll("a").forEach(function (link) {
+                link.addEventListener("click", function () {
+                    mobileNav.classList.remove("is-open");
+                    navToggle.setAttribute("aria-expanded", "false");
+                    navToggle.setAttribute("aria-label", "Open menu");
+                });
             });
         }
+
+        /* Waitlist forms */
+        const isValidEmail = function (value) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+        };
+
+        document.querySelectorAll(".waitlist-form").forEach(function (form) {
+            const input = form.querySelector('input[type="email"]');
+            const note = form.querySelector(".form-note");
+            const button = form.querySelector("button");
+
+            form.addEventListener("submit", function (event) {
+                event.preventDefault();
+
+                const value = (input.value || "").trim();
+
+                if (!isValidEmail(value)) {
+                    note.textContent = "Enter a valid email address to join the waitlist.";
+                    note.classList.add("is-error");
+                    input.focus();
+                    return;
+                }
+
+                note.classList.remove("is-error");
+                note.textContent = "You're on the list \u2014 watch your inbox for the beta invite.";
+                input.value = "";
+                input.disabled = true;
+                button.disabled = true;
+                button.textContent = "Reserved";
+            });
+        });
     })();
 </script>
-
 </body>
 </html>

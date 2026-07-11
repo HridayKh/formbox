@@ -3,11 +3,9 @@ package in.hridaykh.formbox.service;
 import in.hridaykh.formbox.constant.CacheNames;
 import in.hridaykh.formbox.model.dto.CachedForm;
 import in.hridaykh.formbox.model.entity.Submission;
-import in.hridaykh.formbox.model.enums.FormContentType;
 import in.hridaykh.formbox.repository.FormRepository;
 import in.hridaykh.formbox.repository.SubmissionRepository;
 import in.hridaykh.formbox.service.cache.SubmissionCacheService;
-import in.hridaykh.formbox.util.TurnstileVerifier;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.Part;
@@ -64,13 +62,10 @@ public class FormSubmissionService {
 	}
 
 	// step 4: check if content type allowed
-	public FormContentType verifyContentTypes(CachedForm form, HttpServletRequest request) {
+	public boolean isContentTypeJson(CachedForm form, HttpServletRequest request) {
 		boolean isContentTypeJson = request.getContentType().equalsIgnoreCase(MediaType.APPLICATION_JSON_VALUE);
 		boolean isAcceptJson = request.getHeader("Accept").equalsIgnoreCase(MediaType.APPLICATION_JSON_VALUE);
-		if (!form.allowJson() && (isContentTypeJson || isAcceptJson)) return FormContentType.json;
-		if (!form.allowHtmx() && "true".equalsIgnoreCase(request.getHeader("Hx-Request")))
-			return FormContentType.htmx;
-		return null;
+		return isContentTypeJson || isAcceptJson;
 	}
 
 	// step 5: check honeypot

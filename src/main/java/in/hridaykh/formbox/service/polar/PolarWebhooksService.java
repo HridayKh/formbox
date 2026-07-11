@@ -6,7 +6,7 @@ import in.hridaykh.formbox.model.entity.Tenant;
 import in.hridaykh.formbox.model.enums.SubscriptionState;
 import in.hridaykh.formbox.repository.PurchasesRepository;
 import in.hridaykh.formbox.repository.TenantRepository;
-import in.hridaykh.formbox.service.cache.TenantTierCacheService;
+import in.hridaykh.formbox.service.cache.TenantCacheService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,7 +27,7 @@ public class PolarWebhooksService {
 	private final ObjectMapper objectMapper;
 	private final PolarMeterService polarMeterService;
 	private final PolarCacheService polarCacheService;
-	private final TenantTierCacheService tenantTierCacheService;
+	private final TenantCacheService tenantCacheService;
 
 	@Transactional
 	public void processHook(String rawBody) {
@@ -110,7 +110,7 @@ public class PolarWebhooksService {
 			log.info("Purged free tier for upgraded Starter user: {}", tenant.getEmail());
 		}
 
-		tenantTierCacheService.evictTenantTierCache(tenant.getId().toString());
+		tenantCacheService.evictTenantTierCache(tenant.getId().toString());
 	}
 
 	private PolarProducts resolveProductFromDataNode(JsonNode dataNode) {
@@ -155,7 +155,7 @@ public class PolarWebhooksService {
 		purchasesRepository.save(purchase);
 		log.info("Successfully updated purchase state to {} for tenant: {} on product: {}", newState, tenant.getEmail(), product.getName());
 
-		tenantTierCacheService.evictTenantTierCache(tenant.getId().toString());
+		tenantCacheService.evictTenantTierCache(tenant.getId().toString());
 		polarMeterService.getRemainingSubmissionsBalance(tenant.getId());
 	}
 }

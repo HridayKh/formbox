@@ -10,7 +10,7 @@ import in.hridaykh.formbox.repository.FormRepository;
 import in.hridaykh.formbox.repository.TenantRepository;
 import in.hridaykh.formbox.service.cache.FormCacheService;
 import in.hridaykh.formbox.service.cache.SubmissionCacheService;
-import in.hridaykh.formbox.service.cache.TenantTierCacheService;
+import in.hridaykh.formbox.service.cache.TenantCacheService;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,17 +32,25 @@ public class FormController {
 	private final TenantRepository tenantRepository;
 	private final FormRepository formRepository;
 	private final SubmissionCacheService submissionCacheService;
-	private final TenantTierCacheService tenantTierCacheService;
+	private final TenantCacheService tenantCacheService;
 	private final FormCacheService formCacheService;
 
 	@PostMapping
 	public String createForm(@RequestAttribute JwtPayload userMetadata, @RequestParam("name") String name, @RequestParam(value = "redirectUrl", required = false) String redirectUrl, HttpServletResponse response) {
 		log.debug("Processing request to create a new form. Name: [{}], Requested Redirect URL: [{}]", name, redirectUrl);
-		String msgParam = "";
+
 
 		UUID tenantId = UUID.fromString(Objects.requireNonNull(userMetadata.getSub()));
-		String highestTier = tenantTierCacheService.resolveHighestActiveTierNonNull(tenantId);
+		List<CachedForm> forms = formCacheService.getTenantForms(tenantId);
 
+		String highestTier = tenantCacheService.resolveHighestActiveTierNonNull(tenantId);
+		if (forms.size() >= Tiers.t(highestTier).maxForms()) {
+			String msg = "Your have Reached Your Forms Limit, Upgrade For More!";
+			response.setHeader("HX-Redirect", PathRegistry.DASHBOARD + "?msg=" + msg);
+			return ViewRegistry.Auth.Fragments.EMPTY;
+		}
+
+		String msgParam = "";
 		if (!Tiers.t(highestTier).redirectUrlAllowed() && redirectUrl != null && !redirectUrl.isBlank()) {
 			log.warn("Tier constraint violation intercepted. Free tier tenant: {} attempted custom redirect validation rules.", tenantId);
 			redirectUrl = null;
@@ -98,7 +106,7 @@ public class FormController {
 		}
 
 		FormSubmissionsResponse submissions = submissionCacheService.getFormSubmissionsGrouped(formId);
-		String currentTier = tenantTierCacheService.resolveHighestActiveTierNonNull(form.tenantId());
+		String currentTier = tenantCacheService.resolveHighestActiveTierNonNull(form.tenantId());
 
 		log.trace("Aggregated presentation variables completely loaded for form context identifier: {}. Submissions collection count: {}, Spam flags matched: {}",
 			formId, submissions.submissions().size(), submissions.spam().size());
@@ -126,7 +134,7 @@ public class FormController {
 
 		boolean tierViolationAttempted = false;
 
-		String subscriptionTier = tenantTierCacheService.resolveHighestActiveTierNonNull(form.getTenant().getId());
+		String subscriptionTier = tenantCacheService.resolveHighestActiveTierNonNull(form.getTenant().getId());
 		if (!Tiers.t(subscriptionTier).redirectUrlAllowed() && redirectUrl != null && !redirectUrl.isBlank()) {
 			log.warn("Intercepted invalid configuration upgrade tier parameter state. Dropping restricted input field variables for form: {}", formId);
 			redirectUrl = null;

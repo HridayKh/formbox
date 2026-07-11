@@ -7,7 +7,7 @@ import in.hridaykh.formbox.model.dto.CachedForm;
 import in.hridaykh.formbox.service.FormFileService;
 import in.hridaykh.formbox.service.FormSubmissionService;
 import in.hridaykh.formbox.service.cache.FormCacheService;
-import in.hridaykh.formbox.service.cache.TenantTierCacheService;
+import in.hridaykh.formbox.service.cache.TenantCacheService;
 import in.hridaykh.formbox.service.polar.PolarCacheService;
 import in.hridaykh.formbox.util.TurnstileVerifier;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
@@ -21,6 +21,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import tools.jackson.databind.ObjectMapper;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
@@ -35,7 +36,7 @@ public class IndexController {
 	private final FormCacheService formCacheService;
 	private final FormFileService formFileService;
 	private final ObjectMapper objectMapper;
-	private final TenantTierCacheService tenantTierCacheService;
+	private final TenantCacheService tenantCacheService;
 
 	@GetMapping("/")
 	public String index(@RequestAttribute(required = false) JwtPayload userMetadata, Model model) {
@@ -44,7 +45,7 @@ public class IndexController {
 	}
 
 	@PostMapping("/f/{formId}")
-	public String submission(@PathVariable UUID formId, @RequestParam Map<String, String> payload, HttpServletRequest request, HttpServletResponse response) {
+	public String submission(@PathVariable UUID formId, @RequestParam Map<String, String> payload, HttpServletRequest request, HttpServletResponse response) throws IOException {
 		log.debug("Processing incoming webhook submission request path channel for form ID: {}", formId);
 
 		// step 1: get form (404 if db request says form doesn't exist)
@@ -70,13 +71,9 @@ public class IndexController {
 		}
 
 		// step 4: check if content type allowed
-		switch (submissionService.verifyContentTypes(form, request)) {
-			case json:
-				return "submit/json-not-allowed";
-			case htmx:
-				return "submit/htmx-not-allowed";
-			case null, default:
-		}
+		boolean isContentTypeJson = submissionService.isContentTypeJson(form, request);
+		if (!form.allowJson() && isContentTypeJson)
+			return "submit/json-not-allowed";
 
 		// step 5: check honeypot
 		if (!payload.getOrDefault(form.honeypotName(), "").isBlank()) {
@@ -128,7 +125,12 @@ public class IndexController {
 		log.debug("processed the form!!!!!!!!!");
 
 		// step 12: return 200 ok
-		String tier = tenantTierCacheService.resolveHighestActiveTierNonNull(form.tenantId());
+		if (isContentTypeJson) {
+			response.setStatus(HttpServletResponse.SC_OK);
+			response.setContentType("application/json");
+			return "submit/json-response";
+		}
+		String tier = tenantCacheService.resolveHighestActiveTierNonNull(form.tenantId());
 		if (form.redirectUrl() == null || form.redirectUrl().isBlank() || !Tiers.t(tier).redirectUrlAllowed())
 			return "submit/thanks";
 		return "redirect:" + form.redirectUrl();

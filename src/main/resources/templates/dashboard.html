@@ -689,6 +689,15 @@
 
 <main class="main-content">
 
+
+    <div th:if="${msg}" class="alert alert--warning"
+         style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 1rem; margin-bottom: 1.5rem; color: #991b1b; border-radius: 4px;">
+        <p style="margin: 0; font-size: 0.95rem;">
+            <span th:text="${msg}">Warning message</span>
+        </p>
+    </div>
+
+
     <!-- PAGE HEADER -->
     <div class="page-header">
         <div class="page-header__content">

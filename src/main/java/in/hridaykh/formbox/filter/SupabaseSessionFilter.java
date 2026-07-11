@@ -4,6 +4,7 @@ import in.hridaykh.formbox.AuthServiceKt;
 import in.hridaykh.formbox.constant.PathRegistry;
 import in.hridaykh.formbox.service.AuthService;
 import io.github.jan.supabase.SupabaseClient;
+import io.github.jan.supabase.auth.jwt.JwtPayload;
 import io.github.jan.supabase.auth.user.UserSession;
 import jakarta.servlet.*;
 import jakarta.servlet.http.Cookie;
@@ -51,10 +52,20 @@ public class SupabaseSessionFilter extends OncePerRequestFilter {
 			String oldRefreshToken = getCookieValue(request, "sb_refresh");
 
 			request.setAttribute("userMetadata", null);
-			var userMetadata = authServiceKt.getUserMetadata(supabaseClient, oldAccessToken);
+
+			JwtPayload userMetadata = null;
+			if (oldAccessToken != null && !oldAccessToken.isBlank()) {
+				try {
+					userMetadata = authServiceKt.getUserMetadata(supabaseClient, oldAccessToken);
+				} catch (IllegalArgumentException e) {
+					log.warn("Access token structurally invalid: {}. Falling back to token rotation.", e.getMessage());
+				} catch (Exception e) {
+					log.warn("Unexpected exception during access token processing: {}", e.getMessage());
+				}
+			}
 
 			if (userMetadata != null && userMetadata.getSub() != null) {
-				log.debug("Valid active session discovered for user identity payload: {}", userMetadata.getSub());
+				log.debug("Valid active session discovered for user identity payload.");
 				request.setAttribute("userMetadata", userMetadata);
 				filterChain.doFilter(request, response);
 				return;
@@ -65,11 +76,13 @@ public class SupabaseSessionFilter extends OncePerRequestFilter {
 				return;
 			}
 
-			log.debug("Access token expired or missing. Initializing rotation workflow using refresh token.");
-			UserSession newSession = authService.refreshUserSession(supabaseClient, oldRefreshToken);
-
-			if (newSession == null) {
-				log.warn("Refresh token present but server validation process failed.");
+			log.debug("Access token expired, missing, or invalid. Initializing rotation workflow using refresh token.");
+			UserSession newSession;
+			try {
+				newSession = authServiceKt.refreshSession(supabaseClient, oldRefreshToken);
+			} catch (Exception e) {
+				log.warn("Unexpected error during session token rotation: {}", e.getMessage());
+				authService.clearAuthCookies(response);
 				handleUnauthorizedRedirect(request, response, filterChain);
 				return;
 			}
@@ -81,12 +94,11 @@ public class SupabaseSessionFilter extends OncePerRequestFilter {
 			authService.setAuthCookie(response, "sb_refresh", newRefreshToken, (int) Duration.ofDays(7).toSeconds());
 
 			HttpServletRequest wrappedRequest = new RequestWrapper(request, newAccessToken, newRefreshToken);
-			var freshMetadata = authServiceKt.getUserMetadata(supabaseClient, newAccessToken);
-			wrappedRequest.setAttribute("userMetadata", freshMetadata);
+			wrappedRequest.setAttribute("userMetadata", authServiceKt.getUserMetadata(supabaseClient, newAccessToken));
 
-			log.debug("Session successfully refreshed for user sub: {}", freshMetadata != null ? freshMetadata.getSub() : "unknown");
-
+			log.debug("Session successfully refreshed.");
 			filterChain.doFilter(wrappedRequest, response);
+
 		} finally {
 			authServiceKt.closeIsolatedClient(supabaseClient);
 		}

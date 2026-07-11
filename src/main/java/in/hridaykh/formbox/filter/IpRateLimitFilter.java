@@ -56,7 +56,7 @@ public class IpRateLimitFilter extends OncePerRequestFilter {
 		String refillRate = "3";
 
 		String path = request.getRequestURI();
-		if (path.startsWith("/f/") || path.startsWith("/auth/") || path.startsWith("/api/waitlist")) {
+		if (path.startsWith("/f/") || path.startsWith("/auth/")) {
 			scope = "b";
 			capacity = "5";
 			refillRate = "0.2";

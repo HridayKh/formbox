@@ -3,7 +3,6 @@ package in.hridaykh.formbox.constant;
 public interface PathRegistry {
 
 	String DASHBOARD = "/dashboard";
-	String WAITLIST = "/api/waitlist";
 
 	interface Form {
 		String BASE = "/forms";

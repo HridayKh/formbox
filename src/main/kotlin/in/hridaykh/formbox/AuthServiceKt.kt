@@ -184,7 +184,7 @@ class AuthServiceKt(private val supabaseProps: SupabaseProperties) {
 			log.trace("User session security claims metadata decoded successfully.")
 			return@runBlocking claims
 		} catch (e: Exception) {
-			log.error(
+			log.info(
 				"Failed to decode user security claims context array from raw access token payload string.",
 				e
 			)
@@ -194,16 +194,8 @@ class AuthServiceKt(private val supabaseProps: SupabaseProperties) {
 
 	fun refreshSession(client: SupabaseClient, refreshToken: String): UserSession = runBlocking {
 		log.debug("Issuing downstream token rotation refresh verification exchange handler sequence.")
-		try {
-			val session = client.auth.refreshSession(refreshToken)
-			log.info("Session context tokens rolled successfully through asynchronous infrastructure channel.")
-			return@runBlocking session
-		} catch (e: Exception) {
-			log.error(
-				"Supabase network authorization loop failed to spin credentials using existing refresh token.",
-				e
-			)
-			throw e
-		}
+		val session = client.auth.refreshSession(refreshToken)
+		log.info("Session context tokens rolled successfully through asynchronous infrastructure channel.")
+		return@runBlocking session
 	}
 }

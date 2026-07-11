@@ -7,7 +7,7 @@ import in.hridaykh.formbox.model.enums.SubscriptionState;
 import in.hridaykh.formbox.repository.PurchasesRepository;
 import in.hridaykh.formbox.repository.TenantRepository;
 import in.hridaykh.formbox.service.polar.PolarCacheService;
-import in.hridaykh.formbox.service.cache.TenantTierCacheService;
+import in.hridaykh.formbox.service.cache.TenantCacheService;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,7 +30,7 @@ public class TenantService {
 	private final PurchasesRepository purchasesRepository;
 	private final PolarHttpClient polarHttpClient;
 	private final Polar polar;
-	private final TenantTierCacheService tenantTierCacheService;
+	private final TenantCacheService tenantCacheService;
 	private final PolarCacheService polarCacheService;
 
 	@Transactional
@@ -91,7 +91,7 @@ public class TenantService {
 			purchasesRepository.save(freePurchase);
 			log.debug("Successfully persisted localized free entitlement entry mapping reference to database cluster schema layers.");
 
-			tenantTierCacheService.evictTenantTierCache(tenant.getId().toString());
+			tenantCacheService.evictTenantTierCache(tenant.getId().toString());
 			log.info("Successfully provisioned Polar Free Subscription via backfill for: {}", tenant.getEmail());
 		} catch (Exception e) {
 			log.error("Failed to recover or assign dynamic Polar free subscription on active dashboard load for email: {}", tenant.getEmail(), e);

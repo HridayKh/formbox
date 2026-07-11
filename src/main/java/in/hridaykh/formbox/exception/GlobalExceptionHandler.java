@@ -1,5 +1,6 @@
 package in.hridaykh.formbox.exception;
 
+import in.hridaykh.formbox.exception.auth.AuthException;
 import io.github.jan.supabase.auth.exception.AuthErrorCode;
 import io.github.jan.supabase.auth.exception.AuthRestException;
 import io.github.jan.supabase.auth.exception.TokenExpiredException;
