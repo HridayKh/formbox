@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FormBox — A form backend for sites with no backend</title>
+    <title>FormBox - A form backend for sites with no backend</title>
     <meta name="description"
           content="FormBox catches submissions from any static site's HTML form. No server, no database, no glue code. Cloudflare-powered edge. Public beta — join the waitlist.">
-    <link rel="stylesheet" href="/assets/styles.css">
+    <link rel="stylesheet" th:href="'/assets/styles.css'" href="/../static/assets/styles.css">
+
 </head>
 <body>
 
@@ -36,8 +37,8 @@
                 <a class="btn btn-primary btn-small" href="/dashboard">Dashboard</a>
             </div>
             <div th:unless="${loggedIn}">
-                <a class="btn btn-secondary btn-small" href="/auth/signin">Sign in</a>
-                <a class="btn btn-primary btn-small" href="/auth/register">Register</a>
+                <a class="btn btn-secondary btn-small" href="/auth/login">Login</a>
+                <a class="btn btn-primary btn-small" href="/auth/signup">Signup</a>
             </div>
             <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="mobileNav"
                     aria-label="Open menu">
@@ -208,6 +209,7 @@
                         <li><span class="icon-check" aria-hidden="true"></span>Redirect URLs &amp; AJAX/JSON endpoints
                         </li>
                         <li><span class="icon-check" aria-hidden="true"></span>1,000 submissions / month</li>
+                        <li><span class="icon-check" aria-hidden="true"></span>10 forms</li>
                         <li><span class="icon-check" aria-hidden="true"></span>Unlimited forms</li>
                         <li><span class="icon-check" aria-hidden="true"></span>1GB file storage <span
                                 class="feature-note">(10MB file limit)</span></li>
@@ -236,6 +238,7 @@
                         <li><span class="icon-check" aria-hidden="true"></span>Redirect URLs &amp; AJAX/JSON endpoints
                         </li>
                         <li><span class="icon-check" aria-hidden="true"></span>10,000 submissions / month</li>
+                        <li><span class="icon-check" aria-hidden="true"></span>Unlimited forms</li>
                         <li><span class="icon-check" aria-hidden="true"></span>10GB file storage <span
                                 class="feature-note">(100MB file limit)</span></li>
                         <li><span class="icon-check" aria-hidden="true"></span>Cloudflare Turnstile integration</li>
@@ -325,6 +328,7 @@
                 <span class="logo-word">FormBox</span>
             </a>
             <p>A form backend for sites that don't have one.</p>
+            <a href="mailto:mail@formbox.hridaykh.in">mail@formbox.hridaykh.in</a>
         </div>
 
         <nav class="footer-nav" aria-label="Footer">
@@ -337,11 +341,11 @@
                 </ul>
             </div>
             <div class="footer-col">
-                <h4>Follow along</h4>
+                <h4>Links</h4>
                 <ul>
-                    <li><a href="#">X / Twitter</a></li>
                     <li><a href="#">GitHub</a></li>
-                    <li><a href="#">Email us</a></li>
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Terms of Service</a></li>
                 </ul>
             </div>
         </nav>

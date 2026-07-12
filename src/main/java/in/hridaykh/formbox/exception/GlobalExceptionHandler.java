@@ -1,6 +1,5 @@
 package in.hridaykh.formbox.exception;
 
-import in.hridaykh.formbox.exception.auth.AuthException;
 import io.github.jan.supabase.auth.exception.AuthErrorCode;
 import io.github.jan.supabase.auth.exception.AuthRestException;
 import io.github.jan.supabase.auth.exception.TokenExpiredException;
@@ -78,7 +77,7 @@ public class GlobalExceptionHandler {
 	}
 
 	private ModelAndView buildErrorResponse(String errorTitle, String errorMessage, HttpStatus status) {
-		ModelAndView mav = new ModelAndView("fragments/error-alert");
+		ModelAndView mav = new ModelAndView("error");
 		mav.addObject("errorTitle", errorTitle);
 		mav.addObject("errorMessage", errorMessage);
 		mav.addObject("errorStatus", status);

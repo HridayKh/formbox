@@ -5,679 +5,70 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Dashboard | Formbox</title>
     <meta name="description" content="Manage your form endpoints, view submissions, and upgrade your plan."/>
-
-    <link rel="preconnect" href="https://fonts.googleapis.com"/>
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
-          rel="stylesheet"/>
-
-    <!-- Using HTMX 2.0.10 from functional version -->
+    <link rel="stylesheet" th:href="'/assets/styles.css'" href="/../static/assets/styles.css">
     <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.10/dist/htmx.min.js"></script>
-
-    <style>
-        /* ════════════════════════════════════════════════════
-        ════════════════════════════════════════════════════ */
-        :root {
-            --color-bg: #09090B;
-            --color-bg-raised: #0E0E12;
-            --color-surface: #121218;
-            --color-surface-2: #16161D;
-            --color-border: #1E1E24;
-            --color-border-2: #27272A;
-            --color-text: #F4F4F6;
-            --color-text-dim: #A3A3AE;
-            --color-text-faint: #6C6C77;
-            --color-accent: #7C5CFC;
-            --color-accent-bright: #9B7CFF;
-            --color-accent-soft: rgba(124, 92, 252, 0.12);
-            --color-teal: #2DD8C4;
-            --color-teal-soft: rgba(45, 216, 196, 0.12);
-            --color-danger: #F36464;
-            --color-warning: #F2B84B;
-            --color-success: #34D399;
-            --gradient-accent: linear-gradient(135deg, #7C5CFC 0%, #5B3FE0 100%);
-            --gradient-glow: radial-gradient(circle at 30% 20%, rgba(124, 92, 252, 0.25), transparent 60%);
-            --font-display: 'Inter', system-ui, -apple-system, sans-serif;
-            --font-body: 'Inter', system-ui, -apple-system, sans-serif;
-            --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
-            --space-1: 4px;
-            --space-2: 8px;
-            --space-3: 12px;
-            --space-4: 16px;
-            --space-5: 20px;
-            --space-6: 24px;
-            --space-8: 32px;
-            --space-10: 40px;
-            --space-12: 48px;
-            --space-16: 64px;
-            --radius-sm: 6px;
-            --radius-md: 8px;
-            --radius-lg: 14px;
-            --radius-full: 999px;
-            --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.02) inset, 0 12px 32px -16px rgba(0, 0, 0, 0.6);
-            --shadow-glow: 0 0 0 1px rgba(124, 92, 252, 0.35), 0 0 32px rgba(124, 92, 252, 0.18);
-            --shadow-glow-sm: 0 0 0 1px rgba(124, 92, 252, 0.45), 0 0 16px rgba(124, 92, 252, 0.25);
-            --border: 1px solid var(--color-border);
-            --border-2: 1px solid var(--color-border-2);
-        }
-
-        /* ════════════════════════════════════════════════════
-           RESET & BASE
-        ════════════════════════════════════════════════════ */
-        *, *::before, *::after {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        html {
-            scroll-behavior: smooth;
-        }
-
-        body {
-            background: var(--color-bg);
-            color: var(--color-text);
-            font-family: var(--font-body);
-            font-size: 16px;
-            line-height: 1.6;
-            -webkit-font-smoothing: antialiased;
-            min-height: 100vh;
-        }
-
-        img, svg {
-            display: block;
-            max-width: 100%;
-        }
-
-        a {
-            color: inherit;
-        }
-
-        button, input, select, textarea {
-            font-family: inherit;
-            color: inherit;
-        }
-
-        ul {
-            list-style: none;
-        }
-
-        :focus-visible {
-            outline: 2px solid var(--color-accent-bright);
-            outline-offset: 2px;
-            border-radius: 4px;
-        }
-
-        /* ════════════════════════════════════════════════════
-           LAYOUT
-        ════════════════════════════════════════════════════ */
-        .navbar {
-            position: sticky;
-            top: 0;
-            z-index: 50;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: var(--space-4) var(--space-6);
-            background: rgba(9, 9, 11, 0.75);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-bottom: var(--border);
-        }
-
-        .navbar__inner {
-            max-width: 1200px;
-            margin-inline: auto;
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .navbar__logo {
-            display: flex;
-            align-items: center;
-            gap: var(--space-2);
-            text-decoration: none;
-            color: var(--color-text);
-        }
-
-        .navbar__logo-mark {
-            width: 30px;
-            height: 30px;
-            border-radius: var(--radius-sm);
-            background: var(--gradient-accent);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: var(--shadow-glow-sm);
-        }
-
-        .navbar__logo-mark svg {
-            width: 16px;
-            height: 16px;
-            color: #fff;
-        }
-
-        .navbar__wordmark {
-            font-family: var(--font-display);
-            font-weight: 700;
-            font-size: 1.05rem;
-            letter-spacing: -0.01em;
-        }
-
-        .navbar__breadcrumb {
-            display: flex;
-            align-items: center;
-            gap: var(--space-3);
-            font-size: 0.92rem;
-            color: var(--color-text-dim);
-            flex: 1;
-            margin-left: var(--space-10);
-        }
-
-        .navbar__breadcrumb span {
-            color: var(--color-text-faint);
-        }
-
-        .navbar__user {
-            display: flex;
-            align-items: center;
-            gap: var(--space-4);
-            margin-left: auto;
-        }
-
-        .navbar__user-name {
-            font-size: 0.92rem;
-        }
-
-        .navbar__user-avatar {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background: var(--color-accent-soft);
-            border: 1px solid var(--color-accent);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--color-accent-bright);
-            font-weight: 600;
-            font-size: 0.85rem;
-        }
-
-        .navbar__actions {
-            margin-left: 1em;
-            display: flex;
-            align-items: center;
-            gap: var(--space-3);
-        }
-
-
-        .sidebar__link svg {
-            width: 18px;
-            height: 18px;
-        }
-
-        .main-content {
-            padding-block: var(--space-4);
-            margin: 2em 5em 5em;
-        }
-
-        /* ════════════════════════════════════════════════════
-           PAGE HEADER
-        ════════════════════════════════════════════════════ */
-        .page-header {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: var(--space-6);
-            margin-bottom: var(--space-10);
-        }
-
-        .page-header__content h1 {
-            font-family: var(--font-display);
-            font-weight: 700;
-            font-size: 2rem;
-            letter-spacing: -0.02em;
-            margin-bottom: var(--space-2);
-        }
-
-        .page-header__content p {
-            color: var(--color-text-dim);
-            font-size: 0.95rem;
-            max-width: 55ch;
-        }
-
-        .page-header__actions {
-            display: flex;
-            gap: var(--space-3);
-            flex-wrap: wrap;
-            justify-content: flex-end;
-        }
-
-        /* ════════════════════════════════════════════════════
-           CARDS & SECTIONS
-        ════════════════════════════════════════════════════ */
-        .card {
-            background: var(--color-surface);
-            border: var(--border-2);
-            border-radius: var(--radius-lg);
-            padding: var(--space-6);
-            box-shadow: var(--shadow-card);
-        }
-
-        .card__header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: var(--space-5);
-            padding-bottom: var(--space-5);
-            border-bottom: var(--border);
-        }
-
-        .card__title {
-            font-family: var(--font-display);
-            font-weight: 600;
-            font-size: 1.2rem;
-        }
-
-        .card__subtitle {
-            color: var(--color-text-dim);
-            font-size: 0.92rem;
-        }
-
-
-        /* ════════════════════════════════════════════════════
-           BUTTONS
-        ════════════════════════════════════════════════════ */
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: var(--space-2);
-            font-family: var(--font-display);
-            font-weight: 600;
-            font-size: 0.92rem;
-            padding: 11px 22px;
-            border-radius: var(--radius-md);
-            border: 1px solid transparent;
-            cursor: pointer;
-            text-decoration: none;
-            white-space: nowrap;
-            transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, border-color 0.15s ease;
-        }
-
-        .btn--primary {
-            background: var(--gradient-accent);
-            color: #FFFFFF;
-            box-shadow: var(--shadow-glow-sm);
-        }
-
-        .btn--primary:hover {
-            transform: translateY(-1px);
-            box-shadow: var(--shadow-glow);
-        }
-
-        .btn--secondary {
-            background: var(--color-surface-2);
-            color: var(--color-text);
-            border-color: var(--color-border-2);
-        }
-
-        .btn--secondary:hover {
-            border-color: var(--color-accent);
-            background: var(--color-surface);
-        }
-
-        .btn--danger {
-            background: var(--color-danger);
-            color: #fff;
-            box-shadow: 0 0 0 1px rgba(243, 100, 100, 0.45), 0 0 16px rgba(243, 100, 100, 0.25);
-        }
-
-        .btn--danger:hover {
-            transform: translateY(-1px);
-        }
-
-        .btn--success {
-            background: var(--color-success);
-            color: #121218;
-            box-shadow: 0 0 0 1px rgba(52, 211, 153, 0.45), 0 0 16px rgba(52, 211, 153, 0.25);
-        }
-
-        .btn--success:hover {
-            transform: translateY(-1px);
-        }
-
-        .btn--sm {
-            padding: 8px 16px;
-            font-size: 0.82rem;
-        }
-
-        .btn svg {
-            width: 16px;
-            height: 16px;
-            flex-shrink: 0;
-        }
-
-        /* ════════════════════════════════════════════════════
-           BADGES
-        ════════════════════════════════════════════════════ */
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-family: var(--font-mono);
-            font-size: 0.68rem;
-            font-weight: 500;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            padding: 4px 10px;
-            border-radius: var(--radius-full);
-            border: 1px solid var(--color-border-2);
-            background: var(--color-surface-2);
-            color: var(--color-text-dim);
-        }
-
-        /* ════════════════════════════════════════════════════
-           FORMS
-        ════════════════════════════════════════════════════ */
-        .form-block {
-            display: flex;
-            flex-direction: column;
-            gap: var(--space-2);
-        }
-
-        .form-label {
-            font-family: var(--font-mono);
-            font-size: 0.72rem;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: var(--color-text-faint);
-        }
-
-        .input {
-            width: 100%;
-            background: var(--color-bg-raised);
-            color: var(--color-text);
-            border: var(--border-2);
-            border-radius: var(--radius-md);
-            padding: 12px 16px;
-            font-size: 0.92rem;
-            transition: border-color 0.15s ease, box-shadow 0.15s ease;
-            appearance: none;
-        }
-
-        .input::placeholder {
-            color: var(--color-text-faint);
-        }
-
-        .input:focus {
-            outline: none;
-            border-color: var(--color-accent);
-            box-shadow: 0 0 0 3px rgba(124, 92, 252, 0.18);
-        }
-
-        /* ════════════════════════════════════════════════════
-           TABLES
-        ════════════════════════════════════════════════════ */
-        .table-wrapper {
-            overflow-x: auto;
-            margin-top: var(--space-6);
-        }
-
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.92rem;
-        }
-
-        .table thead {
-            background: var(--color-surface-2);
-            border-bottom: var(--border);
-        }
-
-        .table th {
-            padding: var(--space-4);
-            text-align: left;
-            font-family: var(--font-mono);
-            font-size: 0.72rem;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            color: var(--color-text-faint);
-            font-weight: 500;
-        }
-
-        .table td {
-            padding: var(--space-4);
-            border-bottom: var(--border-2);
-        }
-
-        .table tbody tr:hover {
-            background: rgba(124, 92, 252, 0.05);
-        }
-
-        /* ════════════════════════════════════════════════════
-           MODAL
-        ════════════════════════════════════════════════════ */
-        .modal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            z-index: 100;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(4px);
-            align-items: center;
-            justify-content: center;
-            padding: var(--space-6);
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal__content {
-            background: var(--color-surface);
-            border: var(--border-2);
-            border-radius: var(--radius-lg);
-            padding: var(--space-10);
-            max-width: 540px;
-            width: 100%;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-
-        .modal__header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: var(--space-6);
-            padding-bottom: var(--space-6);
-            border-bottom: var(--border);
-        }
-
-        .modal__title {
-            font-family: var(--font-display);
-            font-weight: 600;
-            font-size: 1.3rem;
-        }
-
-        .modal__close {
-            background: transparent;
-            border: none;
-            color: var(--color-text-dim);
-            cursor: pointer;
-            font-size: 24px;
-            padding: 0;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: var(--radius-sm);
-            transition: color 0.15s ease, background 0.15s ease;
-        }
-
-        .modal__close:hover {
-            color: var(--color-text);
-            background: var(--color-surface-2);
-        }
-
-        .modal__body {
-            display: flex;
-            flex-direction: column;
-            gap: var(--space-4);
-            margin-bottom: var(--space-6);
-        }
-
-        .modal__actions {
-            display: flex;
-            gap: var(--space-3);
-            justify-content: flex-end;
-        }
-
-
-        /* ════════════════════════════════════════════════════
-           SUBSCRIPTION BANNER & STATES
-        ════════════════════════════════════════════════════ */
-        .subscription-banner {
-            background: linear-gradient(180deg, rgba(124, 92, 252, 0.12), rgba(45, 216, 196, 0.08));
-            border: 1px solid rgba(124, 92, 252, 0.35);
-            border-radius: var(--radius-lg);
-            padding: var(--space-6);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: var(--space-6);
-            margin-bottom: var(--space-10);
-        }
-
-        .subscription-banner__content h3 {
-            font-family: var(--font-display);
-            font-weight: 600;
-            font-size: 1.1rem;
-            margin-bottom: var(--space-1);
-        }
-
-        .subscription-banner__content p {
-            color: var(--color-text-dim);
-            font-size: 0.9rem;
-        }
-
-        /* ════════════════════════════════════════════════════
-           RESPONSIVE
-        ════════════════════════════════════════════════════ */
-
-        @media (max-width: 720px) {
-            .page-header {
-                flex-direction: column;
-            }
-
-            .page-header__actions {
-                justify-content: flex-start;
-            }
-
-            .subscription-banner {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .subscription-banner__action .btn {
-                width: 100%;
-            }
-        }
-
-        /* ════════════════════════════════════════════════════
-           UTILITIES
-        ════════════════════════════════════════════════════ */
-
-        .htmx-indicator {
-            display: none;
-        }
-
-        .htmx-request .htmx-indicator {
-            display: inline-flex;
-        }
-
-        .spinner {
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-top-color: #fff;
-            animation: spin 0.7s linear infinite;
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-    </style>
 </head>
 <body>
 
 <!-- ════════════════════════════════════════════
      NAVIGATION
 ════════════════════════════════════════════ -->
-<header class="navbar">
-    <div class="navbar__inner">
-        <a href="/" class="navbar__logo">
-            <span class="navbar__logo-mark">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                     stroke-linejoin="round">
-                    <path d="M4 6h16M4 12h10M4 18h16"/>
+<header class="site-header">
+    <div class="wrap header-inner">
+
+        <!-- Logo & Breadcrumb -->
+        <div style="display: flex; align-items: center; gap: 24px;">
+            <a href="/" class="logo">
+                <svg width="24" height="24" viewBox="0 0 24 24" class="logo-box">
+                    <rect x="2" y="4" width="20" height="16" rx="2"/>
+                    <polyline points="2,6 12,13 22,6" class="logo-flap"/>
                 </svg>
-            </span>
-            <span class="navbar__wordmark">Formbox</span>
-        </a>
-        <div class="navbar__breadcrumb">
-            <span>/</span>
-            <span>Dashboard</span>
-        </div>
-        <div class="navbar__user">
-            <div class="navbar__user-name">
-                <div style="font-size: 0.82rem; color: var(--color-text-dim);">Signed in as</div>
-                <div style="font-weight: 500;" th:text="${user.email}">
-                    user@domain.com
-                </div>
+                <span class="logo-word">Formbox</span>
+            </a>
+
+            <div style="display: flex; align-items: center; gap: 12px; font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-on-ink-muted); border-left: 1px solid var(--line-on-ink); padding-left: 24px;">
+                <span>Dashboard</span>
             </div>
-            <div class="navbar__user-avatar">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+        </div>
+
+        <!-- Actions & User Info -->
+        <div class="header-actions">
+
+            <!-- User Pill -->
+            <div class="stamp-badge"
+                 style="border-color: var(--line-on-ink); color: var(--text-on-ink-muted); margin-bottom: 0; padding: 6px 12px; gap: 10px;">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
+                     style="opacity: 0.7;">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                     <circle cx="12" cy="7" r="4"/>
                 </svg>
+                <span th:text="${user.email}" style="font-weight: 500; font-size: 0.72rem; letter-spacing: 0.02em;">user@domain.com</span>
             </div>
-        </div>
-        <div class="navbar__actions">
-            <th:block th:if="${tier != 'pro-v1'}">
-                <div th:if="${tier == 'free-v1'}" style="display: flex; gap: 0.5rem; align-items: center;">
-                    <a href="/billing/upgrade/starter-v1" class="btn btn--secondary"
-                       style="padding: 0.5rem 1rem; font-size: 0.875rem; text-decoration: none;">
-                        Upgrade to Starter
-                    </a>
-                    <a href="/billing/upgrade/pro-v1" class="btn btn--primary"
-                       style="padding: 0.5rem 1rem; font-size: 0.875rem; text-decoration: none;">
-                        Upgrade to Pro
-                    </a>
-                </div>
 
+            <!-- Upgrades -->
+            <th:block th:if="${tier != 'pro-v1'}">
+                <div th:if="${tier == 'free-v1'}" style="display: flex; gap: 12px; align-items: center;">
+                    <a href="/billing/upgrade/starter-v1" class="btn btn-secondary btn-small">Upgrade to Starter</a>
+                    <a href="/billing/upgrade/pro-v1" class="btn btn-primary btn-small">Upgrade to Pro</a>
+                </div>
                 <div th:if="${tier == 'starter-v1'}">
-                    <a href="/billing/upgrade/pro-v1" class="btn btn--primary"
-                       style="padding: 0.5rem 1rem; font-size: 0.875rem; text-decoration: none;">
-                        Upgrade to Pro
-                    </a>
+                    <a href="/billing/upgrade/pro-v1" class="btn btn-primary btn-small">Upgrade to Pro</a>
                 </div>
             </th:block>
 
-            <button th:if="${tier != 'free-v1'}"
-                    hx-post="/billing/portal"
-                    class="btn btn--secondary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
+            <button th:if="${tier != 'free-v1'}" hx-post="/billing/portal" class="btn btn-secondary btn-small">
                 Manage Subscription
             </button>
 
-            <button class="btn btn--secondary btn--sm" hx-post="/auth/logout">
-                Sign out
+            <!-- Logout (Icon only for cleanliness, or text) -->
+            <button class="btn btn-secondary btn-small" hx-post="/auth/logout"
+                    style="padding: 10px; border-color: transparent;">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
             </button>
         </div>
     </div>
@@ -687,75 +78,69 @@
      DASHBOARD LAYOUT
 ════════════════════════════════════════════ -->
 
-<main class="main-content">
+<main class="wrap" style="padding-top: 64px; padding-bottom: 96px;">
 
-
-    <div th:if="${msg}" class="alert alert--warning"
-         style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 1rem; margin-bottom: 1.5rem; color: #991b1b; border-radius: 4px;">
-        <p style="margin: 0; font-size: 0.95rem;">
-            <span th:text="${msg}">Warning message</span>
-        </p>
+    <!-- Alert Block -->
+    <div th:if="${msg}" class="stamp-badge"
+         style="width: 100%; border-color: rgba(192, 67, 43, 0.55); color: var(--stamp-red); margin-bottom: 32px;">
+        <div class="stamp-ring" style="background: var(--stamp-red); box-shadow: none;"></div>
+        <span th:text="${msg}">Warning message</span>
     </div>
 
-
     <!-- PAGE HEADER -->
-    <div class="page-header">
-        <div class="page-header__content">
-            <h1>Welcome back</h1>
-            <p>Manage your form endpoints, track submissions, and upgrade your plan.</p>
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 40px; flex-wrap: wrap; gap: 24px;">
+        <div class="section-head" style="margin-bottom: 0;">
+            <span class="eyebrow">Overview</span>
+            <h2>Welcome back</h2>
+            <p class="section-sub">Manage your form endpoints, track submissions, and upgrade your plan.</p>
         </div>
-        <div class="page-header__actions">
-            <button class="btn btn--primary" id="create-form-btn" onclick="openModal('create-form-modal')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                     stroke-linejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19"/>
-                    <line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
-                New Endpoint
-            </button>
-        </div>
+
+        <button class="btn btn-primary" id="create-form-btn" onclick="openModal('create-form-modal')">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            New Endpoint
+        </button>
     </div>
 
     <!-- FORM ENDPOINTS CARD (HTMX Loaded Table) -->
-    <div class="card">
-        <div class="card__header">
-            <div>
-                <h2 class="card__title">Form Endpoints</h2>
-                <p class="card__subtitle">Manage all your active form endpoints below</p>
-            </div>
-        </div>
+    <div style="margin-bottom: 16px;">
+        <h3 style="font-family: var(--font-display); font-size: 1.15rem; margin-bottom: 6px;">Form Endpoints</h3>
+        <p style="color: var(--text-on-ink-muted); font-size: 0.92rem; margin-bottom: 16px;">Manage all your active form
+            endpoints below.</p>
+    </div>
 
-        <!-- HTMX Table Container -->
-        <div class="table-wrapper" hx-get="/forms" hx-trigger="load" hx-target="#endpoints-tbody"
-             hx-swap="innerHTML">
-            <table class="table">
-                <thead>
-                <tr>
-                    <th>Endpoint</th>
-                    <th>Submissions</th>
-                    <th>Status</th>
-                    <th style="text-align: right;">Actions</th>
-                </tr>
-                </thead>
-                <tbody id="endpoints-tbody">
-                <!-- Content will load via HTMX here. Below is a fallback loading state. -->
-                <tr>
-                    <td colspan="4"
-                        style="text-align: center; padding: var(--space-8); color: var(--color-text-dim);">
-                            <span class="spinner"
-                                  style="display:inline-block; border-top-color: var(--color-accent); border-right-color: var(--color-accent); margin-right: 8px; margin-bottom: -2px;"></span>
+    <!-- HTMX Table Container -->
+    <div class="table-wrapper" hx-get="/forms" hx-trigger="load" hx-target="#endpoints-tbody" hx-swap="innerHTML">
+        <table class="table">
+            <thead>
+            <tr>
+                <th>Endpoint</th>
+                <th>Submissions</th>
+                <th>Status</th>
+                <th style="text-align: right;">Actions</th>
+            </tr>
+            </thead>
+            <tbody id="endpoints-tbody">
+            <!-- Content will load via HTMX here. Below is a fallback loading state. -->
+            <tr>
+                <td colspan="4" style="text-align: center; padding: 48px; color: var(--text-on-ink-muted);">
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 12px; font-family: var(--font-mono); font-size: 0.85rem;">
+                        <span class="spinner" style="border-top-color: var(--air-gold);"></span>
                         Loading your endpoints...
-                    </td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
+                    </div>
+                </td>
+            </tr>
+            </tbody>
+        </table>
     </div>
 
 </main>
 
 <!-- ════════════════════════════════════════════
-     CREATE FORM MODAL (Converted to HTML form)
+     CREATE FORM MODAL
 ════════════════════════════════════════════ -->
 <div class="modal" id="create-form-modal">
     <div class="modal__content">
@@ -768,29 +153,34 @@
         <form hx-post="/forms" hx-target="#endpoints-tbody" hx-swap="beforeend"
               onsubmit="closeModal('create-form-modal')">
             <div class="modal__body">
-                <div class="form-block">
-                    <label class="form-label" for="form-name">Form Name</label>
-                    <input class="input" id="form-name" name="name" type="text" placeholder="Contact Form" required/>
-                </div>
-                <div class="form-block">
-                    <label class="form-label" for="form-redirect">Custom Redirect URL (Optional)</label>
 
-                    <input class="input" id="form-redirect" name="redirectUrl" type="url"
-                           placeholder="https://yoursite.com/thank-you"
+                <div class="input-group">
+                    <label class="eyebrow" for="form-name">Form Name</label>
+                    <input id="form-name" name="name" type="text" placeholder="e.g. Contact Form" required/>
+                </div>
+
+                <div class="input-group" style="margin-bottom: 0;">
+                    <label class="eyebrow" for="form-redirect">Custom Redirect URL <span
+                            style="text-transform: none; color: var(--text-on-ink-muted);">(Optional)</span></label>
+                    <input id="form-redirect" name="redirectUrl" type="url" placeholder="https://yoursite.com/thank-you"
                            th:disabled="${tier == 'free-v1'}"/>
 
-                    <p class="upgrade-message" th:if="${tier == 'free-v1'}"
-                       style="color: #ef4444; font-size: 0.875rem; margin-top: 0.25rem;">
-                        Custom redirects are a premium feature.
-                        <a href="#" style="text-decoration: underline;">Upgrade your plan</a> to unlock.
+                    <p th:if="${tier == 'free-v1'}"
+                       style="color: var(--stamp-red); font-family: var(--font-mono); font-size: 0.76rem; margin-top: 8px;">
+                        Custom redirects are a premium feature.<br>
+                        <a href="/billing/upgrade/starter-v1"
+                           style="color: var(--air-gold); text-decoration: underline; text-underline-offset: 3px;">Upgrade
+                            your plan</a> to unlock.
                     </p>
                 </div>
+
             </div>
 
             <div class="modal__actions">
-                <button type="button" class="btn btn--secondary" onclick="closeModal('create-form-modal')">Cancel
+                <button type="button" class="btn btn-secondary btn-small" onclick="closeModal('create-form-modal')">
+                    Cancel
                 </button>
-                <button type="submit" class="btn btn--primary">
+                <button type="submit" class="btn btn-primary btn-small" style="min-width: 140px;">
                     <span class="btn-label">Create Endpoint</span>
                     <span class="spinner htmx-indicator"></span>
                 </button>

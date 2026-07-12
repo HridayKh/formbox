@@ -2,70 +2,96 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Verifying Session | FormBox</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" th:href="'/assets/styles.css'" href="/../static/assets/styles.css">
     <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.10/dist/htmx.min.js"></script>
-
     <style>
-        :root {
-            --color-bg:           #09090B;
-            --color-surface:      #121218;
-            --color-border-2:     #27272A;
-            --color-text:         #F4F4F6;
-            --color-text-dim:     #A3A3AE;
-            --color-accent:       #7C5CFC;
-            --color-accent-bright:#9B7CFF;
-            --gradient-accent:    linear-gradient(135deg, #7C5CFC 0%, #5B3FE0 100%);
-            --font-body:          'Inter', system-ui, -apple-system, sans-serif;
-            --space-4: 16px;
-            --space-6: 24px;
-            --radius-lg: 14px;
-        }
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            background: var(--color-bg);
-            color: var(--color-text);
-            font-family: var(--font-body);
+        .verify-container {
             display: flex;
             align-items: center;
             justify-content: center;
             min-height: 100vh;
+            padding: 24px;
         }
+
         .auth-card {
-            background: var(--color-surface);
-            border: 1px solid var(--color-border-2);
-            border-radius: var(--radius-lg);
-            padding: var(--space-6);
-            width: 100%;
-            max-width: 400px;
+            background: var(--ink-raised);
+            border: 1px solid var(--line-on-ink);
+            border-radius: var(--radius-l);
+            padding: 48px 40px;
+            max-width: 420px;
             text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: var(--space-4);
+            box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.55);
+            position: relative;
         }
+
+        .auth-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--airmail-stripe);
+            border-radius: var(--radius-l) var(--radius-l) 0 0;
+        }
+
         .spinner {
-            border: 3px solid rgba(124, 92, 252, 0.1);
-            border-top: 3px solid var(--color-accent-bright);
+            width: 48px;
+            height: 48px;
+            border: 3px solid rgba(243, 236, 221, 0.2);
+            border-top-color: var(--air-gold);
             border-radius: 50%;
-            width: 36px;
-            height: 36px;
-            animation: spin 0.8s linear infinite;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 28px;
         }
-        h3 { font-size: 1.1rem; font-weight: 500; color: var(--color-text); }
-        p { font-size: 0.9rem; color: var(--color-text-dim); }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .auth-card h3 {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 1.4rem;
+            color: var(--text-on-ink);
+            margin: 0 0 8px;
+        }
+
+        .auth-card p {
+            color: var(--text-on-ink-muted);
+            margin: 0;
+            font-size: 0.96rem;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 480px) {
+            .auth-card {
+                padding: 36px 24px;
+            }
+
+            .auth-card h3 {
+                font-size: 1.2rem;
+            }
+
+            .spinner {
+                width: 40px;
+                height: 40px;
+                border-width: 2px;
+            }
+        }
     </style>
 </head>
 <body>
-
-<div class="auth-card">
-    <div class="spinner"></div>
-    <h3>Verifying Session</h3>
-    <p>Finalizing verification, please wait...</p>
+<div class="verify-container">
+    <div class="auth-card">
+        <div class="spinner"></div>
+        <h3>Verifying Session</h3>
+        <p>Finalizing verification, please wait...</p>
+    </div>
 </div>
 
 <script>
@@ -84,7 +110,6 @@
         if (window.location.hash) {
             const tokens = getHashParams();
 
-            // Programmatically execute the HTMX post without needing a dummy hidden button
             htmx.ajax('POST', '/auth/session-callback', {
                 values: tokens
             });
