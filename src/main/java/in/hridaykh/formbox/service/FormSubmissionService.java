@@ -54,7 +54,7 @@ public class FormSubmissionService {
 				return false;
 			}
 			if (currentCount == 1) redis.expire(redisKey, Duration.ofMinutes(1));
-			return currentCount > rateLimitRpm;
+			return currentCount <= rateLimitRpm;
 		} catch (Exception e) {
 			log.error("Failed to execute rate limit logic in Redis for key: {}", redisKey, e);
 			return false;

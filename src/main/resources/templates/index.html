@@ -390,7 +390,7 @@
             const note = form.querySelector(".form-note");
             const button = form.querySelector("button");
 
-            form.addEventListener("submit", function (event) {
+            form.addEventListener("submit", async function (event) {
                 event.preventDefault();
 
                 const value = (input.value || "").trim();
@@ -403,11 +403,34 @@
                 }
 
                 note.classList.remove("is-error");
-                note.textContent = "You're on the list \u2014 watch your inbox for the beta invite.";
-                input.value = "";
-                input.disabled = true;
+
                 button.disabled = true;
-                button.textContent = "Reserved";
+                button.textContent = "Joining...";
+
+                try {
+                    const response = await fetch("http://127.0.0.1:8080/f/302b5467-9d06-4901-8691-0a42b999e7e8", {
+                        method: "POST",
+                        body: new URLSearchParams({
+                            email: value
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error("Request failed");
+                    }
+
+                    note.textContent = "You're on the list — watch your inbox for the beta invite.";
+                    input.value = "";
+                    input.disabled = true;
+                    button.textContent = "Reserved";
+                } catch (error) {
+                    button.disabled = false;
+                    button.textContent = "Join Waitlist";
+
+                    note.classList.add("is-error");
+                    note.textContent = "Something went wrong. Please try again.";
+                    console.error(error);
+                }
             });
         });
     })();

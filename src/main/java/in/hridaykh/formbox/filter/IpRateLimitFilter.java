@@ -27,7 +27,7 @@ import java.util.List;
 
 @Slf4j
 @RequiredArgsConstructor
-@Order(Ordered.HIGHEST_PRECEDENCE)
+@Order(Ordered.HIGHEST_PRECEDENCE + 100)
 @Component
 public class IpRateLimitFilter extends OncePerRequestFilter {
 
