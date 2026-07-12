@@ -62,10 +62,10 @@ public class FormSubmissionService {
 	}
 
 	// step 4: check if content type allowed
-	public boolean isContentTypeJson(CachedForm form, HttpServletRequest request) {
-		boolean isContentTypeJson = request.getContentType().equalsIgnoreCase(MediaType.APPLICATION_JSON_VALUE);
-		boolean isAcceptJson = request.getHeader("Accept").equalsIgnoreCase(MediaType.APPLICATION_JSON_VALUE);
-		return isContentTypeJson || isAcceptJson;
+	public boolean isContentTypeJson(HttpServletRequest request) {
+		String contentType = request.getContentType();
+		String accept = request.getHeader("Accept");
+		return (contentType != null && contentType.equalsIgnoreCase(MediaType.APPLICATION_JSON_VALUE)) || (accept != null && accept.equalsIgnoreCase(MediaType.APPLICATION_JSON_VALUE));
 	}
 
 	// step 5: check honeypot
@@ -80,7 +80,7 @@ public class FormSubmissionService {
 	// step 8: abort request if invalid mime type on file (error 400)
 	public boolean filesHaveValidMimeTypes(HttpServletRequest request) {
 		if (request.getContentType() == null || !request.getContentType().startsWith("multipart/")) {
-			log.warn("Request is not a multipart form submission; skipping file validation.");
+			log.debug("Request is not a multipart form submission; skipping file validation.");
 			return true;
 		}
 
@@ -95,7 +95,7 @@ public class FormSubmissionService {
 				String contentType = part.getContentType();
 				if (contentType == null || contentType.isBlank()) continue;
 				if (ALLOWED_MIME_TYPES.contains(contentType.trim().toLowerCase())) {
-					log.warn("Invalid MIME type detected: {} for file field: {}", contentType, part.getName());
+					log.info("Invalid MIME type detected: {} for file field: {}", contentType, part.getName());
 					return false;
 				}
 			}

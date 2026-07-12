@@ -11,11 +11,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import sh.polar.sdk.Polar;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.OffsetDateTime;
 import java.util.NoSuchElementException;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +30,7 @@ public class PolarWebhooksService {
 	private final PolarMeterService polarMeterService;
 	private final PolarCacheService polarCacheService;
 	private final TenantCacheService tenantCacheService;
+	private final Polar polar;
 
 	@Transactional
 	public void processHook(String rawBody) {
@@ -83,13 +86,11 @@ public class PolarWebhooksService {
 					break;
 
 				default:
-					// Demoted to DEBUG/INFO because ignoring unhandled events is standard behavior
 					log.debug("Unmanaged event passed validation: {}", eventType);
 					break;
 			}
 
 		} catch (Exception e) {
-			// SLF4J correctly logs the exception stack trace when passed as the last isolated argument
 			log.error("Failed to process Polar webhook payload", e);
 		}
 	}
@@ -102,12 +103,31 @@ public class PolarWebhooksService {
 			throw new NoSuchElementException("Either free-v1 or starter-v1 is null in db");
 
 		if ("pro-v1".equals(newProduct.getSlug())) {
-			purchasesRepository.deleteByUserId_idAndProduct(tenant.getId(), free);
-			purchasesRepository.deleteByUserId_idAndProduct(tenant.getId(), starter);
-			log.info("Purged lower tiers (free and starter) for upgraded Pro user: {}", tenant.getEmail());
+			try {
+				var freePurchase = purchasesRepository.findByUserIdAndProduct(tenant, free);
+				purchasesRepository.deleteByUserId_idAndProduct(tenant.getId(), free);
+				freePurchase.ifPresent(purchases -> polar.subscriptions().revoke(UUID.fromString(purchases.getPolarOrderId())));
+			} catch (Exception e) {
+				log.error("", e);
+			}
+
+			try {
+				var starterPurchase = purchasesRepository.findByUserIdAndProduct(tenant, starter);
+				purchasesRepository.deleteByUserId_idAndProduct(tenant.getId(), starter);
+				starterPurchase.ifPresent(purchases -> polar.subscriptions().revoke(UUID.fromString(purchases.getPolarOrderId())));
+				log.info("Purged lower tiers (free and starter) for upgraded Pro user: {}", tenant.getEmail());
+			} catch (Exception e) {
+				log.error("", e);
+			}
 		} else if ("start-v1".equals(newProduct.getSlug())) {
-			purchasesRepository.deleteByUserId_idAndProduct(tenant.getId(), free);
-			log.info("Purged free tier for upgraded Starter user: {}", tenant.getEmail());
+			try {
+				var starterPurchase = purchasesRepository.findByUserIdAndProduct(tenant, starter);
+				purchasesRepository.deleteByUserId_idAndProduct(tenant.getId(), starter);
+				starterPurchase.ifPresent(purchases -> polar.subscriptions().revoke(UUID.fromString(purchases.getPolarOrderId())));
+				log.info("Purged free tier for upgraded Starter user: {}", tenant.getEmail());
+			} catch (Exception e) {
+				log.error("", e);
+			}
 		}
 
 		tenantCacheService.evictTenantTierCache(tenant.getId().toString());
@@ -130,6 +150,7 @@ public class PolarWebhooksService {
 		}
 
 		if (newState == SubscriptionState.active || newState == SubscriptionState.free) {
+			log.info("removing lower tiers for tenant: {}", tenant.getId());
 			removeLowerTiersOnUpgrade(tenant, product);
 		}
 

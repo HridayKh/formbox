@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Login | FormBox</title>
+    <title>Register | FormBox</title>
     <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.10/dist/htmx.min.js"></script>
-    <link rel="stylesheet" th:href="'/assets/styles.css'" href="/../../static/assets/styles.css">
+    <link rel="stylesheet" th:href="'/assets/styles.css'" href="/../static/assets/styles.css">
 </head>
 <body>
 
@@ -21,29 +21,11 @@
     </a>
 
     <div class="section-head" style="margin-bottom: 32px;">
-        <h2 style="font-size: 2rem;">Login to FormBox</h2>
-        <p class="section-sub" style="font-size: 0.95rem;">Welcome back! Please enter your details.</p>
+        <h2 style="font-size: 2rem;">Create an Account</h2>
+        <p class="section-sub" style="font-size: 0.95rem;">Please fill in the details to get started.</p>
     </div>
 
-    <div id="alert-container" style="margin-bottom: 24px;">
-        <div th:if="${param.msg != null and param.msg[0] == 'check_email'}" class="stamp-badge" style="width: 100%;">
-            <div class="stamp-ring"></div>
-            Registration successful! Please check your email.
-        </div>
-        <div th:if="${param.msg != null and param.msg[0] == 'logged_out'}" class="stamp-badge"
-             style="width: 100%; border-color: rgba(171, 176, 201, 0.4); color: var(--text-on-ink-muted);">
-            <div class="stamp-ring"
-                 style="background: var(--text-on-ink-muted); box-shadow: 0 0 0 3px rgba(171, 176, 201, 0.15);"></div>
-            You have been safely logged out.
-        </div>
-        <div th:if="${param.msg != null and param.msg[0] == 'unauthorized'}" class="stamp-badge"
-             style="width: 100%; border-color: rgba(192, 67, 43, 0.55); color: var(--stamp-red);">
-            <div class="stamp-ring" style="background: var(--stamp-red); box-shadow: none;"></div>
-            Please log in to access this resource.
-        </div>
-    </div>
-
-    <form hx-post="/auth/login" hx-target="#alert-container" hx-swap="innerHTML" class="waitlist-form">
+    <form hx-post="/auth/signup" hx-target="#alert-container" hx-swap="innerHTML" class="waitlist-form">
         <div class="input-group">
             <label for="login-email" class="eyebrow" style="display: block; margin-bottom: 10px;">Email</label>
             <input type="email" id="login-email" name="email" required autocomplete="email"
@@ -57,14 +39,14 @@
         </div>
 
         <button type="submit" class="btn btn-primary"
-                style="width: 100%; margin-top: 12px; font-size: 1.05rem; padding: 14px 22px;">Sign In
+                style="width: 100%; margin-top: 12px; font-size: 1.05rem; padding: 14px 22px;">Sign Up
         </button>
     </form>
 
     <div style="margin-top: 36px; border-top: 1px dashed var(--line-on-ink); padding-top: 24px; text-align: center;">
         <p style="font-size: 0.92rem; color: var(--text-on-ink-muted);">
-            Don't have an account? <a href="/auth/signup"
-                                      style="color: var(--air-gold); font-weight: 600; text-decoration: none;">Register
+            Already have an account? <a href="/auth/login"
+                                      style="color: var(--air-gold); font-weight: 600; text-decoration: none;">Login
             here</a>
         </p>
 

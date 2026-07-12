@@ -53,7 +53,7 @@ public class IndexController {
 		try {
 			form = formCacheService.getCachedForm(formId);
 		} catch (FormNotFoundException e) {
-			log.warn("Submission rejected. Form destination completely missing from structural records for ID: {}", formId);
+			log.info("Submission rejected. Form destination completely missing from structural records for ID: {}", formId);
 			response.setStatus(HttpServletResponse.SC_NOT_FOUND);
 			return "submit/form-not-found";
 		}
@@ -71,7 +71,7 @@ public class IndexController {
 		}
 
 		// step 4: check if content type allowed
-		boolean isContentTypeJson = submissionService.isContentTypeJson(form, request);
+		boolean isContentTypeJson = submissionService.isContentTypeJson(request);
 		if (!form.allowJson() && isContentTypeJson)
 			return "submit/json-not-allowed";
 

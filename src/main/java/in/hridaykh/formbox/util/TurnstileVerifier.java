@@ -22,7 +22,7 @@ public class TurnstileVerifier {
 		String turnstileCode = payload.getOrDefault("cf-turnstile", "");
 
 		if (turnstileCode.isBlank() || turnstileSecretKey == null || turnstileSecretKey.isBlank()) {
-			log.warn("Turnstile validation skipped or failed due to missing token or secret key.");
+			log.info("Turnstile validation skipped or failed due to missing token or secret key.");
 			return false;
 		}
 
