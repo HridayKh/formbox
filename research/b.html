@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>/f/abc123 — Market Teardown &amp; Growth Plan</title>
+    <style>
+        @font-face {
+            font-family: 'JBM';
+            src: local('JetBrains Mono');
+        }
+        :root{
+            --ink:#0D1117;
+            --ink-2:#141A21;
+            --ink-3:#1B222B;
+            --paper:#ECEAE3;
+            --paper-dim:#C9C7BE;
+            --muted:#7D8590;
+            --signal:#FF8A3D;
+            --signal-dim:#FF8A3D66;
+            --wire:#2DD4BF;
+            --wire-dim:#2DD4BF55;
+            --line:rgba(236,234,227,0.12);
+            --line-strong:rgba(236,234,227,0.22);
+            --danger:#F2545B;
+            --radius:10px;
+            --mono:'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            --sans:'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+        }
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap');
+
+        *{box-sizing:border-box;}
+        html{scroll-behavior:smooth;}
+        body{
+            margin:0;
+            background:var(--ink);
+            color:var(--paper);
+            font-family:var(--sans);
+            line-height:1.5;
+            -webkit-font-smoothing:antialiased;
+        }
+        ::selection{ background:var(--signal); color:var(--ink); }
+
+        a{ color:inherit; }
+        .wrap{ max-width:1160px; margin:0 auto; padding:0 28px; }
+
+        /* subtle grid texture backdrop */
+        body::before{
+            content:"";
+            position:fixed; inset:0;
+            background-image:
+                    linear-gradient(var(--line) 1px, transparent 1px),
+                    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+            background-size: 64px 64px;
+            opacity:.25;
+            pointer-events:none;
+            z-index:0;
+            mask-image: radial-gradient(ellipse 90% 60% at 50% 0%, black 40%, transparent 90%);
+        }
+
+        code, .mono{ font-family:var(--mono); }
+
+        .eyebrow{
+            font-family:var(--mono);
+            font-size:12.5px;
+            letter-spacing:.04em;
+            color:var(--wire);
+            display:inline-flex;
+            align-items:center;
+            gap:8px;
+            margin:0 0 14px;
+        }
+        .eyebrow .verb{
+            background:var(--wire-dim);
+            color:var(--wire);
+            border:1px solid var(--wire);
+            border-radius:4px;
+            padding:2px 6px;
+            font-weight:700;
+            font-size:11px;
+        }
+        .eyebrow.amber .verb{ background:var(--signal-dim); color:var(--signal); border-color:var(--signal); }
+        .eyebrow.amber{ color:var(--signal); }
+
+        h1,h2,h3{ font-family:var(--mono); font-weight:800; letter-spacing:-0.01em; margin:0; }
+
+        /* ---------- NAV ---------- */
+        header{
+            position:sticky; top:0; z-index:50;
+            backdrop-filter:blur(10px);
+            background:rgba(13,17,23,0.85);
+            border-bottom:1px solid var(--line);
+        }
+        .nav{
+            display:flex; align-items:center; justify-content:space-between;
+            padding:16px 28px; max-width:1160px; margin:0 auto;
+        }
+        .brand{ display:flex; align-items:center; gap:10px; font-family:var(--mono); font-weight:700; font-size:14px; }
+        .brand .dot{ width:8px;height:8px;border-radius:50%; background:var(--wire); box-shadow:0 0 8px var(--wire); animation:blink 2.4s ease-in-out infinite; }
+        @keyframes blink{ 0%,100%{opacity:1;} 50%{opacity:.35;} }
+        .nav-links{ display:flex; gap:22px; font-family:var(--mono); font-size:12.5px; color:var(--muted); }
+        .nav-links a{ text-decoration:none; }
+        .nav-links a:hover{ color:var(--paper); }
+        @media (max-width:720px){ .nav-links{ display:none; } }
+
+        /* ---------- HERO ---------- */
+        .hero{ position:relative; z-index:1; padding:76px 0 40px; }
+        .hero-grid{
+            display:grid; grid-template-columns:1.15fr .85fr; gap:56px; align-items:center;
+        }
+        @media (max-width:900px){ .hero-grid{ grid-template-columns:1fr; } }
+
+        .hero h1{
+            font-size:clamp(30px, 4.4vw, 50px);
+            line-height:1.06;
+            color:var(--paper);
+        }
+        .hero h1 .accent{ color:var(--signal); }
+        .hero p.lede{
+            font-family:var(--sans); color:var(--paper-dim); font-size:17px; max-width:52ch; margin:20px 0 0;
+        }
+        .stat-row{ display:flex; gap:28px; margin-top:34px; flex-wrap:wrap; }
+        .stat{ }
+        .stat .num{ font-family:var(--mono); font-weight:800; font-size:30px; color:var(--paper); }
+        .stat .num small{ font-size:15px; color:var(--muted); font-weight:600; }
+        .stat .label{ font-family:var(--mono); font-size:11.5px; color:var(--muted); margin-top:4px; letter-spacing:.02em; }
+
+        /* signature diagram */
+        .diagram{
+            position:relative;
+            border:1px solid var(--line-strong);
+            border-radius:var(--radius);
+            background:linear-gradient(180deg, var(--ink-2), var(--ink-3));
+            padding:26px 20px 30px;
+            overflow:hidden;
+        }
+        .diagram-label{ font-family:var(--mono); font-size:11px; color:var(--muted); display:flex; justify-content:space-between; margin-bottom:18px; }
+        .diagram-label .ok{ color:var(--wire); }
+        .node{
+            display:flex; align-items:center; gap:8px;
+            font-family:var(--mono); font-size:12.5px;
+            background:var(--ink); border:1px solid var(--line-strong); border-radius:7px;
+            padding:9px 12px; white-space:nowrap;
+        }
+        .node.form{ color:var(--paper-dim); }
+        .node.endpoint{ color:var(--signal); border-color:var(--signal-dim); box-shadow:0 0 0 1px transparent; }
+        .diagram-flow{ display:flex; align-items:center; justify-content:space-between; gap:6px; }
+        .wireLine{ flex:1; height:1px; background:repeating-linear-gradient(90deg, var(--line-strong) 0 6px, transparent 6px 12px); position:relative; min-width:14px; }
+        .wireLine .packet{
+            position:absolute; top:-3px; width:7px; height:7px; border-radius:50%; background:var(--wire);
+            box-shadow:0 0 8px var(--wire); left:-8px;
+            animation:travel 2.6s linear infinite;
+        }
+        @keyframes travel{ 0%{ left:-8px; opacity:0;} 8%{opacity:1;} 92%{opacity:1;} 100%{ left:100%; opacity:0; } }
+
+        .fanout{ margin-top:22px; display:grid; grid-template-columns:1fr; gap:10px; }
+        .dest{
+            display:flex; align-items:center; gap:10px;
+            font-family:var(--mono); font-size:12.5px; color:var(--paper-dim);
+            border:1px solid var(--line); border-radius:7px; padding:9px 12px;
+            background:rgba(255,255,255,0.02);
+        }
+        .dest svg{ width:16px; height:16px; flex:none; }
+        .dest .to{ color:var(--muted); font-size:11px; }
+        .dest.discord svg{ color:#8CA0FF; }
+        .dest.slack svg{ color:#2DD4BF; }
+        .dest.telegram svg{ color:#4FB6FF; }
+
+        @media (prefers-reduced-motion: reduce){
+            .wireLine .packet{ animation:none; opacity:0; }
+            .brand .dot{ animation:none; }
+        }
+
+        /* ---------- SECTION SHELL ---------- */
+        section{ position:relative; z-index:1; padding:64px 0; border-top:1px solid var(--line); }
+        section .head{ max-width:70ch; margin-bottom:34px; }
+        section h2{ font-size:clamp(22px,3vw,32px); color:var(--paper); }
+        section .head p{ color:var(--paper-dim); margin-top:12px; font-size:15.5px; }
+
+        .reveal{ opacity:0; transform:translateY(14px); transition:opacity .6s ease, transform .6s ease; }
+        .reveal.in{ opacity:1; transform:none; }
+        @media (prefers-reduced-motion: reduce){ .reveal{ opacity:1; transform:none; transition:none; } }
+
+        /* ---------- PRICING TABLE ---------- */
+        .toggle{
+            display:inline-flex; border:1px solid var(--line-strong); border-radius:8px; overflow:hidden; margin-bottom:22px;
+            font-family:var(--mono); font-size:12.5px;
+        }
+        .toggle button{
+            background:transparent; border:none; color:var(--muted); padding:9px 16px; cursor:pointer; font-family:var(--mono); font-size:12.5px;
+        }
+        .toggle button.active{ background:var(--signal); color:var(--ink); font-weight:700; }
+
+        .table-scroll{ overflow-x:auto; border:1px solid var(--line-strong); border-radius:var(--radius); }
+        table{ border-collapse:collapse; width:100%; min-width:880px; font-size:13.5px; }
+        thead th{
+            text-align:left; font-family:var(--mono); font-weight:700; color:var(--muted);
+            text-transform:uppercase; font-size:10.5px; letter-spacing:.05em;
+            padding:14px 16px; border-bottom:1px solid var(--line-strong); background:var(--ink-2);
+            position:sticky; top:0;
+        }
+        tbody td{ padding:14px 16px; border-bottom:1px solid var(--line); vertical-align:top; color:var(--paper-dim); }
+        tbody tr:last-child td{ border-bottom:none; }
+        tbody tr.you{ background:linear-gradient(90deg, rgba(255,138,61,0.08), transparent); }
+        tbody tr.you td:first-child{ color:var(--signal); font-weight:700; font-family:var(--mono); }
+        td.svc{ font-family:var(--mono); font-weight:700; color:var(--paper); white-space:nowrap; }
+        td.price{ font-family:var(--mono); color:var(--paper); }
+        td.price.dim{ opacity:.45; }
+        td.price.hot{ color:var(--signal); font-weight:700; }
+        .tag{ display:inline-block; font-family:var(--mono); font-size:10.5px; padding:2px 6px; border-radius:4px; border:1px solid var(--line-strong); color:var(--muted); margin-top:4px; }
+        .tag.yes{ color:var(--wire); border-color:var(--wire-dim); }
+        .foot-note{ margin-top:16px; font-size:13px; color:var(--muted); max-width:75ch; }
+        .foot-note strong{ color:var(--paper-dim); }
+
+        /* ---------- PERSONAS ---------- */
+        .persona-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+        @media (max-width:920px){ .persona-grid{ grid-template-columns:1fr; } }
+        .persona{
+            border:1px solid var(--line-strong); border-radius:var(--radius); padding:22px 22px 24px;
+            background:var(--ink-2); display:flex; flex-direction:column; gap:14px;
+            transition:border-color .25s ease, transform .25s ease;
+        }
+        .persona:hover{ border-color:var(--signal-dim); transform:translateY(-3px); }
+        .persona .id{ font-family:var(--mono); font-size:11px; color:var(--muted); }
+        .persona h3{ font-size:18px; color:var(--paper); line-height:1.25; }
+        .persona .field{ font-size:13.5px; color:var(--paper-dim); }
+        .persona .field .k{ display:block; font-family:var(--mono); font-size:10.5px; color:var(--wire); text-transform:uppercase; letter-spacing:.05em; margin-bottom:5px; }
+        .chips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:auto; padding-top:6px; }
+        .chip{ font-family:var(--mono); font-size:11px; color:var(--muted); border:1px solid var(--line-strong); padding:3px 8px; border-radius:20px; }
+
+        /* ---------- HOOKS ---------- */
+        .hook-list{ display:flex; flex-direction:column; gap:12px; }
+        .hook{
+            display:grid; grid-template-columns:auto 1fr auto; gap:18px; align-items:center;
+            border:1px solid var(--line-strong); border-radius:var(--radius); padding:18px 20px;
+            background:var(--ink-2);
+        }
+        @media (max-width:720px){ .hook{ grid-template-columns:1fr; } .hook .copy-btn{ justify-self:start; } }
+        .hook .idx{ font-family:var(--mono); color:var(--signal); font-weight:800; font-size:15px; }
+        .hook .txt{ font-size:15px; color:var(--paper); }
+        .hook .txt .angle{ display:block; font-family:var(--mono); font-size:10.5px; color:var(--muted); margin-top:6px; text-transform:uppercase; letter-spacing:.04em; }
+        .copy-btn{
+            font-family:var(--mono); font-size:11.5px; color:var(--muted); background:transparent;
+            border:1px solid var(--line-strong); border-radius:6px; padding:7px 12px; cursor:pointer;
+            white-space:nowrap; transition:all .2s ease;
+        }
+        .copy-btn:hover{ border-color:var(--wire); color:var(--wire); }
+        .copy-btn.copied{ border-color:var(--wire); color:var(--wire); }
+
+        /* ---------- PLAYBOOK TABS ---------- */
+        .tabs{ display:flex; gap:6px; margin-bottom:22px; flex-wrap:wrap; }
+        .tab{
+            font-family:var(--mono); font-size:12.5px; color:var(--muted); background:var(--ink-2);
+            border:1px solid var(--line-strong); border-radius:8px; padding:9px 16px; cursor:pointer;
+        }
+        .tab.active{ color:var(--ink); background:var(--wire); border-color:var(--wire); font-weight:700; }
+        .panel{ display:none; }
+        .panel.active{ display:block; }
+        .playbook-item{ display:flex; gap:14px; padding:16px 0; border-bottom:1px solid var(--line); }
+        .playbook-item:last-child{ border-bottom:none; }
+        .playbook-item .status{ font-family:var(--mono); font-size:11px; color:var(--wire); border:1px solid var(--wire-dim); border-radius:4px; padding:2px 7px; height:fit-content; white-space:nowrap; margin-top:2px; }
+        .playbook-item p{ margin:0; color:var(--paper-dim); font-size:14.5px; }
+        .playbook-item strong{ color:var(--paper); }
+
+        .principle{ margin-top:28px; border:1px dashed var(--line-strong); border-radius:var(--radius); padding:20px 22px; color:var(--paper-dim); font-size:14.5px; }
+        .principle .k{ font-family:var(--mono); color:var(--signal); font-size:11px; text-transform:uppercase; letter-spacing:.05em; display:block; margin-bottom:8px; }
+
+        footer{ padding:40px 0 60px; border-top:1px solid var(--line); text-align:center; }
+        footer p{ font-family:var(--mono); font-size:12px; color:var(--muted); }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="nav">
+        <div class="brand"><span class="dot"></span> /f/abc123 <span style="color:var(--muted); font-weight:500;">&nbsp;— status report</span></div>
+        <nav class="nav-links">
+            <a href="#teardown">market-teardown</a>
+            <a href="#audience">audience-segments</a>
+            <a href="#hooks">marketing-hooks</a>
+            <a href="#playbook">growth-playbook</a>
+        </nav>
+    </div>
+</header>
+
+<main class="wrap">
+
+    <section class="hero">
+        <div class="hero-grid">
+            <div>
+                <div class="eyebrow amber"><span class="verb">200 OK</span> headless form backend / go-to-market brief</div>
+                <h1>Every submission has<br>somewhere to go<span class="accent">.</span></h1>
+                <p class="lede">No inbox in the middle. A static HTML form posts to an endpoint, the endpoint fans out to Discord, Slack, Telegram, or a digest — and the whole thing runs at a fraction of what the email-first incumbents charge.</p>
+                <div class="stat-row">
+                    <div class="stat"><div class="num">$2.87<small>/mo</small></div><div class="label">STARTER — 2,500 SUBS, 1GB</div></div>
+                    <div class="stat"><div class="num">$7.38<small>/mo</small></div><div class="label">PRO — 100,000 SUBS, 10GB</div></div>
+                    <div class="stat"><div class="num">10–50x<small> cheaper</small></div><div class="label">VS. MOST INCUMBENTS AT VOLUME</div></div>
+                </div>
+            </div>
+
+            <div class="diagram" aria-hidden="false">
+                <div class="diagram-label"><span>traffic.log</span><span class="ok">● live</span></div>
+                <div class="diagram-flow">
+                    <div class="node form">&lt;form&gt;</div>
+                    <div class="wireLine"><span class="packet" style="animation-delay:0s"></span></div>
+                    <div class="node endpoint">POST /submit</div>
+                </div>
+                <div class="fanout">
+                    <div class="dest discord">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 12c1.5 1 2.7 1.3 4 1.3S14.5 13 16 12"/><path d="M9 9.5c0 .6-.4 1-1 1s-1-.4-1-1 .4-1 1-1 1 .4 1 1z" fill="currentColor" stroke="none"/><path d="M17 9.5c0 .6-.4 1-1 1s-1-.4-1-1 .4-1 1-1 1 .4 1 1z" fill="currentColor" stroke="none"/><path d="M7 5.5C9 4.7 10.5 4.5 12 4.5s3 .2 5 1c1.5 2 2.2 4.8 2 8.5-1.4 1.2-3 1.9-3 1.9l-.7-1.3M7 5.5C5 7.5 4.3 10.3 4.5 14c1.4 1.2 3 1.9 3 1.9l.7-1.3"/></svg>
+                        <span>#form-alerts</span><span class="to">← webhook</span>
+                    </div>
+                    <div class="dest slack">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="3" width="3" height="8" rx="1.5"/><rect x="13" y="13" width="3" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="3" rx="1.5" transform="rotate(90 13 3)"/><rect x="3" y="13" width="8" height="3" rx="1.5" transform="rotate(90 3 13)"/></svg>
+                        <span>#leads</span><span class="to">← webhook</span>
+                    </div>
+                    <div class="dest telegram">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 4L3 11.5l6 2M21 4l-4 16-8-6.5M21 4L9 15.5v5.5"/></svg>
+                        <span>@ops_bot</span><span class="to">← webhook</span>
+                    </div>
+                    <div class="dest" style="color:var(--muted); border-style:dashed;">
+                        <span>weekly digest</span><span class="to">→ every Mon 9am</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="teardown">
+        <div class="head reveal">
+            <div class="eyebrow"><span class="verb">GET</span> /market-teardown</div>
+            <h2>What the incumbents actually charge</h2>
+            <p>Pricing checked against public plan pages as of July 2026. Rows are sorted by how they behave at real volume, not by their homepage headline number.</p>
+        </div>
+
+        <div class="toggle reveal">
+            <button class="active" data-vol="2500">at 2,500 subs/mo</button>
+            <button data-vol="100000">at 100,000 subs/mo</button>
+        </div>
+
+        <div class="table-scroll reveal">
+            <table>
+                <thead>
+                <tr>
+                    <th>Service</th>
+                    <th>Entry tier</th>
+                    <th class="colprice">Price at volume</th>
+                    <th>Storage</th>
+                    <th>Native webhooks</th>
+                    <th>Compliance posture</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr class="you">
+                    <td class="svc">Yours</td>
+                    <td>Starter / Pro</td>
+                    <td class="price hot" data-p2500="$2.87/mo" data-p100k="$7.38/mo">$2.87/mo</td>
+                    <td>1GB → 10GB</td>
+                    <td><span class="tag yes">Discord + Slack + Telegram</span></td>
+                    <td>Pursuing GDPR + HIPAA</td>
+                </tr>
+                <tr>
+                    <td class="svc">Formspree</td>
+                    <td>Personal / Professional</td>
+                    <td class="price" data-p2500="~$30/mo (Professional tier)" data-p100k="~$99+/mo, custom above that">~$30/mo (Professional tier)</td>
+                    <td>25MB / file, no pooled GB</td>
+                    <td><span class="tag">Gated to ~$99/mo tier</span></td>
+                    <td>GDPR-oriented, no HIPAA</td>
+                </tr>
+                <tr>
+                    <td class="svc">Formcarry</td>
+                    <td>Base tier</td>
+                    <td class="price" data-p2500="~$19–30/mo (estimated)" data-p100k="Beyond published tiers — custom quote">~$19–30/mo (estimated)</td>
+                    <td>30GB, capped at 30k subs</td>
+                    <td><span class="tag yes">Slack + generic webhooks</span></td>
+                    <td>GDPR compliant, EU data centers</td>
+                </tr>
+                <tr>
+                    <td class="svc">UseBasin</td>
+                    <td>Starter / Pro</td>
+                    <td class="price" data-p2500="$30.62/mo (Pro, 5k cap)" data-p100k="Above Agency tier — custom quote, likely $150+/mo">$30.62/mo (Pro, 5k cap)</td>
+                    <td>10GB (Pro), 50GB (Agency)</td>
+                    <td><span class="tag yes">Slack via webhook/Zapier</span></td>
+                    <td>EU-processor language, no HIPAA</td>
+                </tr>
+                <tr>
+                    <td class="svc">Slapform</td>
+                    <td>Sumo (entry)</td>
+                    <td class="price" data-p2500="~$9/mo+ (exact caps unpublished)" data-p100k="Not published — likely custom, $50–100+/mo">~$9/mo+ (exact caps unpublished)</td>
+                    <td>Not clearly published</td>
+                    <td><span class="tag">Webhook + Zapier claimed</span></td>
+                    <td>Not clearly documented</td>
+                </tr>
+                <tr>
+                    <td class="svc">FormBackend</td>
+                    <td>Simple</td>
+                    <td class="price" data-p2500="~$14/mo (5k-sub tier)" data-p100k="Not published — extrapolates well above $100/mo">~$14/mo (5k-sub tier)</td>
+                    <td>250MB at $5/mo tier</td>
+                    <td><span class="tag yes">Slack + Discord native</span></td>
+                    <td>No explicit claims found</td>
+                </tr>
+                <tr>
+                    <td class="svc">StaticForms.dev</td>
+                    <td>Pro / Advanced</td>
+                    <td class="price" data-p2500="$7.50–9/mo (Pro, 25k cap)" data-p100k="$35/mo (Advanced, 200k cap)">$7.50–9/mo (Pro, 25k cap)</td>
+                    <td>4.5MB / file, no pooled GB</td>
+                    <td><span class="tag">Generic webhooks, no D/T/S naming</span></td>
+                    <td>GDPR: export, deletion, DPA</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <p class="foot-note reveal"><strong>The one honest caveat:</strong> StaticForms.dev's Advanced tier ($35/mo for 200,000 subs) is the real benchmark here, not Formspree. Per submission, you're still roughly <strong>2.4x cheaper</strong> than their most aggressive tier, and 10–50x cheaper than everyone else at real volume — because your architecture never pays for email infrastructure in the first place.</p>
+    </section>
+
+    <section id="audience">
+        <div class="head reveal">
+            <div class="eyebrow"><span class="verb">GET</span> /audience-segments</div>
+            <h2>Who actively prefers no-email, high-volume, BYOK</h2>
+            <p>Three archetypes who read your omissions as a feature, not a gap.</p>
+        </div>
+        <div class="persona-grid reveal">
+            <div class="persona">
+                <div class="id">SEGMENT 01</div>
+                <h3>The Indie SaaS Bootstrapper</h3>
+                <div class="field"><span class="k">Who they are</span>Solo or 2-person founder running a lean Jamstack product where every recurring bill gets scrutinized personally.</div>
+                <div class="field"><span class="k">Frustration</span>Cheap-looking form tools that lock webhooks or volume behind a $30–90/mo tier they never wanted to pay for email they don't send.</div>
+                <div class="field"><span class="k">Why your gaps are a feature</span>No email-routing tax. BYOK Turnstile means their own Cloudflare account, their own limits. $7.38 for 100k removes this line item from their budget entirely.</div>
+                <div class="chips">
+                    <span class="chip">r/SaaS</span><span class="chip">r/indiehackers</span><span class="chip">Indie Hackers</span><span class="chip">#buildinpublic</span>
+                </div>
+            </div>
+            <div class="persona">
+                <div class="id">SEGMENT 02</div>
+                <h3>The Agency Dev at Scale</h3>
+                <div class="field"><span class="k">Who they are</span>Freelancer or small shop running 10–50 client marketing sites on static templates or Webflow exports.</div>
+                <div class="field"><span class="k">Frustration</span>Managing dozens of accounts and email reputations per client, when most forms are low-volume but numerous.</div>
+                <div class="field"><span class="k">Why your gaps are a feature</span>Slack/Discord routing puts every client's submissions in one operational view instead of 40 separate inboxes. Digests replace custom client reporting.</div>
+                <div class="chips">
+                    <span class="chip">r/webdev</span><span class="chip">r/freelance</span><span class="chip">Webflow Discord</span><span class="chip">Framer Slack</span>
+                </div>
+            </div>
+            <div class="persona">
+                <div class="id">SEGMENT 03</div>
+                <h3>The Privacy-First / Regulated Builder</h3>
+                <div class="field"><span class="k">Who they are</span>Devs building intake for legal, healthcare-adjacent, or EU-facing products — therapist directories, NGOs, health-coaching intake.</div>
+                <div class="field"><span class="k">Frustration</span>Mainstream backends route through opaque email infra, and reCAPTCHA itself is a GDPR gray area because it phones home to Google.</div>
+                <div class="field"><span class="k">Why your gaps are a feature</span>Altcha avoids third-party tracking entirely. BYOK Turnstile keeps the data relationship under the customer's own Cloudflare agreement. HIPAA pursuit is a nearly empty lane.</div>
+                <div class="chips">
+                    <span class="chip">r/GDPR</span><span class="chip">r/privacy</span><span class="chip">HealthTech Slack</span><span class="chip">LegalTech LI groups</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="hooks">
+        <div class="head reveal">
+            <div class="eyebrow amber"><span class="verb">POST</span> /marketing-hooks</div>
+            <h2>Five hooks for the landing page</h2>
+            <p>Each one leans into cost, privacy, or developer control. Click to copy.</p>
+        </div>
+        <div class="hook-list reveal">
+            <div class="hook">
+                <div class="idx">01</div>
+                <div class="txt">"100,000 form submissions. $7.38/month. Not a typo — just no email tax."<span class="angle">Cost-cliff hook</span></div>
+                <button class="copy-btn" data-copy="100,000 form submissions. $7.38/month. Not a typo — just no email tax.">Copy</button>
+            </div>
+            <div class="hook">
+                <div class="idx">02</div>
+                <div class="txt">"Your forms don't need an inbox. They need a Discord ping."<span class="angle">Webhook-native hook</span></div>
+                <button class="copy-btn" data-copy="Your forms don't need an inbox. They need a Discord ping.">Copy</button>
+            </div>
+            <div class="hook">
+                <div class="idx">03</div>
+                <div class="txt">"Bring your own Turnstile key. Your captcha, your Cloudflare account, your rules — not ours."<span class="angle">BYOK security hook</span></div>
+                <button class="copy-btn" data-copy="Bring your own Turnstile key. Your captcha, your Cloudflare account, your rules — not ours.">Copy</button>
+            </div>
+            <div class="hook">
+                <div class="idx">04</div>
+                <div class="txt">"No email routing means one less place your users' data can leak."<span class="angle">Privacy-by-architecture hook</span></div>
+                <button class="copy-btn" data-copy="No email routing means one less place your users' data can leak.">Copy</button>
+            </div>
+            <div class="hook">
+                <div class="idx">05</div>
+                <div class="txt">"We didn't build a form builder, a CRM, or an email platform. We built one thing: forms that just work, at a price that doesn't punish you for growing."<span class="angle">Anti-bloat hook</span></div>
+                <button class="copy-btn" data-copy="We didn't build a form builder, a CRM, or an email platform. We built one thing: forms that just work, at a price that doesn't punish you for growing.">Copy</button>
+            </div>
+        </div>
+    </section>
+
+    <section id="playbook">
+        <div class="head reveal">
+            <div class="eyebrow"><span class="verb">GET</span> /growth-playbook</div>
+            <h2>Low-cost distribution for the MVP</h2>
+            <p>The core narrative is radical cost transparency — your 70–80% margin is content, not a secret.</p>
+        </div>
+
+        <div class="tabs reveal">
+            <button class="tab active" data-tab="hn">Hacker News</button>
+            <button class="tab" data-tab="reddit">Reddit</button>
+            <button class="tab" data-tab="x">X / Twitter</button>
+        </div>
+
+        <div class="reveal">
+            <div class="panel active" id="panel-hn">
+                <div class="playbook-item"><span class="status">POST</span><p><strong>Show HN as an engineering story.</strong> "I built a form backend on Spring Boot/Postgres/Redis that costs $0.07/1000 submissions to run — here's the architecture and why competitors charge 50x more." Show the real cost breakdown next to the price.</p></div>
+                <div class="playbook-item"><span class="status">POST</span><p><strong>Follow-up on the BYOK decision.</strong> A dedicated post on why you chose BYOK Turnstile over embedding your own captcha — HN's security crowd engages with genuine architectural trade-offs, not feature lists.</p></div>
+            </div>
+            <div class="panel" id="panel-reddit">
+                <div class="playbook-item"><span class="status">POST</span><p><strong>r/webdev, r/SaaS:</strong> post the pricing matrix itself as "I researched every form backend's pricing so I didn't have to guess." Mention your product once, as a disclosure line — not the headline.</p></div>
+                <div class="playbook-item"><span class="status">POST</span><p><strong>r/selfhosted, r/privacy:</strong> the Altcha + BYOK angle earns organic interest, since these communities already debate reCAPTCHA alternatives without prompting.</p></div>
+            </div>
+            <div class="panel" id="panel-x">
+                <div class="playbook-item"><span class="status">POST</span><p><strong>#buildinpublic weekly updates:</strong> MRR, infra cost, and margin, posted plainly. "Here's exactly what $7.38/month actually costs to deliver" is the kind of post that gets screenshotted.</p></div>
+                <div class="playbook-item"><span class="status">POST</span><p><strong>Reply where it's earned:</strong> jump into threads where developers complain about Formspree/Basin pricing — only when you add something genuinely useful, never as a drive-by plug.</p></div>
+            </div>
+        </div>
+
+        <div class="principle reveal">
+            <span class="k">Governing principle</span>
+            Every piece of content teaches something — an architecture decision, a cost breakdown, a compliance trade-off — before it sells anything. In this niche, developers punish anything that reads as growth-hacking. Transparency works specifically because it doesn't look like marketing.
+        </div>
+    </section>
+
+</main>
+
+<footer>
+    <p>compiled market analysis · headless static form backend · v1.0</p>
+</footer>
+
+<script>
+    // scroll reveal
+    const revealEls = document.querySelectorAll('.reveal');
+    const io = new IntersectionObserver((entries)=>{
+        entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+    }, { threshold: 0.12 });
+    revealEls.forEach(el=>io.observe(el));
+
+    // pricing toggle
+    const toggleBtns = document.querySelectorAll('.toggle button');
+    const priceCells = document.querySelectorAll('td.price');
+    toggleBtns.forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+            toggleBtns.forEach(b=>b.classList.remove('active'));
+            btn.classList.add('active');
+            const vol = btn.dataset.vol;
+            priceCells.forEach(cell=>{
+                const val = vol === '2500' ? cell.dataset.p2500 : cell.dataset.p100k;
+                if(val) cell.textContent = val;
+            });
+        });
+    });
+
+    // copy buttons
+    document.querySelectorAll('.copy-btn').forEach(btn=>{
+        btn.addEventListener('click', async ()=>{
+            const text = btn.dataset.copy;
+            try{
+                await navigator.clipboard.writeText(text);
+                const original = btn.textContent;
+                btn.textContent = 'Copied';
+                btn.classList.add('copied');
+                setTimeout(()=>{ btn.textContent = original; btn.classList.remove('copied'); }, 1600);
+            }catch(e){ /* clipboard unavailable, fail silently */ }
+        });
+    });
+
+    // playbook tabs
+    document.querySelectorAll('.tab').forEach(tab=>{
+        tab.addEventListener('click', ()=>{
+            document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+            document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+            tab.classList.add('active');
+            document.getElementById('panel-'+tab.dataset.tab).classList.add('active');
+        });
+    });
+</script>
+
+</body>
+</html>
