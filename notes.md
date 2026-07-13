@@ -24,57 +24,54 @@
 
 ## Todo
 
-### Unorganized
+### Security, Rate Limiting & Anti-Spam
 
-1. let user decide per form for errors (202 even if fail (hopefully for sub-20ms response times maybe) or throw proper errors)
-2. magic mailto links
+* **[High Priority]** Implement Turnstile on my own forms.
+* **[High Priority]** Implement Turnstile on starter tier (keep redirects on pro only).
+* **[High Priority]** Strict rate limits are too tight and lenient rate limits are too loose.
+* **[Medium Priority]** Change `isSpam` boolean to a `spamReason` enum (e.g., `notSpam`, `turnstileFailed`).
+* **[Medium Priority]** Auth improvements: Password reset, forgot password, and OAuth for quick signup.
+* **[Low Priority]** Add `ALTCHA` as an alternative option for spam protection.
 
-### Next Up
+### Backend, Infrastructure & Operations
 
-1. add turnstile to my own forms
-2. show submissions balance to user
-3. redirects on pro only, but turnstile on starter tier
-4. turn post requests for redirects (like manage subscription, etc.) to get respects
+* **[High Priority]** Move tier-checks from Thymeleaf templates into the Controllers (e.g., send `showManageSubscription`, `showBuyStarter`, `showBuyPro` flags).
+* **[High Priority]** Set up the Scheduler Service base for automated tasks; sync Polar with Redis more frequently.
+* **[Medium Priority]** Offload submissions older than the last 100 per form to Cloudflare R2.
+* **[Medium Priority]** Convert POST requests for redirects (like managing subscriptions) into GET requests.
+* **[Medium Priority]** Implement OpenTelemetry (Otel) across all methods and capture deeper metadata (IP, User ID, Session data).
+* **[Low Priority]** Audit and re-decide log levels; implement structured logging usage everywhere.
+* **[Low Priority]** Retry setting up the Sentry agent.
 
-### Tasks
+### Core Form Features & Integrations
 
-1. increase strict rate limits and decrease lenient rate limits
-2. instead of checking tier in thymeleaf, check it in controller per thing ex: form controller, send: `showManageSubscrition`, `showBuyStarter`, `showBuyPro`, etc.
-3. redo the manage form page: separate tab for settings, show submission stats on form page
-4. scheduler service: setup base for methods to run automatically on scheduled time, sync polar with redis more often
-5. add otel to all methods and add more metadata: ip, user id, user sessions, etc.
-6. change isSpam to spamReason: notSpam, turnstileFailed, etc.
-7. optional (for now) auth improvements (password reset, password forget, oauth for quick signup)
-8. revamp how forms are displayed and add paging
-9. fix billing
-10. put submissions older than last 100 for every form in cf r2
-11. soft deleting forms
-12. discord notifs (url field for discord webhook url and send it async, report errors to dashboard if failed through an errors table)
-13. csv exports
-14. redecide log levels and log usage everywhere
-15. add annual plans to the index page as coming soon
+* **[High Priority]** Implement soft-deleting for forms.
+* **[Medium Priority]** Add asynchronous Discord notifications via webhook URL (with an errors table to report dashboard failures).
+* **[Medium Priority]** Form Error Handling: Let users decide error behavior per form (e.g., return `202 Accepted` even if validation fails for sub-20ms responses, or throw proper errors).
+* **[Medium Priority]** Build CSV export functionality for submissions.
+* **[Low Priority]** Magic `mailto:` links.
+* **[Future]** Advanced Integrations & Routing: Slack, Telegram, Custom Webhooks, Custom Pro filters/rules, Routing rules for webhooks/Discord, and Email digests.
+* **[Future]** Build 3rd-party library wrappers (React components, etc.).
 
-### Later
+### Dashboard & Frontend UX
 
-1. Lifetime Plan ($89 maybe for lifetime pro tier or 3-5yr)
-2. custom filters and rules on pro tier for submissions
-3. email digests
-4. telegram notifs
-5. slack notifs
-6. webhooks
-7. 3rd party libs (react, etc.)
-8. try sentry agent again
-9. routing rules for webhooks and discord
-10. implement the annual plans
-11. proper page to manage which plan to buy in dashboard if polar hosted doesn't do that already
+* **[High Priority]** Revamp the **Manage Form** page: Separate settings into a tab and display submission stats directly on the main form page.
+* **[High Priority]** Show the user's current submission balance.
+* **[Medium Priority]** Revamp the overall form display layout and implement pagination.
+* **[Near Launch]** Build an `/onboarding` page post-signup that auto-generates a mock form with fields to get users started instantly.
 
-### Near Launch
+### Billing, Monetization & Launch Strategy
 
-1. start on admin panel
-2. finish admin panel
-3. auto delete free tier from polar.sh of higher tiers
-4. knowledge base
-5. legal docs
-6. add a contact us plan to the frontend with call link
-7. add `ALTCHA` as an option for spam protection
-8. /onboarding page after sign up create a new form with generated fields, constantly
+* **[High Priority]** Fix billing.
+* **[Medium Priority]** Add "Annual Plans (Coming Soon)" to the index page.
+* **[Near Launch]** Build a dashboard page to manage/buy plans if the Polar-hosted checkout doesn't cover it.
+* **[Near Launch]** Handle automated tier cleanup: Auto-delete free tier configurations from Polar.sh if a user upgrades to a higher tier.
+* **[Near Launch]** Fully implement the Annual plans.
+* **[Near Launch]** Add a "Contact Us" custom enterprise plan to the frontend alongside a scheduling call link.
+* **[Future]** Launch a Lifetime Plan ($89 for lifetime Pro or 3-5 year access).
+
+### Admin & Documentation (Pre-Launch)
+
+* **[Near Launch]** Start and finish the internal Admin Panel.
+* **[Near Launch]** Write the Knowledge Base / Help documentation.
+* **[Near Launch]** Draft and publish Legal Docs (Privacy Policy, ToS).
