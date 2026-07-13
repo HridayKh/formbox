@@ -21,6 +21,7 @@
 3. try to get the same with just workers 
 4. try to mini.ise latency without cf 
 5. move the turnstile check and schema validation after the response if the user says so (force the user to choose on form creation, no defualts)
+6. Trunstile verificaiton on my own /f/ or /verify/ domain????
 
 ## Todo
 
