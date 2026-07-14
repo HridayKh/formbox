@@ -6,6 +6,7 @@
     <title>Login | FormBox</title>
     <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.10/dist/htmx.min.js"></script>
     <link rel="stylesheet" th:href="'/assets/styles.css'" href="/../../static/assets/styles.css">
+    <link rel="preconnect" href="https://challenges.cloudflare.com"/>
 </head>
 <body>
 
@@ -57,6 +58,7 @@
         <button type="submit" class="btn btn-primary"
                 style="width: 100%; margin-top: 12px; font-size: 1.05rem; padding: 14px 22px;">Sign In
         </button>
+        <div class="cf-turnstile" data-sitekey="0x4AAAAAAD1xEDYqYOi7tGNB"></div>
     </form>
 
     <div style="margin-top: 36px; border-top: 1px dashed var(--line-on-ink); padding-top: 24px; text-align: center;">
@@ -86,10 +88,14 @@
                     <button type="submit" class="btn btn-secondary btn-small"
                             style="width: 100%; justify-content: center;">Resend Confirmation
                     </button>
+                    <div class="cf-turnstile" data-sitekey="0x4AAAAAAD1xEDYqYOi7tGNB"></div>
                 </form>
             </div>
         </div>
     </div>
 </main>
+
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+
 </body>
 </html>

@@ -18,13 +18,17 @@ public class TurnstileVerifier {
 	private static final HttpClient httpClient = HttpClient.newBuilder().build();
 	private static final String CLOUDFLARE_VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 
-	public static boolean turnstilePassed(Map<String, String> payload, String turnstileSecretKey, ObjectMapper objectMapper) {
-		String turnstileCode = payload.getOrDefault("cf-turnstile", "");
+	public static boolean turnstileFailed(Map<String, String> payload, String turnstileSecretKey, ObjectMapper objectMapper) {
+		String turnstileCode = payload.getOrDefault("cf-turnstile-response", "");
+		payload.remove("cf-turnstile-response");
 
-		if (turnstileCode.isBlank() || turnstileSecretKey == null || turnstileSecretKey.isBlank()) {
+		if (turnstileSecretKey == null || turnstileSecretKey.isBlank()) {
 			log.info("Turnstile validation skipped or failed due to missing token or secret key.");
 			return false;
 		}
+
+		if (turnstileCode.isBlank())
+			return true;
 
 		try {
 			String formData = String.format("secret=%s&response=%s", URLEncoder.encode(turnstileSecretKey, StandardCharsets.UTF_8), URLEncoder.encode(turnstileCode, StandardCharsets.UTF_8));
@@ -39,7 +43,7 @@ public class TurnstileVerifier {
 
 			if (response.statusCode() == 200) {
 				String body = response.body();
-				return body != null && objectMapper.readTree(body).get("success").asBoolean();
+				return body == null || !objectMapper.readTree(body).get("success").asBoolean();
 			} else {
 				log.error("Cloudflare Turnstile API returned unexpected status code: {}", response.statusCode());
 			}

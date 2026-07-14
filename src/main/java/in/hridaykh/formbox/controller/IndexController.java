@@ -83,7 +83,7 @@ public class IndexController {
 
 		// step 6: check turnstile
 		String turnstileSecretKey = form.turnstileSecretKey();
-		if (TurnstileVerifier.turnstilePassed(payload, turnstileSecretKey, objectMapper)) {
+		if (TurnstileVerifier.turnstileFailed(payload, turnstileSecretKey, objectMapper)) {
 			submissionService.saveSubmission(form.id(), request.getRemoteAddr(), payload, true);
 			return "submit/thanks";
 		}
