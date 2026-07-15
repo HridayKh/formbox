@@ -959,9 +959,9 @@
                 <div class="form-block">
                     <label class="form-label">Custom Redirect URL (Optional)</label>
                     <input class="input" type="url" name="redirectUrl" th:value="${form.redirectUrl}"
-                           placeholder="https://your-site.com/thanks" th:disabled="${tier == 'free-v1'}"/>
+                           placeholder="https://your-site.com/thanks" th:disabled="redirectUrlNotAllowed"/>
 
-                    <p class="upgrade-message" th:if="${tier == 'free-v1'}"
+                    <p class="upgrade-message" th:if="redirectUrlNotAllowed"
                        style="color: #ef4444; font-size: 0.875rem; margin-top: 0.25rem;">
                         Custom redirects are a premium feature.
                         <a href="#" style="text-decoration: underline;">Upgrade your plan</a> to unlock.
@@ -985,7 +985,6 @@
 
     <div th:replace="~{fragments/submissions :: submissions(
     form=${form},
-    tier=${tier},
     submissions=${submissions},
     spamSubmissions=${spamSubmissions}
 )}"></div>

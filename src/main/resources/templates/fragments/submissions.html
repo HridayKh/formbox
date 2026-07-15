@@ -1,29 +1,10 @@
-<div th:fragment="submissions(form, tier, submissions, spamSubmissions)"
+<div th:fragment="submissions(form, csvExportNotAllowed, submissions, spamSubmissions)"
      class="card" id="submissions-card">
     <div class="card__header">
         <div class="submissions-header-title">
             <h2 class="card__title">Submissions</h2>
             <p class="card__subtitle">View and manage form submissions</p>
         </div>
-        <div class="submissions-actions">
-            <button class="btn btn--secondary btn--sm" id="export-csv-btn"
-                    th:disabled="${tier == 'free-v1'}"
-                    th:attr="hx-get='/forms/${form.id}/submissions/export',hx-target='#submissions-card',hx-swap='none'"
-                    onclick="exportSubmissions()">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                     stroke-linejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="7 10 12 15 17 10"></polyline>
-                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
-                Export CSV
-            </button>
-        </div>
-    </div>
-
-    <div th:if="${tier == 'free-v1'}" class="premium-info">
-        <strong>📊 Export to CSV is available on premium plans.</strong>
-        <a href="#">Upgrade your plan</a> to export submissions and unlock other advanced features.
     </div>
 
     <div class="tabs">

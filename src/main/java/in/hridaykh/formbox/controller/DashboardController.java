@@ -1,6 +1,7 @@
 package in.hridaykh.formbox.controller;
 
 import in.hridaykh.formbox.constant.PathRegistry;
+import in.hridaykh.formbox.constant.Tiers;
 import in.hridaykh.formbox.constant.ViewRegistry;
 import in.hridaykh.formbox.service.cache.TenantCacheService;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
@@ -35,8 +36,14 @@ public class DashboardController {
 		String activeTier = tenantCacheService.resolveHighestActiveTierNonNull(tenantId);
 		log.debug("Resolved active workspace references for Tenant ID: {}, Service Tier: {}", tenantId, activeTier);
 
+		boolean isFreeTier = Tiers.isFree(activeTier);
+		boolean isStarterTier = Tiers.isStarter(activeTier);
+		model.addAttribute("showUpgradeStarter", isFreeTier);
+		model.addAttribute("showUpgradePro", isFreeTier || isStarterTier);
+		model.addAttribute("showManageSubscription", !isFreeTier);
+
+		model.addAttribute("redirectUrlNotAllowed", !Tiers.t(activeTier).redirectUrlAllowed());
 		model.addAttribute("user", userMetadata);
-		model.addAttribute("tier", activeTier);
 		model.addAttribute("msg", msg);
 
 		if (customerSessionToken != null && !customerSessionToken.isBlank()) {

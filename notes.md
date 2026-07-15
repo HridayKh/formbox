@@ -28,7 +28,6 @@
 
 ### Backend, Infrastructure & Operations
 
-* **[High Priority]** Move tier-checks from Thymeleaf templates into the Controllers (e.g., send `showManageSubscription`, `showBuyStarter`, `showBuyPro` flags).
 * **[High Priority]** Set up the Scheduler Service base for automated tasks; sync Polar with Redis more frequently.
 * **[Medium Priority]** Offload submissions older than the last 100 per form to Cloudflare R2.
 * **[Medium Priority]** Convert POST requests for redirects (like managing subscriptions) into GET requests.

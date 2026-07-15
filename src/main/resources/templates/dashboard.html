@@ -26,7 +26,7 @@
                 <span class="logo-word">Formbox</span>
             </a>
 
-            <div style="display: flex; align-items: center; gap: 12px; font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-on-ink-muted); border-left: 1px solid var(--line-on-ink); padding-left: 24px;">
+            <div style="display: flex; align-items: center; gap: 12px; font-family: var(--font-mono),serif; font-size: 0.85rem; color: var(--text-on-ink-muted); border-left: 1px solid var(--line-on-ink); padding-left: 24px;">
                 <span>Dashboard</span>
             </div>
         </div>
@@ -46,17 +46,11 @@
             </div>
 
             <!-- Upgrades -->
-            <th:block th:if="${tier != 'pro-v1'}">
-                <div th:if="${tier == 'free-v1'}" style="display: flex; gap: 12px; align-items: center;">
-                    <a href="/billing/upgrade/starter-v1" class="btn btn-secondary btn-small">Upgrade to Starter</a>
-                    <a href="/billing/upgrade/pro-v1" class="btn btn-primary btn-small">Upgrade to Pro</a>
-                </div>
-                <div th:if="${tier == 'starter-v1'}">
-                    <a href="/billing/upgrade/pro-v1" class="btn btn-primary btn-small">Upgrade to Pro</a>
-                </div>
-            </th:block>
-
-            <button th:if="${tier != 'free-v1'}" hx-post="/billing/portal" class="btn btn-secondary btn-small">
+            <div style="display: flex; gap: 12px; align-items: center;">
+                <a th:if="showUpgradeStarter" href="/billing/upgrade/starter-v1" class="btn btn-secondary btn-small">Upgrade to Starter</a>
+                <a th:if="showUpgradePro" href="/billing/upgrade/pro-v1" class="btn btn-primary btn-small">Upgrade to Pro</a>
+            </div>
+            <button th:if="showManageSubscription" hx-post="/billing/portal" class="btn btn-secondary btn-small">
                 Manage Subscription
             </button>
 
@@ -107,7 +101,7 @@
 
     <!-- FORM ENDPOINTS CARD (HTMX Loaded Table) -->
     <div style="margin-bottom: 16px;">
-        <h3 style="font-family: var(--font-display); font-size: 1.15rem; margin-bottom: 6px;">Form Endpoints</h3>
+        <h3 style="font-family: var(--font-display),serif; font-size: 1.15rem; margin-bottom: 6px;">Form Endpoints</h3>
         <p style="color: var(--text-on-ink-muted); font-size: 0.92rem; margin-bottom: 16px;">Manage all your active form
             endpoints below.</p>
     </div>
@@ -127,7 +121,7 @@
             <!-- Content will load via HTMX here. Below is a fallback loading state. -->
             <tr>
                 <td colspan="4" style="text-align: center; padding: 48px; color: var(--text-on-ink-muted);">
-                    <div style="display: flex; align-items: center; justify-content: center; gap: 12px; font-family: var(--font-mono); font-size: 0.85rem;">
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 12px; font-family: var(--font-mono),serif; font-size: 0.85rem;">
                         <span class="spinner" style="border-top-color: var(--air-gold);"></span>
                         Loading your endpoints...
                     </div>
@@ -163,10 +157,10 @@
                     <label class="eyebrow" for="form-redirect">Custom Redirect URL <span
                             style="text-transform: none; color: var(--text-on-ink-muted);">(Optional)</span></label>
                     <input id="form-redirect" name="redirectUrl" type="url" placeholder="https://yoursite.com/thank-you"
-                           th:disabled="${tier == 'free-v1'}"/>
+                           th:disabled="redirectUrlNotAllowed"/>
 
-                    <p th:if="${tier == 'free-v1'}"
-                       style="color: var(--stamp-red); font-family: var(--font-mono); font-size: 0.76rem; margin-top: 8px;">
+                    <p th:if="redirectUrlNotAllowed"
+                       style="color: var(--stamp-red); font-family: var(--font-mono),serif; font-size: 0.76rem; margin-top: 8px;">
                         Custom redirects are a premium feature.<br>
                         <a href="/billing/upgrade/starter-v1"
                            style="color: var(--air-gold); text-decoration: underline; text-underline-offset: 3px;">Upgrade

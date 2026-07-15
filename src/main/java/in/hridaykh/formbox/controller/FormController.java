@@ -112,7 +112,7 @@ public class FormController {
 			formId, submissions.submissions().size(), submissions.spam().size());
 
 		model.addAttribute("form", form);
-		model.addAttribute("tier", currentTier);
+		model.addAttribute("redirectUrlNotAllowed", !Tiers.t(currentTier).redirectUrlAllowed());
 		model.addAttribute("submissions", submissions.submissions());
 		model.addAttribute("spamSubmissions", submissions.spam());
 
