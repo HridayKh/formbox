@@ -1,4 +1,4 @@
-package in.hridaykh.formbox.service;
+package in.hridaykh.formbox.service.form;
 
 import in.hridaykh.formbox.constant.CacheNames;
 import in.hridaykh.formbox.model.dto.CachedForm;

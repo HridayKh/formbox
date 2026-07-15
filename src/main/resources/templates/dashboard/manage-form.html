@@ -948,30 +948,86 @@
                         now</a>.
                 </p>
             </div>
+            <form th:attr="hx-put=|/forms/${form.id}|" hx-target="#settings-panel-container" hx-swap="innerHTML"
+                  class="settings-form">
 
-            <form th:attr="hx-put=|/forms/${form.id}|" hx-target="#settings-panel-container" hx-swap="innerHTML">
+                <fieldset class="settings-section">
+                    <legend class="settings-legend">General Settings</legend>
 
-                <div class="form-block">
-                    <label class="form-label">Form Name</label>
-                    <input class="input" type="text" name="name" th:value="${form.name}" required/>
-                </div>
+                    <div class="form-block">
+                        <label class="form-label" for="name">Form Name</label>
+                        <input class="input" type="text" id="name" name="name" th:value="${form.name}" required/>
+                    </div>
 
-                <div class="form-block">
-                    <label class="form-label">Custom Redirect URL (Optional)</label>
-                    <input class="input" type="url" name="redirectUrl" th:value="${form.redirectUrl}"
-                           placeholder="https://your-site.com/thanks" th:disabled="redirectUrlNotAllowed"/>
+                    <div class="form-block">
+                        <label class="form-label" for="redirectUrl">Custom Redirect URL (Optional)</label>
+                        <input class="input" type="url" id="redirectUrl" name="redirectUrl"
+                               th:value="${form.redirectUrl}"
+                               placeholder="https://your-site.com/thanks" th:disabled="${redirectUrlNotAllowed}"/>
 
-                    <p class="upgrade-message" th:if="redirectUrlNotAllowed"
-                       style="color: #ef4444; font-size: 0.875rem; margin-top: 0.25rem;">
-                        Custom redirects are a premium feature.
-                        <a href="#" style="text-decoration: underline;">Upgrade your plan</a> to unlock.
-                    </p>
-                </div>
+                        <p class="upgrade-message" th:if="${redirectUrlNotAllowed}"
+                           style="color: #ef4444; font-size: 0.875rem; margin-top: 0.25rem;">
+                            Custom redirects are a premium feature.
+                            <a href="#" style="text-decoration: underline;">Upgrade your plan</a> to unlock.
+                        </p>
+                    </div>
 
-                <label class="checkbox-group" for="isActive">
-                    <input type="checkbox" id="isActive" name="isActive" value="true" th:checked="${form.isActive}"/>
-                    <label for="isActive" style="margin: 0;">Form is currently active</label>
-                </label>
+                    <label class="checkbox-group" for="isActive">
+                        <input type="checkbox" id="isActive" name="isActive" value="true"
+                               th:checked="${form.isActive}"/>
+                        <label for="isActive" style="margin: 0;">Form is currently active</label>
+                    </label>
+                </fieldset>
+
+                <hr class="settings-divider"/>
+
+                <fieldset class="settings-section">
+                    <legend class="settings-legend">Spam & Security</legend>
+
+                    <div class="form-block">
+                        <label class="form-label" for="honeypotName">Honeypot Field Name</label>
+                        <input class="input" type="text" id="honeypotName" name="honeypotName"
+                               th:value="${form.honeypotName}" required placeholder="_gotcha"/>
+                        <small class="form-help">Keep this hidden from real users. Bots will fill it out and get
+                            blocked.</small>
+                    </div>
+
+                    <div class="form-block">
+                        <label class="form-label" for="turnstileSecretKey">Cloudflare Turnstile Secret Key (Leave empty to disable)</label>
+                        <input class="input" type="password" id="turnstileSecretKey" name="turnstileSecretKey"
+                               th:value="${form.turnstileSecretKey}" placeholder="0x4AAAAAA..."/>
+                    </div>
+
+                    <div class="form-block">
+                        <label class="form-label" for="rateLimitRpm">Rate Limit (Requests per Minute)</label>
+                        <input class="input" type="number" id="rateLimitRpm" name="rateLimitRpm"
+                               th:value="${form.rateLimitRpm}" min="1" max="1000" required/>
+                    </div>
+                </fieldset>
+
+                <hr class="settings-divider"/>
+
+                <fieldset class="settings-section">
+                    <legend class="settings-legend">Integrations & Format Controls</legend>
+
+                    <label class="checkbox-group" for="allowFiles">
+                        <input type="checkbox" id="allowFiles" name="allowFiles" value="true"
+                               th:checked="${form.allowFiles}"/>
+                        <label for="allowFiles" style="margin: 0;">Allow File Uploads</label>
+                    </label>
+
+                    <label class="checkbox-group" for="allowHtmx">
+                        <input type="checkbox" id="allowHtmx" name="allowHtmx" value="true"
+                               th:checked="${form.allowHtmx}"/>
+                        <label for="allowHtmx" style="margin: 0;">Allow AJAX / HTMX Submissions</label>
+                    </label>
+
+                    <label class="checkbox-group" for="allowJson">
+                        <input type="checkbox" id="allowJson" name="allowJson" value="true"
+                               th:checked="${form.allowJson}"/>
+                        <label for="allowJson" style="margin: 0;">Allow JSON API Submissions</label>
+                    </label>
+                </fieldset>
 
                 <div class="form-actions">
                     <button class="btn btn--primary" type="submit">
@@ -1003,23 +1059,6 @@
         // Add active class to clicked tab and corresponding content
         event.target.closest('.tab-btn').classList.add('active');
         document.getElementById(tabId).classList.add('active');
-    }
-
-    // Export submissions to CSV
-    function exportSubmissions() {
-        const btn = document.getElementById('export-csv-btn');
-        if (btn.disabled) {
-            alert('CSV export is available on premium plans. Upgrade your plan to unlock this feature.');
-            return;
-        }
-
-        // Create a link element and trigger download
-        const link = document.createElement('a');
-        link.href = btn.getAttribute('hx-get');
-        link.download = 'submissions.csv';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
     }
 
     // Honeypot copy functionality

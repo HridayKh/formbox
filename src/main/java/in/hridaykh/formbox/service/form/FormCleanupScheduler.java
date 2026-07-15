@@ -1,4 +1,4 @@
-package in.hridaykh.formbox.service;
+package in.hridaykh.formbox.service.form;
 
 import in.hridaykh.formbox.repository.FormRepository;
 import in.hridaykh.formbox.repository.SubmissionRepository;

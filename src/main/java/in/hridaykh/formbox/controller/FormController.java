@@ -4,13 +4,16 @@ import in.hridaykh.formbox.constant.PathRegistry;
 import in.hridaykh.formbox.constant.Tiers;
 import in.hridaykh.formbox.constant.ViewRegistry;
 import in.hridaykh.formbox.model.dto.CachedForm;
+import in.hridaykh.formbox.model.dto.FormSettingsRequest;
 import in.hridaykh.formbox.model.dto.FormSubmissionsResponse;
+import in.hridaykh.formbox.model.dto.TierValidationResult;
 import in.hridaykh.formbox.model.entity.Form;
 import in.hridaykh.formbox.repository.FormRepository;
 import in.hridaykh.formbox.repository.TenantRepository;
 import in.hridaykh.formbox.service.cache.FormCacheService;
 import in.hridaykh.formbox.service.cache.SubmissionCacheService;
 import in.hridaykh.formbox.service.cache.TenantCacheService;
+import in.hridaykh.formbox.service.form.FormSettingsService;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +37,7 @@ public class FormController {
 	private final SubmissionCacheService submissionCacheService;
 	private final TenantCacheService tenantCacheService;
 	private final FormCacheService formCacheService;
+	private final FormSettingsService formSettingsService;
 
 	@PostMapping
 	public String createForm(@RequestAttribute JwtPayload userMetadata, @RequestParam("name") String name, @RequestParam(value = "redirectUrl", required = false) String redirectUrl, HttpServletResponse response) {
@@ -95,8 +99,7 @@ public class FormController {
 		CachedForm form = formCacheService.getCachedForm(formId);
 
 		if (!form.tenantId().toString().equals(userMetadata.getSub())) {
-			log.error("Security authorization intercept triggered. User: {} failed ownership check rule bounds for form ID: {} belonging to tenant: {}",
-				userMetadata.getSub(), formId, form.tenantId());
+			log.error("Security authorization intercept triggered. User: {} failed ownership check rule bounds for form ID: {} belonging to tenant: {}", userMetadata.getSub(), formId, form.tenantId());
 			throw new RuntimeException("Unauthorized access to form system.");
 		}
 
@@ -108,8 +111,7 @@ public class FormController {
 		FormSubmissionsResponse submissions = submissionCacheService.getFormSubmissionsGrouped(formId);
 		String currentTier = tenantCacheService.resolveHighestActiveTierNonNull(form.tenantId());
 
-		log.trace("Aggregated presentation variables completely loaded for form context identifier: {}. Submissions collection count: {}, Spam flags matched: {}",
-			formId, submissions.submissions().size(), submissions.spam().size());
+		log.trace("Aggregated presentation variables completely loaded for form context identifier: {}. Submissions collection count: {}, Spam flags matched: {}", formId, submissions.submissions().size(), submissions.spam().size());
 
 		model.addAttribute("form", form);
 		model.addAttribute("redirectUrlNotAllowed", !Tiers.t(currentTier).redirectUrlAllowed());
@@ -120,42 +122,20 @@ public class FormController {
 	}
 
 	@PutMapping("/{id}")
-	public String updateForm(@RequestAttribute JwtPayload userMetadata, @PathVariable("id") UUID formId, @RequestParam("name") String name, @RequestParam(value = "redirectUrl", required = false) String redirectUrl, @RequestParam(value = "isActive", required = false) Boolean isActive, Model model) {
-		log.debug("Processing persistence updates mapping target parameters for form validation configuration modification ID: {}", formId);
-		Form form = formRepository.findById(formId).orElseThrow(() -> {
-			log.error("Target resource lookup mismatch error structure. Record completely missing for form entity updating target: {}", formId);
-			return new RuntimeException("Form not found");
-		});
+	public String updateForm(@RequestAttribute JwtPayload userMetadata, @PathVariable("id") UUID formId, @ModelAttribute FormSettingsRequest request, Model model) {
 
-		if (!form.getTenant().getId().toString().equals(userMetadata.getSub())) {
-			log.error("Security authorization intercept triggered. User: {} failed structural access requirements updates checklist for resource context: {}", userMetadata.getSub(), formId);
-			throw new RuntimeException("Unauthorized access to form system.");
-		}
+		log.debug("Initiating settings update for form ID: {}", formId);
 
-		boolean tierViolationAttempted = false;
+		// Execute core business logic
+		TierValidationResult result = formSettingsService.updateFormSettings(formId, userMetadata.getSub(), request);
 
-		String subscriptionTier = tenantCacheService.resolveHighestActiveTierNonNull(form.getTenant().getId());
-		if (!Tiers.t(subscriptionTier).redirectUrlAllowed() && redirectUrl != null && !redirectUrl.isBlank()) {
-			log.warn("Intercepted invalid configuration upgrade tier parameter state. Dropping restricted input field variables for form: {}", formId);
-			redirectUrl = null;
-			tierViolationAttempted = true;
-			model.addAttribute("warningMessage", "Settings updated, but custom redirects require a premium upgrade!");
-		}
-
-		form.setName(name);
-		form.setRedirectUrl(redirectUrl == null || redirectUrl.isBlank() ? null : redirectUrl);
-		form.setIsActive(isActive != null && isActive);
-
-		Form savedForm = formRepository.save(form);
-		log.info("Successfully updated configurations record layout properties mapping data for form ID: {}", formId);
-
-		formCacheService.updateFormCache(savedForm);
-		formCacheService.evictTenantForms(savedForm.getTenant().getId());
-
-		model.addAttribute("form", savedForm);
-
-		if (!tierViolationAttempted)
+		if (result.hasWarnings()) {
+			model.addAttribute("warningMessage", result.getFirstWarning());
+		} else {
 			model.addAttribute("message", "Form configurations updated successfully!");
+		}
+
+		model.addAttribute("form", result.updatedForm());
 
 		return ViewRegistry.Fragments.SETTINGS;
 	}
