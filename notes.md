@@ -29,11 +29,9 @@
 
 ### Backend, Infrastructure & Operations
 
-* **[Medium Priority]**: Offload submissions older than the last 100 per form to Cloudflare R2.
-* **[Medium Priority]**: Convert POST requests for redirects (like managing subscriptions) into GET requests.
 * **[Medium Priority]**: Implement OpenTelemetry (Otel) across all methods and capture deeper metadata (IP, User ID, Session data).
 * **[Low Priority]**: Audit and re-decide log levels; implement structured logging usage everywhere.
-* **[Low Priority]**: Retry setting up the Sentry agent.
+* **[Low Priority]**: Offload submissions older than the last 100 per form to Cloudflare R2.
 
 ### Dashboard & Frontend UX
 
@@ -66,10 +64,12 @@
 
 ### Roadmap
 
-1. Change `isSpam` boolean to a `spamReason` enum (e.g., `notSpam`, `turnstileFailed`)
-2. Build the internal Admin Panel web based
-3. Build an `/onboarding` page post-signup that auto-generates a mock form with fields to get users started instantly
-4. Build 3rd-party library wrappers (React components, etc.)
-5. Slack webhooks
-6. Telegram Webhooks
-7. Form Error Handling: Let users decide error behavior per form (e.g., return `202 Accepted` even if validation fails for sub-20ms responses, or throw proper errors).
+1. Retry setting up the Sentry agent.
+2. Change `isSpam` boolean to a `spamReason` enum (e.g., `notSpam`, `turnstileFailed`)
+3. Build the internal Admin Panel web based
+4. Build an `/onboarding` page post-signup that auto-generates a mock form with fields to get users started instantly
+5. Build 3rd-party library wrappers (React components, etc.)
+6. Slack webhooks
+7. Telegram Webhooks
+8. Form Error Handling: Let users decide error behavior per form (e.g., return `202 Accepted` even if validation fails for sub-20ms responses, or throw proper errors).
+9. deleted forms page

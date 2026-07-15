@@ -18,11 +18,7 @@ import sh.polar.sdk.Polar;
 import sh.polar.sdk.http.PolarHttpClient;
 import sh.polar.sdk.models.customer.PolarCustomerSessionResponse;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @Controller
 @RequestMapping(PathRegistry.Billing.BASE)
@@ -35,12 +31,6 @@ public class BillingController {
 	private final PolarCacheService polarCacheService;
 	private final TenantCacheService tenantCacheService;
 
-	@PostMapping("/upgrade/{plan}")
-	@ResponseBody
-	public void redirectToCheckout(@PathVariable String plan, @RequestAttribute JwtPayload userMetadata, HttpServletRequest request, HttpServletResponse response) {
-		log.debug("Processing htmx checkout request for plan: {} from user: {}", plan, userMetadata.getSub());
-		response.setHeader("HX-Redirect", generateCheckoutUrl(plan, userMetadata, request));
-	}
 
 	@GetMapping("/upgrade/{plan}")
 	public String redirectToCheckoutGet(@PathVariable String plan, @RequestAttribute JwtPayload userMetadata, HttpServletRequest request) {
@@ -48,36 +38,52 @@ public class BillingController {
 		return "redirect:" + generateCheckoutUrl(plan, userMetadata, request);
 	}
 
-	@PostMapping(PathRegistry.Billing.PORTAL)
-	@ResponseBody
-	public void redirectToCustomerPortal(@RequestAttribute JwtPayload userMetadata, HttpServletResponse response) {
+	@GetMapping(PathRegistry.Billing.PORTAL)
+	public String redirectToCustomerPortal(@RequestAttribute JwtPayload userMetadata, HttpServletRequest request, HttpServletResponse response) {
 		String userId = userMetadata.getSub();
-		log.debug("Request received to generate customer portal session for user ID: {}", userId);
+		log.debug("GET request received to generate customer portal session for user ID: {}", userId);
 
 		if (userId == null) {
 			log.warn("Customer portal generation rejected. Missing user subject metadata in request attributes.");
-			response.setHeader("HX-Redirect", PathRegistry.Auth.Hx.LOGIN_UNAUTHORIZED);
-			return;
+			if (request.getHeader("HX-Request") != null) {
+				response.setHeader("HX-Redirect", PathRegistry.Auth.Hx.LOGIN_UNAUTHORIZED);
+				return null;
+			}
+			return "redirect:" + PathRegistry.Auth.Hx.LOGIN_UNAUTHORIZED;
 		}
 
 		String tier = tenantCacheService.resolveHighestActiveTierNonNull(UUID.fromString(userId));
 		if (Tiers.isFree(tier)) {
-			log.warn("Customer {} attempted to redirect to checkout on free tier!", userId);
-			try {
-				response.getWriter().write("Cannot manage subscription on free tier!");
-			} catch (IOException e) {
-				log.error("unable to write to response after tier check", e);
-			}
-			return;
+			log.warn("Customer {} attempted to redirect to portal on free tier!", userId);
+
+			String errorMessage = java.net.URLEncoder.encode("Cannot manage subscription on free tier!", java.nio.charset.StandardCharsets.UTF_8);
+			String fallbackUrl = PathRegistry.DASHBOARD + "?msg=" + errorMessage;
+
+			if (request.getHeader("HX-Request") != null)
+				response.setHeader("HX-Redirect", fallbackUrl);
+			return "redirect:" + fallbackUrl;
 		}
 
 		try {
 			var session = polarHttpClient.post("/customer-sessions/", Map.of("external_customer_id", userId), PolarCustomerSessionResponse.class);
 			log.info("Customer portal billing session successfully generated for user ID: {}", userId);
-			response.setHeader("HX-Redirect", session.customerPortalUrl());
+
+			if (request.getHeader("HX-Request") != null) {
+				response.setHeader("HX-Redirect", session.customerPortalUrl());
+				return null;
+			}
+			return "redirect:" + session.customerPortalUrl();
 		} catch (Exception e) {
 			log.error("Failed to provision downstream customer session portal from Polar billing client layer for user ID: {}", userId, e);
-			throw e;
+
+			String errorMessage = java.net.URLEncoder.encode("Failed to open billing portal. Please try again later.", java.nio.charset.StandardCharsets.UTF_8);
+			String fallbackUrl = PathRegistry.DASHBOARD + "?msg=" + errorMessage;
+
+			if (request.getHeader("HX-Request") != null) {
+				response.setHeader("HX-Redirect", fallbackUrl);
+				return null;
+			}
+			return "redirect:" + fallbackUrl;
 		}
 	}
 
@@ -86,6 +92,19 @@ public class BillingController {
 
 		if (Tiers.isFree(plan)) {
 			log.debug("Plan parameter detected as tier baseline default [free-v1]. Skipping checkout routing, redirecting straight to dashboard.");
+			return PathRegistry.DASHBOARD;
+		}
+
+		UUID tierUuid = UUID.fromString(Objects.requireNonNull(userMetadata.getSub()));
+		String tier = tenantCacheService.resolveHighestActiveTierNonNull(tierUuid);
+
+		if (Tiers.isStarter(plan) && Tiers.isStarter(tier)) {
+			log.debug("Starter user tryna upgrade to startup plan. Skipping checkout routing, redirecting straight to dashboard.");
+			return PathRegistry.DASHBOARD;
+		}
+
+		if (Tiers.isPro(plan)) {
+			log.debug("Plan parameter detected as max [pro-v1]. Skipping checkout routing, redirecting straight to dashboard.");
 			return PathRegistry.DASHBOARD;
 		}
 
@@ -105,9 +124,8 @@ public class BillingController {
 		customBody.put("external_customer_id", userMetadata.getSub());
 
 		try {
-			String checkoutUrl = polar.checkouts().create(customBody).url();
 			log.info("Successfully provisioned Polar hosted checkout pipeline context link instance for plan product: {} (ID: {})", plan, product.getPolarProductId());
-			return checkoutUrl;
+			return polar.checkouts().create(customBody).url();
 		} catch (Exception e) {
 			log.error("Failed to complete remote checkout generation handshake structure with external Polar API engine parameters.", e);
 			throw e;

@@ -47,11 +47,11 @@
 
             <!-- Upgrades -->
             <div style="display: flex; gap: 12px; align-items: center;">
-                <a th:if="showUpgradeStarter" href="/billing/upgrade/starter-v1" class="btn btn-secondary btn-small">Upgrade to Starter</a>
-                <a th:if="showUpgradePro" href="/billing/upgrade/pro-v1" class="btn btn-primary btn-small">Upgrade to Pro</a>
+                <a th:if="${showUpgradeStarter}" href="/billing/upgrade/starter-v1" class="btn btn-secondary btn-small">Upgrade to Starter</a>
+                <a th:if="${showUpgradePro}" href="/billing/upgrade/pro-v1" class="btn btn-primary btn-small">Upgrade to Pro</a>
             </div>
-            <button th:if="showManageSubscription" hx-post="/billing/portal" class="btn btn-secondary btn-small">
-                Manage Subscription
+            <button th:if="${showManageSubscription}" class="btn btn-secondary btn-small">
+                <a href="billing/portal">Manage Subscription</a>
             </button>
 
             <!-- Logout (Icon only for cleanliness, or text) -->
