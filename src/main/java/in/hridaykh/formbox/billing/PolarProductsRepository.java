@@ -1,6 +1,6 @@
-package in.hridaykh.formbox.repository;
+package in.hridaykh.formbox.billing;
 
-import in.hridaykh.formbox.model.entity.PolarProducts;
+import in.hridaykh.formbox.billing.model.PolarProducts;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

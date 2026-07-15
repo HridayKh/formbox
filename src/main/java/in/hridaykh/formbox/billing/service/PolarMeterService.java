@@ -1,7 +1,7 @@
-package in.hridaykh.formbox.service.polar;
+package in.hridaykh.formbox.billing.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import in.hridaykh.formbox.config.PolarIdProperties;
+import in.hridaykh.formbox.billing.PolarIdProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

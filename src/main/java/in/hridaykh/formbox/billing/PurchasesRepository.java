@@ -1,9 +1,9 @@
-package in.hridaykh.formbox.repository;
+package in.hridaykh.formbox.billing;
 
-import in.hridaykh.formbox.model.entity.PolarProducts;
-import in.hridaykh.formbox.model.entity.Purchases;
+import in.hridaykh.formbox.billing.model.PolarProducts;
+import in.hridaykh.formbox.billing.model.Purchases;
+import in.hridaykh.formbox.billing.model.SubscriptionState;
 import in.hridaykh.formbox.model.entity.Tenant;
-import in.hridaykh.formbox.model.enums.SubscriptionState;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 

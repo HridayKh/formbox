@@ -8,7 +8,7 @@ import in.hridaykh.formbox.service.FormFileService;
 import in.hridaykh.formbox.service.FormSubmissionService;
 import in.hridaykh.formbox.service.cache.FormCacheService;
 import in.hridaykh.formbox.service.cache.TenantCacheService;
-import in.hridaykh.formbox.service.polar.PolarCacheService;
+import in.hridaykh.formbox.billing.service.PolarCacheService;
 import in.hridaykh.formbox.util.TurnstileVerifier;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
 import jakarta.servlet.http.HttpServletRequest;

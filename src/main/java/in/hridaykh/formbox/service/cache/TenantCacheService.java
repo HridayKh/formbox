@@ -2,9 +2,9 @@ package in.hridaykh.formbox.service.cache;
 
 import in.hridaykh.formbox.constant.CacheNames;
 import in.hridaykh.formbox.constant.Tiers;
-import in.hridaykh.formbox.model.entity.Purchases;
-import in.hridaykh.formbox.model.enums.SubscriptionState;
-import in.hridaykh.formbox.repository.PurchasesRepository;
+import in.hridaykh.formbox.billing.model.Purchases;
+import in.hridaykh.formbox.billing.model.SubscriptionState;
+import in.hridaykh.formbox.billing.PurchasesRepository;
 import io.sentry.spring7.tracing.SentrySpan;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

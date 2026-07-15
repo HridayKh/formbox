@@ -1,6 +1,5 @@
-package in.hridaykh.formbox.model.entity;
+package in.hridaykh.formbox.billing.model;
 
-import in.hridaykh.formbox.model.enums.BillingInterval;
 import jakarta.persistence.*;
 import lombok.Data;
 

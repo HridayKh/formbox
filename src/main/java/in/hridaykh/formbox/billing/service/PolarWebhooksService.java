@@ -1,10 +1,10 @@
-package in.hridaykh.formbox.service.polar;
+package in.hridaykh.formbox.billing.service;
 
-import in.hridaykh.formbox.model.entity.PolarProducts;
-import in.hridaykh.formbox.model.entity.Purchases;
+import in.hridaykh.formbox.billing.model.PolarProducts;
+import in.hridaykh.formbox.billing.model.Purchases;
+import in.hridaykh.formbox.billing.model.SubscriptionState;
 import in.hridaykh.formbox.model.entity.Tenant;
-import in.hridaykh.formbox.model.enums.SubscriptionState;
-import in.hridaykh.formbox.repository.PurchasesRepository;
+import in.hridaykh.formbox.billing.PurchasesRepository;
 import in.hridaykh.formbox.repository.TenantRepository;
 import in.hridaykh.formbox.service.cache.TenantCacheService;
 import lombok.RequiredArgsConstructor;

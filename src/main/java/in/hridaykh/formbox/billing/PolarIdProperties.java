@@ -1,4 +1,4 @@
-package in.hridaykh.formbox.config;
+package in.hridaykh.formbox.billing;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;

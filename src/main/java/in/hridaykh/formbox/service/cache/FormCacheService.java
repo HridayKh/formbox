@@ -56,7 +56,7 @@ public class FormCacheService {
 
 		log.debug("Redis L2 cache MISS for form ID: {}. Fetching from persistent database...", formId);
 		Form form = formRepository.findById(formId).orElseThrow(() -> {
-			log.warn("Form retrieval failed. Record not found in database for ID: {}", formId);
+			log.info("Form retrieval failed. Record not found in database for ID: {}", formId);
 			return new FormNotFoundException(formId);
 		});
 

@@ -1,8 +1,8 @@
-package in.hridaykh.formbox.service.polar;
+package in.hridaykh.formbox.billing.service;
 
+import in.hridaykh.formbox.billing.model.PolarProducts;
 import in.hridaykh.formbox.constant.CacheNames;
-import in.hridaykh.formbox.model.entity.PolarProducts;
-import in.hridaykh.formbox.repository.PolarProductsRepository;
+import in.hridaykh.formbox.billing.PolarProductsRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
