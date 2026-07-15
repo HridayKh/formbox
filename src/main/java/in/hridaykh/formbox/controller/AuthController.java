@@ -4,8 +4,8 @@ import in.hridaykh.formbox.LoginRequest;
 import in.hridaykh.formbox.SignUpRequest;
 import in.hridaykh.formbox.constant.PathRegistry;
 import in.hridaykh.formbox.constant.ViewRegistry;
+import in.hridaykh.formbox.exception.TurnstileException;
 import in.hridaykh.formbox.exception.auth.InvalidCredentialsException;
-import in.hridaykh.formbox.exception.auth.UserAlreadyExistsException;
 import in.hridaykh.formbox.service.AuthService;
 import io.github.jan.supabase.SupabaseClient;
 import io.github.jan.supabase.auth.exception.AuthWeakPasswordException;
@@ -48,13 +48,12 @@ public class AuthController {
 	}
 
 	@PostMapping(PathRegistry.Auth.SIGNUP)
-	public String handleSignup(@RequestParam String email, @RequestParam String password, @RequestAttribute SupabaseClient supabaseClient, HttpServletResponse response, Model model) {
+	public String handleSignup(@RequestParam String email, @RequestParam String password, @RequestParam("cf-turnstile-response") String turnstileResponse, @RequestAttribute SupabaseClient supabaseClient, HttpServletResponse response, Model model) {
 		log.debug("Processing HTTP POST registration payload submission for email: {}", email);
 		try {
-			authService.registerUser(supabaseClient, new SignUpRequest(email, password), response);
+			authService.registerUser(supabaseClient, new SignUpRequest(email, password), turnstileResponse, response);
 			return ViewRegistry.Auth.Fragments.EMPTY;
-		} catch (UserAlreadyExistsException e) {
-			log.warn("Registration rejected. Account already exists for email: {}", email);
+		} catch (TurnstileException e) {
 			model.addAttribute("error", e.getMessage());
 			return ViewRegistry.Auth.Fragments.ERROR_ALERT;
 		} catch (AuthWeakPasswordException e) {
@@ -69,13 +68,16 @@ public class AuthController {
 	}
 
 	@PostMapping(PathRegistry.Auth.LOGIN)
-	public String handleLogin(@RequestParam String email, @RequestParam String password, @RequestAttribute SupabaseClient supabaseClient, HttpServletResponse response, Model model) {
+	public String handleLogin(@RequestParam String email, @RequestParam String password, @RequestParam("cf-turnstile-response") String turnstileResponse, @RequestAttribute SupabaseClient supabaseClient, HttpServletResponse response, Model model) {
 		log.debug("Processing HTTP POST authentication payload submission for email: {}", email);
 		try {
-			authService.loginUser(supabaseClient, new LoginRequest(email, password), response);
+			authService.loginUser(supabaseClient, new LoginRequest(email, password), turnstileResponse, response);
 			return ViewRegistry.Auth.Fragments.EMPTY;
+		} catch (TurnstileException e) {
+			model.addAttribute("error", e.getMessage());
+			return ViewRegistry.Auth.Fragments.ERROR_ALERT;
 		} catch (InvalidCredentialsException e) {
-			log.warn("Authentication clearance challenge failed for target identifier: {}", email);
+			log.info("Authentication clearance challenge failed for target identifier: {}", email);
 			model.addAttribute("error", e.getMessage());
 			return ViewRegistry.Auth.Fragments.ERROR_ALERT;
 		} catch (Exception e) {
@@ -93,12 +95,17 @@ public class AuthController {
 	}
 
 	@PostMapping(PathRegistry.Auth.RESEND_CONFIRMATION)
-	public String resend(@RequestParam String email, Model model, @RequestAttribute SupabaseClient supabaseClient) {
+	public String resend(@RequestParam String email, @RequestParam("cf-turnstile-response") String turnstileResponse, Model model, @RequestAttribute SupabaseClient supabaseClient) {
 		log.debug("Processing HTTP POST request for verification email resend pipeline targeting: {}", email);
 		try {
-			authService.resendVerification(supabaseClient, email);
+			authService.resendVerification(supabaseClient, email, turnstileResponse);
+
 			model.addAttribute("message", "Confirmation validation token successfully transmitted!");
 			return ViewRegistry.Auth.Fragments.SUCCESS_ALERT;
+		} catch (TurnstileException e) {
+			log.warn("Resend confirmation blocked. Cloudflare Turnstile validation failed for email: {}", email);
+			model.addAttribute("error", e.getMessage());
+			return ViewRegistry.Auth.Fragments.ERROR_ALERT;
 		} catch (Exception e) {
 			log.error("Unable to execute validation token re-issuance routine to target: {}", email, e);
 			model.addAttribute("error", "Failed to dispatch confirmation link. Please check parameters.");

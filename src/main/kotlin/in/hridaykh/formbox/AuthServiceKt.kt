@@ -4,7 +4,6 @@ import `in`.hridaykh.formbox.config.SupabaseProperties
 import `in`.hridaykh.formbox.exception.auth.AuthException
 import `in`.hridaykh.formbox.exception.auth.InvalidCredentialsException
 import `in`.hridaykh.formbox.exception.auth.SessionExpiredException
-import `in`.hridaykh.formbox.exception.auth.UserAlreadyExistsException
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.OtpType
@@ -63,7 +62,7 @@ class AuthServiceKt(private val supabaseProps: SupabaseProperties) {
 			}
 			log.info("Supabase signup transaction successfully finalized for email: {}", request.email)
 		} catch (e: AuthWeakPasswordException) {
-			log.warn("Sign-up rejected: Weak password rules unmet for target address {}", request.email)
+			log.info("Sign-up rejected: Weak password rules unmet for target address {}", request.email)
 			throw e
 		} catch (e: AuthRestException) {
 			log.error(
@@ -71,9 +70,6 @@ class AuthServiceKt(private val supabaseProps: SupabaseProperties) {
 				e.errorCode,
 				e.errorDescription
 			)
-			if (e.errorDescription.contains("already registered", ignoreCase = true)) {
-				throw UserAlreadyExistsException("An account with this email already exists.")
-			}
 			throw AuthException("Registration API error: ${e.errorDescription}")
 		} catch (e: Exception) {
 			log.error("Unhandled error context during registration for: {}", request.email, e)
@@ -126,9 +122,7 @@ class AuthServiceKt(private val supabaseProps: SupabaseProperties) {
 			)
 		} catch (e: AuthRestException) {
 			log.warn(
-				"Supabase reject authenticating credential profile [{}]: {}",
-				request.email,
-				e.errorDescription
+				"Supabase reject authenticating credential profile [{}]", request.email, e
 			)
 			throw InvalidCredentialsException("Invalid email or password.")
 		} catch (e: AuthSessionMissingException) {

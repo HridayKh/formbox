@@ -20,19 +20,11 @@
 2. experiment with cf workers and cf cache to get sub 20ms 
 3. try to get the same with just workers 
 4. try to mini.ise latency without cf 
-5. move the turnstile check and schema validation after the response if the user says so (force the user to choose on form creation, no defualts)
-6. Trunstile verificaiton on my own /f/ or /verify/ domain????
+5. move the turnstile check and schema validation after the response if the user says so (force the user to choose on form creation, no defaults)
+6. Turnstile verification on my own /f/ or /verify/ domain????
+7. `ALTCHA` as an alternative option for spam protection
 
 ## Todo
-
-### Security, Rate Limiting & Anti-Spam
-
-* **[High Priority]** Implement Turnstile on my own forms.
-* **[High Priority]** Implement Turnstile on starter tier (keep redirects on pro only).
-* **[High Priority]** Strict rate limits are too tight and lenient rate limits are too loose.
-* **[Medium Priority]** Change `isSpam` boolean to a `spamReason` enum (e.g., `notSpam`, `turnstileFailed`).
-* **[Medium Priority]** Auth improvements: Password reset, forgot password, and OAuth for quick signup.
-* **[Low Priority]** Add `ALTCHA` as an alternative option for spam protection.
 
 ### Backend, Infrastructure & Operations
 
@@ -73,6 +65,11 @@
 
 ### Admin & Documentation (Pre-Launch)
 
-* **[Near Launch]** Start and finish the internal Admin Panel.
+* **[Medium Priority]** Auth improvements: Password reset, forgot password, and OAuth for quick signup.
+* **[Near Launch]** Build the internal Admin Panel.
 * **[Near Launch]** Write the Knowledge Base / Help documentation.
 * **[Near Launch]** Draft and publish Legal Docs (Privacy Policy, ToS).
+
+### Roadmap
+
+1. Change `isSpam` boolean to a `spamReason` enum (e.g., `notSpam`, `turnstileFailed`)

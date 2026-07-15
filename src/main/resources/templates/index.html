@@ -54,7 +54,7 @@
             <li><a href="#faq">FAQ</a></li>
             <li th:if="${loggedIn}"><a class="btn btn-primary" href="/dashboard">Dashboard</a></li>
             <li th:unless="${loggedIn}"><a class="btn btn-secondary" href="/auth/login">Sign in</a></li>
-            <li th:unless="${loggedIn}"><a class="btn btn-primary" href="/auth/register">Register</a></li>
+            <li th:unless="${loggedIn}"><a class="btn btn-primary" href="/auth/signup">Register</a></li>
         </ul>
     </nav>
 </header>
@@ -198,8 +198,7 @@
                     </header>
                     <ul class="plan-features">
                         <li><span class="icon-check" aria-hidden="true"></span>Cloudflare-powered edge</li>
-                        <li><span class="icon-check" aria-hidden="true"></span>Redirect URLs &amp; AJAX/JSON endpoints
-                        </li>
+                        <li><span class="icon-check" aria-hidden="true"></span>AJAX/JSON endpoints</li>
                         <li><span class="icon-check" aria-hidden="true"></span>2,500 submissions / month</li>
                         <li><span class="icon-check" aria-hidden="true"></span>10 forms</li>
                         <li><span class="icon-check" aria-hidden="true"></span>Unlimited forms</li>
@@ -227,8 +226,8 @@
                     </header>
                     <ul class="plan-features">
                         <li><span class="icon-check" aria-hidden="true"></span>Cloudflare-powered edge</li>
-                        <li><span class="icon-check" aria-hidden="true"></span>Redirect URLs &amp; AJAX/JSON endpoints
-                        </li>
+                        <li><span class="icon-check" aria-hidden="true"></span>AJAX/JSON endpoints</li>
+                        <li><span class="icon-check" aria-hidden="true"></span>Redirect URLs</li>
                         <li><span class="icon-check" aria-hidden="true"></span>100,000 submissions / month</li>
                         <li><span class="icon-check" aria-hidden="true"></span>Unlimited forms</li>
                         <li><span class="icon-check" aria-hidden="true"></span>10GB file storage <span

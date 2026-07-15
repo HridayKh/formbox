@@ -52,14 +52,14 @@ public class IpRateLimitFilter extends OncePerRequestFilter {
 		}
 
 		String scope = "a";
-		String capacity = "60";
-		String refillRate = "3";
+		String capacity = "10";
+		String refillRate = "1";
 
 		String path = request.getRequestURI();
 		if (path.startsWith("/f/") || path.startsWith("/auth/")) {
 			scope = "b";
-			capacity = "5";
-			refillRate = "0.2";
+			capacity = "4";
+			refillRate = "0.1";
 		}
 
 		// Removed the dangling trailing colon from the string formatter

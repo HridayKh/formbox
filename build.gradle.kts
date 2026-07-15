@@ -73,7 +73,6 @@ dependencies {
 	implementation("org.jetbrains.kotlin:kotlin-stdlib:2.3.21")
 
 	// Resend and Polar
-	implementation("com.resend:resend-java:+")
 	implementation("com.jsandev.polar:polar-java-sdk:0.1.5")
 	implementation("com.jsandev.polar:polar-spring:0.1.5")
 }

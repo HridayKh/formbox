@@ -4,17 +4,22 @@ import in.hridaykh.formbox.AuthServiceKt;
 import in.hridaykh.formbox.AuthResponse;
 import in.hridaykh.formbox.LoginRequest;
 import in.hridaykh.formbox.SignUpRequest;
+import in.hridaykh.formbox.config.TurnstileProperties;
 import in.hridaykh.formbox.constant.PathRegistry;
+import in.hridaykh.formbox.exception.TurnstileException;
+import in.hridaykh.formbox.util.TurnstileVerifier;
 import io.github.jan.supabase.SupabaseClient;
 import io.github.jan.supabase.auth.exception.AuthWeakPasswordException;
-import io.github.jan.supabase.auth.user.UserSession;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import tools.jackson.databind.ObjectMapper;
 
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 @Slf4j
@@ -23,6 +28,8 @@ public class AuthService {
 
 	private final AuthServiceKt authServiceKt;
 	private final TenantService tenantService;
+	private final ObjectMapper objectMapper;
+	private final TurnstileProperties turnstileProperties;
 
 	public void processLoginPage(String msg, HttpServletResponse response) {
 		log.trace("Processing login page evaluation. Provided message trigger parameter: [{}]", msg);
@@ -33,18 +40,20 @@ public class AuthService {
 		}
 	}
 
-	public void registerUser(SupabaseClient supabaseClient, SignUpRequest request, HttpServletResponse response) throws AuthWeakPasswordException {
+	public void registerUser(SupabaseClient supabaseClient, SignUpRequest request, String turnstileResponse, HttpServletResponse response) throws AuthWeakPasswordException, TurnstileException {
 		log.debug("Initiating user registration workflow for email: {}", request.getEmail());
 
+		verifyTurnstile(turnstileResponse);
 		authServiceKt.signUp(supabaseClient, request);
 
 		log.info("Registration request completed cleanly for email: {}", request.getEmail());
 		response.setHeader("HX-Redirect", PathRegistry.Auth.Hx.LOGIN_CHECK_EMAIL);
 	}
 
-	public void loginUser(SupabaseClient supabaseClient, LoginRequest request, HttpServletResponse response) {
+	public void loginUser(SupabaseClient supabaseClient, LoginRequest request, String turnstileResponse, HttpServletResponse response) throws TurnstileException {
 		log.debug("Initiating login for user: {}", request.getEmail());
 
+		verifyTurnstile(turnstileResponse);
 		AuthResponse auth = authServiceKt.login(supabaseClient, request);
 
 		setAuthCookie(response, "sb_token", auth.getAccessToken(), 3600);
@@ -71,8 +80,10 @@ public class AuthService {
 		response.setHeader("HX-Redirect", PathRegistry.Auth.Hx.LOGIN_LOGGED_OUT);
 	}
 
-	public void resendVerification(SupabaseClient supabaseClient, String email) {
+	public void resendVerification(SupabaseClient supabaseClient, String email, String turnstileResponse) throws TurnstileException {
 		log.debug("Dispatching confirmation email resend request for address: {}", email);
+
+		verifyTurnstile(turnstileResponse);
 
 		authServiceKt.resendConfirmation(supabaseClient, email);
 
@@ -108,5 +119,18 @@ public class AuthService {
 		cookie.setPath("/");
 		cookie.setMaxAge(maxAge);
 		response.addCookie(cookie);
+	}
+
+	private void verifyTurnstile(String turnstileResponse) throws TurnstileException {
+		if (turnstileResponse == null || turnstileResponse.isBlank())
+			throw new TurnstileException("Security verification is missing. Please try again.");
+
+		Map<String, String> payload = new HashMap<>();
+		payload.put("cf-turnstile-response", turnstileResponse);
+
+		if (TurnstileVerifier.turnstileFailed(payload, turnstileProperties.getSecretKey(), objectMapper)) {
+			log.info("Cloudflare Turnstile verification failed.");
+			throw new TurnstileException("Security verification failed. Please try again.");
+		}
 	}
 }
