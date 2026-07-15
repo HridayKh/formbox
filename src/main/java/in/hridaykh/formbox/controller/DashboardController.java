@@ -1,5 +1,6 @@
 package in.hridaykh.formbox.controller;
 
+import in.hridaykh.formbox.billing.service.PolarCacheService;
 import in.hridaykh.formbox.constant.PathRegistry;
 import in.hridaykh.formbox.constant.Tiers;
 import in.hridaykh.formbox.constant.ViewRegistry;
@@ -18,9 +19,11 @@ import java.util.UUID;
 public class DashboardController {
 
 	private final TenantCacheService tenantCacheService;
+	private final PolarCacheService polarCacheService;
 
-	public DashboardController(TenantCacheService tenantCacheService) {
+	public DashboardController(TenantCacheService tenantCacheService, PolarCacheService polarCacheService) {
 		this.tenantCacheService = tenantCacheService;
+		this.polarCacheService = polarCacheService;
 	}
 
 	@GetMapping
@@ -45,6 +48,7 @@ public class DashboardController {
 		model.addAttribute("redirectUrlNotAllowed", !Tiers.t(activeTier).redirectUrlAllowed());
 		model.addAttribute("user", userMetadata);
 		model.addAttribute("msg", msg);
+		model.addAttribute("balanceLeft", polarCacheService.getCachedSubmissionBalance(tenantId));
 
 		if (customerSessionToken != null && !customerSessionToken.isBlank()) {
 			log.info("Detected Polar query string authentication fallback parameter payload. Cleaning execution URL state via dynamic client-side refresh redirect loop.");

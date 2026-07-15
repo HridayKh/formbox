@@ -35,13 +35,11 @@
 
 ### Dashboard & Frontend UX
 
-* **[High Priority]**: Revamp the **Manage Form** page: Separate settings into a tab and display submission stats directly on the main form page.
-* **[High Priority]**: Show the user's current submission balance.
 * **[Medium Priority]**: Revamp the overall form display layout and implement pagination.
+* **[LOw Priority]**: Reimagine the **Manage Form** page
 
 ### Core Form Features & Integrations
 
-* **[High Priority]**: Settings page with all the form settings
 * **[Medium Priority]**: Add asynchronous Discord notifications via webhook URL (with an errors table to report dashboard failures).
 * **[Medium Priority]**: Build CSV export functionality for submissions.
 * **[Low Priority]**: Magic `mailto:` links.

@@ -47,8 +47,10 @@
 
             <!-- Upgrades -->
             <div style="display: flex; gap: 12px; align-items: center;">
-                <a th:if="${showUpgradeStarter}" href="/billing/upgrade/starter-v1" class="btn btn-secondary btn-small">Upgrade to Starter</a>
-                <a th:if="${showUpgradePro}" href="/billing/upgrade/pro-v1" class="btn btn-primary btn-small">Upgrade to Pro</a>
+                <a th:if="${showUpgradeStarter}" href="/billing/upgrade/starter-v1" class="btn btn-secondary btn-small">Upgrade
+                    to Starter</a>
+                <a th:if="${showUpgradePro}" href="/billing/upgrade/pro-v1" class="btn btn-primary btn-small">Upgrade to
+                    Pro</a>
             </div>
             <button th:if="${showManageSubscription}" class="btn btn-secondary btn-small">
                 <a href="billing/portal">Manage Subscription</a>
@@ -85,8 +87,7 @@
     <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 40px; flex-wrap: wrap; gap: 24px;">
         <div class="section-head" style="margin-bottom: 0;">
             <span class="eyebrow">Overview</span>
-            <h2>Welcome back</h2>
-            <p class="section-sub">Manage your form endpoints, track submissions, and upgrade your plan.</p>
+            <h2>Welcome back, <span th:text="${balanceLeft}">left</span> submissions left</h2>
         </div>
 
         <button class="btn btn-primary" id="create-form-btn" onclick="openModal('create-form-modal')">
