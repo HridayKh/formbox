@@ -1,6 +1,6 @@
 package in.hridaykh.formbox.util;
 
-import in.hridaykh.formbox.constant.Tiers;
+import in.hridaykh.formbox.billing.model.Entitlements;
 import in.hridaykh.formbox.model.dto.FormSettingsRequest;
 import in.hridaykh.formbox.model.dto.TierValidationResult;
 import org.springframework.stereotype.Component;
@@ -12,29 +12,54 @@ import java.util.List;
 @Component
 public class FormTierValidator {
 
-	public TierValidationResult validateAndSanitize(FormSettingsRequest request, String subscriptionTier) {
+	public TierValidationResult validateAndSanitize(FormSettingsRequest request, Entitlements entitlements) {
 		List<String> warnings = new ArrayList<>();
 		String sanitizedRedirectUrl = request.redirectUrl();
 
 		// Rule 1: Custom Redirects
-		if (!Tiers.t(subscriptionTier).redirectUrlAllowed() && StringUtils.hasText(sanitizedRedirectUrl)) {
+		if (!entitlements.redirectUrlsAllowed() && StringUtils.hasText(sanitizedRedirectUrl)) {
 			sanitizedRedirectUrl = null;
 			warnings.add("Settings updated, but custom redirects require a premium upgrade!");
 		}
 
-		// Rule 2: Future rules become trivial to add here:
-		// if (!Tiers.t(subscriptionTier).fileUploadsAllowed() && request.allowFiles()) { ... }
+		// Rule 2: Turnstile verification
+		String sanitizedTurnstileSecretKey = request.turnstileSecretKey();
+		if (!entitlements.turnstileAllowed() && StringUtils.hasText(sanitizedTurnstileSecretKey)) {
+			sanitizedTurnstileSecretKey = null;
+			warnings.add("Turnstile validation is not allowed on your current tier. Please upgrade!");
+		}
+
+		// Rule 3: JSON submissions
+		boolean sanitizedAllowJson = request.allowJson();
+		if (!entitlements.jsonFormsAllowed() && sanitizedAllowJson) {
+			sanitizedAllowJson = false;
+			warnings.add("JSON submission is not allowed on your current tier. Please upgrade!");
+		}
+
+		// Rule 4: File uploads
+		boolean sanitizedAllowFiles = request.allowFiles();
+		if (!entitlements.fileUploadsAllowed() && sanitizedAllowFiles) {
+			sanitizedAllowFiles = false;
+			warnings.add("File uploads are not allowed on your current tier. Please upgrade!");
+		}
+
+		// Rule 5: Rate limit RPM capping
+		int sanitizedRateLimitRpm = request.rateLimitRpm();
+		if (sanitizedRateLimitRpm > entitlements.maxRateLimitRpm()) {
+			sanitizedRateLimitRpm = entitlements.maxRateLimitRpm();
+			warnings.add("Rate limit cannot exceed " + entitlements.maxRateLimitRpm() + " RPM on your current tier.");
+		}
 
 		FormSettingsRequest sanitizedRequest = new FormSettingsRequest(
 			request.name(),
 			sanitizedRedirectUrl,
 			request.isActive(),
-			request.turnstileSecretKey(),
+			sanitizedTurnstileSecretKey,
 			request.honeypotName(),
-			request.rateLimitRpm(),
-			request.allowFiles(),
+			sanitizedRateLimitRpm,
+			sanitizedAllowFiles,
 			request.allowHtmx(),
-			request.allowJson(),
+			sanitizedAllowJson,
 			request.fieldValidations()
 		);
 

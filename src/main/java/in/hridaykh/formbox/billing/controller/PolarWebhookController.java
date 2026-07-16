@@ -1,7 +1,7 @@
 package in.hridaykh.formbox.billing.controller;
 
+import in.hridaykh.formbox.billing.service.WebhookService;
 import in.hridaykh.formbox.constant.PathRegistry;
-import in.hridaykh.formbox.billing.service.PolarWebhooksService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,8 +22,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PolarWebhookController {
 
-	private final PolarWebhooksService polarWebhooksService;
 	private final PolarWebhookVerifier polarWebhookVerifier;
+	private final WebhookService webhooksService;
 
 	@PostMapping(PathRegistry.Webhooks.POLAR)
 	public ResponseEntity<Map<String, Object>> handlePolarWebhook(HttpServletRequest request) {
@@ -64,7 +64,7 @@ public class PolarWebhookController {
 			responseBody.put("status", "accepted");
 
 			try {
-				polarWebhooksService.processHook(body);
+				webhooksService.processHook(body);
 				log.debug("Downstream processing service completed webhook ingestion task asynchronously or sequentially.");
 			} catch (Exception e) {
 				log.error("Internal business layer logic failure crashed during webhook consumption payload mapping pipeline for ID: {}", webhookId, e);

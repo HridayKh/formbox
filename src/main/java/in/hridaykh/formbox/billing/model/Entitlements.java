@@ -27,6 +27,7 @@ public record Entitlements(
 	@JsonProperty("tier_name") String tierName,
 	@JsonProperty("tier_priority") int tierPriority,
 	@JsonProperty("refresh_at") Instant refreshAt,
+	@JsonProperty("recurring_interval") String recurringInterval,
 
 	// Meter limits (max caps, NOT live usage)
 	@JsonProperty("submissions_limit") long submissionsLimit,
@@ -61,6 +62,7 @@ public record Entitlements(
 			.tierName(FreeTierDefaults.TIER_NAME)
 			.tierPriority(FreeTierDefaults.TIER_PRIORITY)
 			.refreshAt(Instant.now().plus(Duration.ofDays(30)))
+			.recurringInterval("free")
 			.submissionsLimit(FreeTierDefaults.SUBMISSIONS_LIMIT)
 			.formsLimit(FreeTierDefaults.FORMS_LIMIT)
 			.storageLimitBytes(FreeTierDefaults.STORAGE_LIMIT_BYTES)

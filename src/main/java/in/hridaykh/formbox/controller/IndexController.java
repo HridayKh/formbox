@@ -1,13 +1,14 @@
 package in.hridaykh.formbox.controller;
 
-import in.hridaykh.formbox.constant.Tiers;
+import in.hridaykh.formbox.billing.model.Entitlements;
 import in.hridaykh.formbox.constant.ViewRegistry;
 import in.hridaykh.formbox.exception.FormNotFoundException;
 import in.hridaykh.formbox.model.dto.CachedForm;
+import in.hridaykh.formbox.model.entity.Tenant;
+import in.hridaykh.formbox.repository.TenantRepository;
 import in.hridaykh.formbox.service.form.FormFileService;
 import in.hridaykh.formbox.service.form.FormSubmissionService;
 import in.hridaykh.formbox.service.cache.FormCacheService;
-import in.hridaykh.formbox.service.cache.TenantCacheService;
 import in.hridaykh.formbox.billing.service.PolarCacheService;
 import in.hridaykh.formbox.util.TurnstileVerifier;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
@@ -36,7 +37,7 @@ public class IndexController {
 	private final FormCacheService formCacheService;
 	private final FormFileService formFileService;
 	private final ObjectMapper objectMapper;
-	private final TenantCacheService tenantCacheService;
+	private final TenantRepository tenantRepository;
 
 	@GetMapping("/")
 	public String index(@RequestAttribute(required = false) JwtPayload userMetadata, Model model) {
@@ -96,7 +97,8 @@ public class IndexController {
 					response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 					return "submit/files-not-allowed";
 				}
-			} catch (Exception _) {
+			} catch (Exception e) {
+				log.trace("Suppressed content parse failure context check. Client sent no multi-part payload structure.");
 			}
 		}
 
@@ -130,8 +132,9 @@ public class IndexController {
 			response.setContentType("application/json");
 			return "submit/json-response";
 		}
-		String tier = tenantCacheService.resolveHighestActiveTierNonNull(form.tenantId());
-		if (form.redirectUrl() == null || form.redirectUrl().isBlank() || !Tiers.t(tier).redirectUrlAllowed())
+		Tenant tenant = tenantRepository.findById(form.tenantId()).orElse(null);
+		Entitlements entitlements = (tenant != null) ? tenant.getEntitlementsOrDefaults() : Entitlements.freeDefaults();
+		if (form.redirectUrl() == null || form.redirectUrl().isBlank() || !entitlements.redirectUrlsAllowed())
 			return "submit/thanks";
 		return "redirect:" + form.redirectUrl();
 	}

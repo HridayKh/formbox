@@ -1,18 +1,18 @@
 package in.hridaykh.formbox.controller;
 
+import in.hridaykh.formbox.billing.model.Entitlements;
 import in.hridaykh.formbox.constant.PathRegistry;
-import in.hridaykh.formbox.constant.Tiers;
 import in.hridaykh.formbox.constant.ViewRegistry;
 import in.hridaykh.formbox.model.dto.CachedForm;
 import in.hridaykh.formbox.model.dto.FormSettingsRequest;
 import in.hridaykh.formbox.model.dto.FormSubmissionsResponse;
 import in.hridaykh.formbox.model.dto.TierValidationResult;
 import in.hridaykh.formbox.model.entity.Form;
+import in.hridaykh.formbox.model.entity.Tenant;
 import in.hridaykh.formbox.repository.FormRepository;
 import in.hridaykh.formbox.repository.TenantRepository;
 import in.hridaykh.formbox.service.cache.FormCacheService;
 import in.hridaykh.formbox.service.cache.SubmissionCacheService;
-import in.hridaykh.formbox.service.cache.TenantCacheService;
 import in.hridaykh.formbox.service.form.FormSettingsService;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
 import lombok.RequiredArgsConstructor;
@@ -35,7 +35,6 @@ public class FormController {
 	private final TenantRepository tenantRepository;
 	private final FormRepository formRepository;
 	private final SubmissionCacheService submissionCacheService;
-	private final TenantCacheService tenantCacheService;
 	private final FormCacheService formCacheService;
 	private final FormSettingsService formSettingsService;
 
@@ -43,19 +42,20 @@ public class FormController {
 	public String createForm(@RequestAttribute JwtPayload userMetadata, @RequestParam("name") String name, @RequestParam(value = "redirectUrl", required = false) String redirectUrl, HttpServletResponse response) {
 		log.debug("Processing request to create a new form. Name: [{}], Requested Redirect URL: [{}]", name, redirectUrl);
 
-
 		UUID tenantId = UUID.fromString(Objects.requireNonNull(userMetadata.getSub()));
 		List<CachedForm> forms = formCacheService.getTenantForms(tenantId);
 
-		String highestTier = tenantCacheService.resolveHighestActiveTierNonNull(tenantId);
-		if (forms.size() >= Tiers.t(highestTier).maxForms()) {
+		Tenant tenant = tenantRepository.findById(tenantId).orElse(null);
+		Entitlements entitlements = (tenant != null) ? tenant.getEntitlementsOrDefaults() : Entitlements.freeDefaults();
+
+		if (forms.size() >= entitlements.formsLimit()) {
 			String msg = "Your have Reached Your Forms Limit, Upgrade For More!";
 			response.setHeader("HX-Redirect", PathRegistry.DASHBOARD + "?msg=" + msg);
 			return ViewRegistry.Auth.Fragments.EMPTY;
 		}
 
 		String msgParam = "";
-		if (!Tiers.t(highestTier).redirectUrlAllowed() && redirectUrl != null && !redirectUrl.isBlank()) {
+		if (!entitlements.redirectUrlsAllowed() && redirectUrl != null && !redirectUrl.isBlank()) {
 			log.warn("Tier constraint violation intercepted. Free tier tenant: {} attempted custom redirect validation rules.", tenantId);
 			redirectUrl = null;
 			msgParam = "?msg=upgrade_required_for_redirect";
@@ -109,12 +109,13 @@ public class FormController {
 		}
 
 		FormSubmissionsResponse submissions = submissionCacheService.getFormSubmissionsGrouped(formId);
-		String currentTier = tenantCacheService.resolveHighestActiveTierNonNull(form.tenantId());
+		Tenant tenant = tenantRepository.findById(form.tenantId()).orElse(null);
+		Entitlements entitlements = (tenant != null) ? tenant.getEntitlementsOrDefaults() : Entitlements.freeDefaults();
 
 		log.trace("Aggregated presentation variables completely loaded for form context identifier: {}. Submissions collection count: {}, Spam flags matched: {}", formId, submissions.submissions().size(), submissions.spam().size());
 
 		model.addAttribute("form", form);
-		model.addAttribute("redirectUrlNotAllowed", !Tiers.t(currentTier).redirectUrlAllowed());
+		model.addAttribute("redirectUrlNotAllowed", !entitlements.redirectUrlsAllowed());
 		model.addAttribute("submissions", submissions.submissions());
 		model.addAttribute("spamSubmissions", submissions.spam());
 

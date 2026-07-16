@@ -1,8 +1,7 @@
 package in.hridaykh.formbox.billing.controller;
 
-import in.hridaykh.formbox.billing.model.PolarProducts;
 import in.hridaykh.formbox.constant.PathRegistry;
-import in.hridaykh.formbox.constant.Tiers;
+import in.hridaykh.formbox.billing.model.Entitlements;
 import in.hridaykh.formbox.service.cache.TenantCacheService;
 import in.hridaykh.formbox.billing.service.PolarCacheService;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
@@ -53,7 +52,7 @@ public class BillingController {
 		}
 
 		String tier = tenantCacheService.resolveHighestActiveTierNonNull(UUID.fromString(userId));
-		if (Tiers.isFree(tier)) {
+		if ("free".equalsIgnoreCase(tier)) {
 			log.warn("Customer {} attempted to redirect to portal on free tier!", userId);
 
 			String errorMessage = java.net.URLEncoder.encode("Cannot manage subscription on free tier!", java.nio.charset.StandardCharsets.UTF_8);
@@ -90,26 +89,26 @@ public class BillingController {
 	private String generateCheckoutUrl(String plan, JwtPayload userMetadata, HttpServletRequest request) {
 		log.trace("Initiating checkout URL generation workflow for requested plan token: {}", plan);
 
-		if (Tiers.isFree(plan)) {
-			log.debug("Plan parameter detected as tier baseline default [free-v1]. Skipping checkout routing, redirecting straight to dashboard.");
+		if ("free".equalsIgnoreCase(plan) || "free-v1".equalsIgnoreCase(plan)) {
+			log.debug("Plan parameter detected as tier baseline default [free]. Skipping checkout routing, redirecting straight to dashboard.");
 			return PathRegistry.DASHBOARD;
 		}
 
 		UUID tierUuid = UUID.fromString(Objects.requireNonNull(userMetadata.getSub()));
 		String tier = tenantCacheService.resolveHighestActiveTierNonNull(tierUuid);
 
-		if (Tiers.isStarter(plan) && Tiers.isStarter(tier)) {
-			log.debug("Starter user tryna upgrade to startup plan. Skipping checkout routing, redirecting straight to dashboard.");
+		if (plan.equalsIgnoreCase(tier)) {
+			log.debug("User already on requested plan {}. Skipping checkout routing, redirecting straight to dashboard.", plan);
 			return PathRegistry.DASHBOARD;
 		}
 
-		if (Tiers.isPro(plan)) {
-			log.debug("Plan parameter detected as max [pro-v1]. Skipping checkout routing, redirecting straight to dashboard.");
+		if ("pro-v1".equalsIgnoreCase(tier)) {
+			log.debug("Pro user cannot upgrade further. Skipping checkout routing, redirecting straight to dashboard.");
 			return PathRegistry.DASHBOARD;
 		}
 
-		PolarProducts product = polarCacheService.productBySlug(plan.toLowerCase());
-		if (product == null) {
+		String polarProductId = polarCacheService.getPolarProductIdBySlug(plan);
+		if (polarProductId == null) {
 			log.error("Resolution mismatch error. Target checkout schema strategy maps to an unknown plan: {}", plan);
 			throw new IllegalArgumentException("Unknown plan: " + plan);
 		}
@@ -118,13 +117,13 @@ public class BillingController {
 		log.trace("Configured callback endpoint fallback resolution tracking target url context to: {}", successUrl);
 
 		Map<String, Object> customBody = new HashMap<>();
-		customBody.put("products", List.of(product.getPolarProductId()));
+		customBody.put("products", List.of(polarProductId));
 		customBody.put("customer_email", userMetadata.getEmail());
 		customBody.put("success_url", successUrl);
 		customBody.put("external_customer_id", userMetadata.getSub());
 
 		try {
-			log.info("Successfully provisioned Polar hosted checkout pipeline context link instance for plan product: {} (ID: {})", plan, product.getPolarProductId());
+			log.info("Successfully provisioned Polar hosted checkout pipeline context link instance for plan product: {} (ID: {})", plan, polarProductId);
 			return polar.checkouts().create(customBody).url();
 		} catch (Exception e) {
 			log.error("Failed to complete remote checkout generation handshake structure with external Polar API engine parameters.", e);

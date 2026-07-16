@@ -1,17 +1,21 @@
 package in.hridaykh.formbox.billing.service;
 
-import in.hridaykh.formbox.billing.model.PolarProducts;
+import in.hridaykh.formbox.billing.model.Entitlements;
 import in.hridaykh.formbox.constant.CacheNames;
-import in.hridaykh.formbox.billing.PolarProductsRepository;
+import in.hridaykh.formbox.model.entity.Tenant;
+import in.hridaykh.formbox.repository.TenantRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.types.Expiration;
 import org.springframework.stereotype.Service;
+import sh.polar.sdk.http.PolarHttpClient;
+import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -25,10 +29,12 @@ public class PolarCacheService {
 
 	private final StringRedisTemplate redisTemplate;
 	private final PolarMeterService polarMeterService;
-	private final PolarProductsRepository polarProductsRepository;
+	private final TenantRepository tenantRepository;
+	private final PolarHttpClient polarHttpClient;
 	private final ObjectMapper objectMapper;
 
 	public long getCachedSubmissionBalance(UUID tenantId) {
+		ensureEntitlementsRefresh(tenantId);
 		String key = getRedisKey(tenantId);
 		String cachedValue = redisTemplate.opsForValue().get(key);
 
@@ -43,6 +49,54 @@ public class PolarCacheService {
 		}
 		log.debug("Redis meter balance cache MISS for tenant ID: {}. Syncing live state...", tenantId);
 		return syncAndCacheMeterBalance(tenantId);
+	}
+
+	private void ensureEntitlementsRefresh(UUID tenantId) {
+		Tenant tenant = tenantRepository.findById(tenantId).orElse(null);
+		if (tenant == null) {
+			return;
+		}
+		Entitlements entitlements = tenant.getEntitlementsOrDefaults();
+		if (entitlements.refreshAt() != null && Instant.now().isAfter(entitlements.refreshAt())) {
+			Instant nextRefresh = entitlements.refreshAt();
+			Instant now = Instant.now();
+			while (!nextRefresh.isAfter(now)) {
+				nextRefresh = nextRefresh.plus(30, ChronoUnit.DAYS);
+			}
+
+			Entitlements updated = Entitlements.builder()
+				.tierName(entitlements.tierName())
+				.tierPriority(entitlements.tierPriority())
+				.refreshAt(nextRefresh)
+				.recurringInterval(entitlements.recurringInterval())
+				.submissionsLimit(entitlements.submissionsLimit())
+				.formsLimit(entitlements.formsLimit())
+				.storageLimitBytes(entitlements.storageLimitBytes())
+				.discordNotifsAllowed(entitlements.discordNotifsAllowed())
+				.turnstileAllowed(entitlements.turnstileAllowed())
+				.redirectUrlsAllowed(entitlements.redirectUrlsAllowed())
+				.jsonFormsAllowed(entitlements.jsonFormsAllowed())
+				.fileUploadsAllowed(entitlements.fileUploadsAllowed())
+				.fieldValidationsAllowed(entitlements.fieldValidationsAllowed())
+				.slackNotifsAllowed(entitlements.slackNotifsAllowed())
+				.telegramNotifsAllowed(entitlements.telegramNotifsAllowed())
+				.customWebhooksAllowed(entitlements.customWebhooksAllowed())
+				.csvExportsAllowed(entitlements.csvExportsAllowed())
+				.emailDigestsAllowed(entitlements.emailDigestsAllowed())
+				.altchaAllowed(entitlements.altchaAllowed())
+				.maxRateLimitRpm(entitlements.maxRateLimitRpm())
+				.maxFileSizeBytes(entitlements.maxFileSizeBytes())
+				.build();
+
+			tenant.setEntitlements(updated);
+			tenantRepository.saveAndFlush(tenant);
+
+			// Reset submissions balance cache in Redis
+			String key = getRedisKey(tenantId);
+			redisTemplate.opsForValue().set(key, String.valueOf(updated.submissionsLimit()), Expiration.from(CACHE_TTL_HOURS, TimeUnit.HOURS));
+			log.info("Entitlements monthly refresh boundary crossed. Reset submission counter to {} and refreshAt to {} for tenant: {}", 
+				updated.submissionsLimit(), nextRefresh, tenantId);
+		}
 	}
 
 	public void decrementCachedSubmissionBalance(UUID tenantId) {
@@ -79,63 +133,42 @@ public class PolarCacheService {
 		return String.format("formbox:%s:%s", CacheNames.METER_BALANCE, tenantId);
 	}
 
-	// ================================ UN-CHANGING POLAR PRODUCT METADATA ================================
-
-	@Cacheable(value = CacheNames.POJO_BY_POLAR_PRODUCT_ID, key = "#polarProductId")
-	public PolarProducts productByPolarProductId(String polarProductId) {
-		log.trace("Local L1 cache MISS for product ID: {}", polarProductId);
-		String redisKey = String.format("formbox:%s:%s", CacheNames.POJO_BY_POLAR_PRODUCT_ID, polarProductId);
-
-		String cachedJson = redisTemplate.opsForValue().get(redisKey);
-		if (cachedJson != null) {
-			try {
-				log.trace("Redis L2 cache HIT for product ID: {}", polarProductId);
-				return objectMapper.readValue(cachedJson, PolarProducts.class);
-			} catch (Exception e) {
-				log.error("Failed to deserialize PolarProducts from Redis L2 for ID: {}", polarProductId, e);
-			}
+	public String getPolarProductIdBySlug(String slug) {
+		String targetName = slug;
+		if ("starter-v1".equalsIgnoreCase(slug)) {
+			targetName = "Starter Monthly";
+		} else if ("pro-v1".equalsIgnoreCase(slug)) {
+			targetName = "Pro Monthly";
 		}
 
-		log.debug("Redis L2 cache MISS for product ID: {}. Fetching configuration details from persistent database repository.", polarProductId);
-		PolarProducts product = polarProductsRepository.findByPolarProductId(polarProductId).orElse(null);
-
-		if (product != null) {
-			try {
-				redisTemplate.opsForValue().set(redisKey, objectMapper.writeValueAsString(product), Duration.ofDays(2));
-			} catch (Exception e) {
-				log.error("Failed to serialize and cache PolarProducts entity to Redis L2 for ID: {}", polarProductId, e);
-			}
+		String redisKey = "formbox:product-slug-id:" + targetName.toLowerCase().replace(" ", "-");
+		String cachedId = redisTemplate.opsForValue().get(redisKey);
+		if (cachedId != null) {
+			return cachedId;
 		}
 
-		return product;
-	}
+		try {
+			log.debug("Cache miss for product name/slug {}. Fetching live products list from Polar...", targetName);
+			String responseJson = polarHttpClient.get("/products/", String.class);
+			JsonNode root = objectMapper.readTree(responseJson);
+			String targetId = null;
 
-	@Cacheable(value = CacheNames.PRODUCT_BY_SLUG, key = "#slug")
-	public PolarProducts productBySlug(String slug) {
-		log.trace("Local L1 cache MISS for product slug: {}", slug);
-		String redisKey = String.format("formbox:%s:%s", CacheNames.PRODUCT_BY_SLUG, slug);
+			for (JsonNode item : root.path("items")) {
+				String itemSlug = item.path("name").asString().toLowerCase().replace(" ", "-");
+				String itemName = item.path("name").asString();
+				String itemId = item.path("id").asString();
 
-		String cachedJson = redisTemplate.opsForValue().get(redisKey);
-		if (cachedJson != null) {
-			try {
-				log.trace("Redis L2 cache HIT for product slug: {}", slug);
-				return objectMapper.readValue(cachedJson, PolarProducts.class);
-			} catch (Exception e) {
-				log.error("Failed to deserialize PolarProducts from Redis L2 for slug: {}", slug, e);
+				// Cache resolved product ID
+				redisTemplate.opsForValue().set("formbox:product-slug-id:" + itemSlug, itemId, Duration.ofDays(7));
+
+				if (itemName.equalsIgnoreCase(targetName) || itemSlug.equalsIgnoreCase(targetName.replace(" ", "-"))) {
+					targetId = itemId;
+				}
 			}
+			return targetId;
+		} catch (Exception e) {
+			log.error("Failed to retrieve or parse Polar products list for target: {}", targetName, e);
+			return null;
 		}
-
-		log.debug("Redis L2 cache MISS for product slug: {}. Fetching entity structure from database context.", slug);
-		PolarProducts product = polarProductsRepository.findBySlug(slug).orElse(null);
-
-		if (product != null) {
-			try {
-				redisTemplate.opsForValue().set(redisKey, objectMapper.writeValueAsString(product), Duration.ofDays(2));
-			} catch (Exception e) {
-				log.error("Failed to serialize and cache PolarProducts entity to Redis L2 for slug: {}", slug, e);
-			}
-		}
-
-		return product;
 	}
 }

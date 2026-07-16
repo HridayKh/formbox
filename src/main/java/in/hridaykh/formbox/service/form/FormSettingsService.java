@@ -1,5 +1,6 @@
 package in.hridaykh.formbox.service.form;
 
+import in.hridaykh.formbox.billing.model.Entitlements;
 import in.hridaykh.formbox.exception.FormNotFoundException;
 import in.hridaykh.formbox.exception.auth.SessionExpiredException;
 import in.hridaykh.formbox.model.dto.FormSettingsRequest;
@@ -35,8 +36,8 @@ public class FormSettingsService {
 		}
 
 		// 2. Validate and Sanitize inputs based on Subscription Tier
-		String tier = tenantCacheService.resolveHighestActiveTierNonNull(form.getTenant().getId());
-		TierValidationResult validationResult = tierValidator.validateAndSanitize(request, tier);
+		Entitlements entitlements = form.getTenant().getEntitlementsOrDefaults();
+		TierValidationResult validationResult = tierValidator.validateAndSanitize(request, entitlements);
 		FormSettingsRequest sanitized = validationResult.sanitizedRequest();
 
 		form.setName(sanitized.name());

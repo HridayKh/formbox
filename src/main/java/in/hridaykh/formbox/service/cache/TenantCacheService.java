@@ -1,10 +1,11 @@
 package in.hridaykh.formbox.service.cache;
 
+import in.hridaykh.formbox.billing.model.Entitlements;
 import in.hridaykh.formbox.constant.CacheNames;
-import in.hridaykh.formbox.constant.Tiers;
-import in.hridaykh.formbox.billing.model.Purchases;
-import in.hridaykh.formbox.billing.model.SubscriptionState;
-import in.hridaykh.formbox.billing.PurchasesRepository;
+import in.hridaykh.formbox.constant.FreeTierDefaults;
+import in.hridaykh.formbox.model.entity.Tenant;
+import in.hridaykh.formbox.repository.TenantRepository;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.sentry.spring7.tracing.SentrySpan;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,8 +15,6 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
-import java.time.OffsetDateTime;
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -23,7 +22,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class TenantCacheService {
 
-	private final PurchasesRepository purchasesRepository;
+	private final TenantRepository tenantRepository;
 	private final StringRedisTemplate stringRedisTemplate;
 
 	@Cacheable(value = CacheNames.TENANT_TIERS, key = "#tenantId.toString()")
@@ -31,7 +30,7 @@ public class TenantCacheService {
 	public String resolveHighestActiveTierNonNull(UUID tenantId) {
 		log.trace("Resolving guaranteed non-null tier context for tenant ID: {}", tenantId);
 		String tier = resolveHighestActiveTierNullable(tenantId);
-		return tier == null ? Tiers.free().name() : tier;
+		return tier == null ? FreeTierDefaults.TIER_NAME : tier;
 	}
 
 	@Cacheable(value = CacheNames.TENANT_TIERS, key = "#tenantId.toString()")
@@ -51,21 +50,15 @@ public class TenantCacheService {
 			return "NULL".equals(cachedTier) ? null : cachedTier;
 		}
 
-		log.debug("Redis L2 cache MISS for tenant tier mapping on tenant ID: {}. Scanning persistent purchase history logs...", tenantId);
-		List<Purchases> activePurchases;
-		try {
-			activePurchases = purchasesRepository.findValidUserPurchases(tenantId, OffsetDateTime.now(), SubscriptionState.free, SubscriptionState.active, SubscriptionState.cancelled_grace_period);
-		} catch (Exception e) {
-			log.error("Database query crash while resolving active purchases array snapshot for tenant ID: {}", tenantId, e);
-			throw e;
-		}
-
+		log.debug("Redis L2 cache MISS for tenant tier mapping on tenant ID: {}. Resolving from JSONB entitlements...", tenantId);
+		Tenant tenant = tenantRepository.findById(tenantId).orElse(null);
 		String highestTier = "NULL";
-		if (activePurchases != null && !activePurchases.isEmpty()) {
-			highestTier = activePurchases.getFirst().getProduct().getSlug().toLowerCase();
-			log.debug("Found active purchase logs. Assigned highest tier rank designation [{}] for tenant ID: {}", highestTier, tenantId);
+
+		if (tenant != null) {
+			highestTier = tenant.getEntitlementsOrDefaults().tierName();
+			log.debug("Found tenant record. Assigned tier: {} for tenant ID: {}", highestTier, tenantId);
 		} else {
-			log.debug("No active subscription/purchase records matching constraints found in database storage layers for tenant ID: {}", tenantId);
+			log.debug("No tenant record found in database storage layers for tenant ID: {}", tenantId);
 		}
 
 		try {
