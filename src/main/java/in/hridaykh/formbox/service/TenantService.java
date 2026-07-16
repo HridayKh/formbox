@@ -1,5 +1,6 @@
 package in.hridaykh.formbox.service;
 
+import in.hridaykh.formbox.billing.model.Entitlements;
 import in.hridaykh.formbox.billing.model.PolarProducts;
 import in.hridaykh.formbox.billing.model.Purchases;
 import in.hridaykh.formbox.model.entity.Tenant;
@@ -42,6 +43,7 @@ public class TenantService {
 			Tenant newTenant = new Tenant();
 			newTenant.setId(userId);
 			newTenant.setEmail(userMetadata.getEmail());
+			newTenant.setEntitlements(Entitlements.freeDefaults());
 			return tenantRepository.saveAndFlush(newTenant);
 		});
 

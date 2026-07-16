@@ -1,5 +1,7 @@
 package in.hridaykh.formbox.billing.service;
 
+import in.hridaykh.formbox.billing.PolarIdProperties;
+import in.hridaykh.formbox.billing.model.ActiveMeters;
 import in.hridaykh.formbox.billing.model.ActiveSubscriptions;
 import in.hridaykh.formbox.billing.model.CustomerStateChanged;
 import in.hridaykh.formbox.billing.model.Entitlements;
@@ -25,6 +27,7 @@ import java.util.*;
 public class WebhookService {
 	private final ObjectMapper objectMapper;
 	private final TenantRepository tenantRepository;
+	private final PolarIdProperties polarIdProperties;
 
 	public void processHook(String rawBody) {
 		JsonNode root = objectMapper.readTree(rawBody);
@@ -54,30 +57,29 @@ public class WebhookService {
 	/**
 	 * Builds the full Entitlements snapshot from the Polar customer state.
 	 * <p>
-	 * Everything is derived from the webhook payload:
+	 * Everything is derived from the webhook payload — no local table lookups:
 	 * <ul>
-	 *   <li>Tier identity: from Feature Flag benefits with {@code tier_priority} + {@code tier_name} in metadata</li>
-	 *   <li>Boolean feature flags: from Feature Flag benefits with {@code feature_key} in metadata</li>
-	 *   <li>Numeric limits: from Feature Flag benefits with {@code limit_key} + {@code limit_value} in metadata</li>
-	 *   <li>Meter limits: from Feature Flag benefits with {@code meter_key} + {@code meter_limit} in metadata</li>
-	 *   <li>Refresh timing: calculated from active subscription billing intervals</li>
+	 *   <li>Tier identity: Feature Flag benefits with {@code tier_priority} + {@code tier_name} in metadata</li>
+	 *   <li>Boolean feature flags: Feature Flag benefits with {@code feature_key} in metadata</li>
+	 *   <li>Numeric limits (forms, rate limit, etc.): Feature Flag benefits with {@code limit_key} + {@code limit_value}</li>
+	 *   <li>Meter limits (submissions): Native Polar meter data from {@code activeMeters} (creditedUnits from Credits benefit)</li>
+	 *   <li>Refresh timing: Calculated from active subscription billing intervals</li>
 	 * </ul>
 	 */
 	private Entitlements createEntitlements(CustomerStateChanged state) {
 		var eb = Entitlements.builder();
 
-		// --- 1. Parse all granted benefits metadata ---
+		// --- 1. Parse granted benefits metadata ---
 		String tierName = FreeTierDefaults.TIER_NAME;
 		int highestPriority = FreeTierDefaults.TIER_PRIORITY;
 		Set<String> enabledFeatures = new HashSet<>();
 		Map<String, Long> numericLimits = new HashMap<>();
-		Map<String, Long> meterLimits = new HashMap<>();
 
 		for (GrantedBenefits benefit : nullSafe(state.grantedBenefits())) {
 			Map<String, String> meta = benefit.benefitMetadata();
 			if (meta == null || meta.isEmpty()) continue;
 
-			// Tier identity benefit: metadata contains tier_priority and tier_name
+			// Tier identity benefit: metadata has tier_priority and tier_name
 			if (meta.containsKey("tier_priority")) {
 				try {
 					int priority = Integer.parseInt(meta.get("tier_priority"));
@@ -86,17 +88,17 @@ public class WebhookService {
 						tierName = meta.getOrDefault("tier_name", tierName);
 					}
 				} catch (NumberFormatException e) {
-					log.warn("Invalid tier_priority in benefit {}: {}", benefit.benefitId(), meta.get("tier_priority"), e);
+					log.warn("Invalid tier_priority in benefit {}: {}", benefit.benefitId(), meta.get("tier_priority"));
 				}
 			}
 
-			// Boolean feature flag: metadata contains feature_key
+			// Boolean feature flag: metadata has feature_key
 			String featureKey = meta.get("feature_key");
 			if (featureKey != null && !featureKey.isBlank()) {
 				enabledFeatures.add(featureKey);
 			}
 
-			// Numeric limit: metadata contains limit_key + limit_value
+			// Numeric limit: metadata has limit_key + limit_value
 			String limitKey = meta.get("limit_key");
 			String limitValue = meta.get("limit_value");
 			if (limitKey != null && limitValue != null) {
@@ -104,19 +106,7 @@ public class WebhookService {
 					long value = Long.parseLong(limitValue);
 					numericLimits.merge(limitKey, value, Math::max);
 				} catch (NumberFormatException e) {
-					log.warn("Invalid limit_value for {} in benefit {}: {}", limitKey, benefit.benefitId(), limitValue, e);
-				}
-			}
-
-			// Meter limit: metadata contains meter_key + meter_limit
-			String meterKey = meta.get("meter_key");
-			String meterLimit = meta.get("meter_limit");
-			if (meterKey != null && meterLimit != null) {
-				try {
-					long limit = Long.parseLong(meterLimit);
-					meterLimits.merge(meterKey, limit, Math::max);
-				} catch (NumberFormatException e) {
-					log.warn("Invalid meter_limit for {} in benefit {}: {}", meterKey, benefit.benefitId(), meterLimit);
+					log.warn("Invalid limit_value for {} in benefit {}: {}", limitKey, benefit.benefitId(), limitValue);
 				}
 			}
 		}
@@ -127,13 +117,29 @@ public class WebhookService {
 
 		// --- 3. Refresh timing ---
 		eb.refreshAt(calculateNextRefreshAt(state.activeSubscriptions()));
+		eb.recurringInterval(calculateRecurringInterval(state.activeSubscriptions()));
 
-		// --- 4. Meter limits (max caps, defaults from FreeTierDefaults) ---
-		eb.submissionsLimit(meterLimits.getOrDefault("submissions", FreeTierDefaults.SUBMISSIONS_LIMIT));
-		eb.formsLimit(meterLimits.getOrDefault("forms", FreeTierDefaults.FORMS_LIMIT));
-		eb.storageLimitBytes(meterLimits.getOrDefault("storage", FreeTierDefaults.STORAGE_LIMIT_BYTES));
+		// --- 4. Submissions limit from Polar's native meter data ---
+		// Credits benefit auto-credits the meter; we read creditedUnits from activeMeters.
+		// The meter ID is matched via config (polar-ids.submission-meter-id).
+		long submissionsLimit = FreeTierDefaults.SUBMISSIONS_LIMIT;
+		for (ActiveMeters meter : nullSafe(state.activeMeters())) {
+			if (meter.meterId() != null
+				&& meter.meterId().toString().equalsIgnoreCase(polarIdProperties.getSubmissionMeterId())) {
+				submissionsLimit = meter.creditedUnits() != null ? meter.creditedUnits().longValue() : submissionsLimit;
+				log.debug("Submissions meter found: credited={}, consumed={}, balance={}",
+					meter.creditedUnits(), meter.consumedUnits(), meter.balance());
+				break;
+			}
+		}
+		eb.submissionsLimit(submissionsLimit);
 
-		// --- 5. Boolean feature flags (present in granted benefits = enabled) ---
+		// --- 5. Other limits from Feature Flag benefit metadata ---
+		// (forms and storage aren't Polar meters — they're caps enforced by the app)
+		eb.formsLimit(numericLimits.getOrDefault("forms_limit", FreeTierDefaults.FORMS_LIMIT));
+		eb.storageLimitBytes(numericLimits.getOrDefault("storage_limit_bytes", FreeTierDefaults.STORAGE_LIMIT_BYTES));
+
+		// --- 6. Boolean feature flags (present = enabled, absent = disabled) ---
 		eb.discordNotifsAllowed(enabledFeatures.contains("discord_notifs_allowed"));
 		eb.turnstileAllowed(enabledFeatures.contains("turnstile_allowed"));
 		eb.redirectUrlsAllowed(enabledFeatures.contains("redirect_urls_allowed"));
@@ -147,34 +153,36 @@ public class WebhookService {
 		eb.emailDigestsAllowed(enabledFeatures.contains("email_digests_allowed"));
 		eb.altchaAllowed(enabledFeatures.contains("altcha_allowed"));
 
-		// --- 6. Numeric limits (take the highest across all benefits, default to free tier) ---
-		eb.maxRateLimitRpm((int) (long) numericLimits.getOrDefault("max_rate_limit_rpm", (long) FreeTierDefaults.MAX_RATE_LIMIT_RPM));
-		eb.maxFileSizeBytes(numericLimits.getOrDefault("max_file_size_bytes", FreeTierDefaults.MAX_FILE_SIZE_BYTES));
+		// --- 7. Numeric limits (take highest across all benefits) ---
+		eb.maxRateLimitRpm((int) (long) numericLimits.getOrDefault(
+			"max_rate_limit_rpm", (long) FreeTierDefaults.MAX_RATE_LIMIT_RPM));
+		eb.maxFileSizeBytes(numericLimits.getOrDefault(
+			"max_file_size_bytes", FreeTierDefaults.MAX_FILE_SIZE_BYTES));
 
 		return eb.build();
 	}
 
 	/**
 	 * Determines the next meter refresh timestamp.
-	 * <ul>
-	 *   <li>Monthly subscriptions (period ≤ 35 days): use {@code currentPeriodEnd} — Polar auto-refreshes</li>
-	 *   <li>Annual/LTD (period > 35 days or no period): set to now + 30 days — scheduler will reset Polar meters manually</li>
-	 * </ul>
-	 * Takes the EARLIEST across all active subscriptions.
+	 * <p>
+	 * Monthly subs: use {@code currentPeriodEnd} — Polar auto-refreshes Credits.
+	 * Annual/LTD: set to the next monthly boundary from period start.
+	 * The lazy refresh check at submission time will handle resetting the Redis counter
+	 * and re-crediting Polar meters when this timestamp passes.
 	 */
-	private Instant calculateNextRefreshAt(List<ActiveSubscriptions> subscriptions) {
+	private Instant calculateNextRefreshAt(List<ActiveSubscriptions> subs) {
 		Instant earliest = null;
 
-		for (var subscription : nullSafe(subscriptions)) {
+		for (var sub : nullSafe(subs)) {
 			Instant refresh;
-			if (subscription.currentPeriodStart() != null && subscription.currentPeriodEnd() != null) {
-				long periodDays = Duration.between(subscription.currentPeriodStart(), subscription.currentPeriodEnd()).toDays();
+			if (sub.currentPeriodStart() != null && sub.currentPeriodEnd() != null) {
+				long periodDays = Duration.between(sub.currentPeriodStart(), sub.currentPeriodEnd()).toDays();
 				if (periodDays <= 35) {
-					// Monthly subscription — Polar handles meter refresh at period end
-					refresh = subscription.currentPeriodEnd();
+					// Monthly — Polar handles meter refresh at period end
+					refresh = sub.currentPeriodEnd();
 				} else {
 					// Annual or longer — need manual monthly refresh
-					refresh = calculateNextMonthlyBoundary(subscription.currentPeriodStart());
+					refresh = calculateNextMonthlyBoundary(sub.currentPeriodStart());
 				}
 			} else {
 				// Lifetime / one-time — no period end, refresh monthly from now
@@ -186,22 +194,38 @@ public class WebhookService {
 			}
 		}
 
-		// Fallback: 30 days from now (new free tier user with no subscriptions)
 		return earliest != null ? earliest : Instant.now().plus(30, ChronoUnit.DAYS);
 	}
 
 	/**
 	 * For annual/long subscriptions: find the next monthly boundary
-	 * (periodStart + N months) that falls in the future.
+	 * (periodStart + N*30 days) that falls in the future.
 	 */
 	private Instant calculateNextMonthlyBoundary(Instant periodStart) {
 		Instant now = Instant.now();
 		Instant boundary = periodStart;
-		// Walk forward month by month until we find one in the future
 		while (!boundary.isAfter(now)) {
 			boundary = boundary.plus(30, ChronoUnit.DAYS);
 		}
 		return boundary;
+	}
+
+	private String calculateRecurringInterval(List<ActiveSubscriptions> subs) {
+		if (subs == null || subs.isEmpty()) {
+			return "free";
+		}
+		String interval = "one_time";
+		for (var sub : subs) {
+			if (sub.currentPeriodStart() != null && sub.currentPeriodEnd() != null) {
+				long periodDays = Duration.between(sub.currentPeriodStart(), sub.currentPeriodEnd()).toDays();
+				if (periodDays <= 35) {
+					return "month";
+				} else {
+					interval = "year";
+				}
+			}
+		}
+		return interval;
 	}
 
 	private <T> List<T> nullSafe(List<T> list) {
