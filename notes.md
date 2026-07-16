@@ -11,9 +11,10 @@
 ## Billing Upgrade Notes
 
 1. Map Java Record to all feature flags and limits (current balance per user + max balance per user)
-2. user.getEntitlements().whateverFeatureFlagOrLimitHere()
+2. tenant.getEntitlements().whateverFeatureFlagOrLimitHere()
 3. ts can be cached ez
 4. annual and lifetime plans
+5. go over the `customer.state_changed` and process all the fields
 
 ## Experiments
 
@@ -27,31 +28,31 @@
 
 ## Todo
 
-### Backend, Infrastructure & Operations
-
-* **[Medium Priority]**: Implement OpenTelemetry (Otel) across all methods and capture deeper metadata (IP, User ID, Session data).
-* **[Low Priority]**: Audit and re-decide log levels; implement structured logging usage everywhere.
-* **[Low Priority]**: Offload submissions older than the last 100 per form to Cloudflare R2.
-
-### Dashboard & Frontend UX
-
-* **[Medium Priority]**: Revamp the overall form display layout and implement pagination.
-* **[LOw Priority]**: Reimagine the **Manage Form** page
-
-### Core Form Features & Integrations
-
-* **[Medium Priority]**: Add asynchronous Discord notifications via webhook URL (with an errors table to report dashboard failures).
-* **[Medium Priority]**: Build CSV export functionality for submissions.
-* **[Low Priority]**: Magic `mailto:` links.
-* **[Low Priority]**: Email Digests
-* **[Low Priority]**: Webhook routing
-
 ### Billing, Monetization & Launch Strategy
 
 * **[High Priority]**: Fix billing.
 * **[Medium Priority]**: Add "Annual Plans (Coming Soon)" to the index page.
 * **[Near Launch]**: Build a dashboard page to manage/buy plans if the Polar-hosted checkout doesn't cover it.
 * **[Near Launch]**: Add a "Contact Us" custom enterprise plan to the frontend alongside a scheduling call link.
+
+### Core Form Features & Integrations
+
+* **[Medium Priority]**: Add asynchronous Discord notifications via webhook URL (with an errors table to report dashboard failures).
+* **[Low Priority]**: Magic `mailto:` links.
+* **[Low Priority]**: Email Digests
+* **[Low Priority]**: Webhook routing
+
+### Dashboard & Frontend UX
+
+* **[Medium Priority]**: Revamp the overall form display layout and implement pagination.
+* **[LOw Priority]**: Reimagine the **Manage Form** page
+
+### Backend, Infrastructure & Operations
+
+* **[High Priority]**: Implement OpenTelemetry (Otel) across all methods and capture deeper metadata (IP, User ID, Session data).
+* **[Medium Priority]**: Audit and re-decide log levels; implement structured logging usage everywhere.
+* **[Low Priority]**: Offload submissions older than the last 100 per form to Cloudflare R2.
+* **[Low Priority]**: Build CSV export functionality for submissions.
 
 ### Admin & Documentation (Pre-Launch)
 

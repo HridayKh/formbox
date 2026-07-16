@@ -60,6 +60,7 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-cache")
 	implementation("com.github.ben-manes.caffeine:caffeine")
 	implementation("org.springframework.boot:spring-boot-starter-data-redis")
+	implementation("org.springframework.boot:spring-boot-starter-actuator")
 
 	// lombok
 	compileOnly("org.projectlombok:lombok:1.18.46")

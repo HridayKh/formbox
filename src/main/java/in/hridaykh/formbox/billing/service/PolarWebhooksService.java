@@ -31,6 +31,7 @@ public class PolarWebhooksService {
 	private final PolarCacheService polarCacheService;
 	private final TenantCacheService tenantCacheService;
 	private final Polar polar;
+	private final WebhookService webhookService;
 
 	@Transactional
 	public void processHook(String rawBody) {
@@ -58,6 +59,9 @@ public class PolarWebhooksService {
 				.orElseThrow(() -> new IllegalStateException("Tenant missing for: " + finalCustomerEmail));
 
 			switch (eventType) {
+				case "customer.state_changed":
+					webhookService.processHook(rawBody);
+					break;
 				case "benefit_grant.cycled":
 				case "benefit_grant.updated":
 				case "order.created":
@@ -86,7 +90,7 @@ public class PolarWebhooksService {
 					break;
 
 				default:
-					log.debug("Unmanaged event passed validation: {}", eventType);
+					log.error("Unmanaged event passed validation: {}", eventType);
 					break;
 			}
 
@@ -168,8 +172,6 @@ public class PolarWebhooksService {
 		if (!endPeriodStr.isBlank() && !"null".equals(endPeriodStr)) {
 			OffsetDateTime periodEnd = OffsetDateTime.parse(endPeriodStr);
 			purchase.setCurrentPeriodEnd(periodEnd);
-
-			tenant.setCurrentPeriodEnd(periodEnd);
 			tenantRepository.save(tenant);
 		}
 
