@@ -82,3 +82,10 @@ Per your instructions, **no files have been deleted** from the filesystem yet. Y
    - *Reason*: Database access layers are no longer needed for purchases/products.
 6. **Postgres Tables: `purchases` and `polar_products`**
    - *Reason*: Can be dropped from your database client since they have been removed from JPA mapping files.
+
+---
+
+## 4. Tenant Onboarding on Login (Fix)
+
+- **Bug**: Credential-based login via `loginUser` did not trigger tenant onboarding/creation (`tenantService.getOrCreateTenantWithFreeSubscription(userMetadata)`), unlike the OAuth flow. This caused subsequent database inserts (such as creating a new form) to fail with a foreign key constraint violation on `forms_tenant_id_fkey` as the tenant row didn't exist in the database.
+- **Fix**: Updated `loginUser` in [AuthService.java](file:///home/hridaykh/Code/hriday_tech/formbox/src/main/java/in/hridaykh/formbox/service/AuthService.java) to resolve `userMetadata` and perform the tenant onboarding setup immediately upon successful authentication.

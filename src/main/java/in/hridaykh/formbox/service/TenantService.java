@@ -41,7 +41,7 @@ public class TenantService {
 			return tenantRepository.saveAndFlush(newTenant);
 		});
 
-		ensureFreeSubscriptionProvisioned(tenant);
+//		ensureFreeSubscriptionProvisioned(tenant);
 	}
 
 	private void ensureFreeSubscriptionProvisioned(Tenant tenant) {

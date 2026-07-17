@@ -62,6 +62,11 @@ public class AuthService {
 		setAuthCookie(response, "sb_token", auth.getAccessToken(), 3600);
 		setAuthCookie(response, "sb_refresh", auth.getRefreshToken(), 604800);
 
+		var userMetadata = authServiceKt.getUserMetadata(supabaseClient, auth.getAccessToken());
+		if (userMetadata != null) {
+			tenantService.getOrCreateTenantWithFreeSubscription(userMetadata);
+		}
+
 		log.info("Login successful. Assigned secure cookie contexts for verified UID payload reference: {}", auth.getUserId());
 		response.setHeader("HX-Redirect", PathRegistry.DASHBOARD);
 	}

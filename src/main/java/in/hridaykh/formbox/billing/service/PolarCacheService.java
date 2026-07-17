@@ -4,6 +4,7 @@ import in.hridaykh.formbox.billing.model.Entitlements;
 import in.hridaykh.formbox.constant.CacheNames;
 import in.hridaykh.formbox.model.entity.Tenant;
 import in.hridaykh.formbox.repository.TenantRepository;
+import in.hridaykh.formbox.repository.SubmissionRepository;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +17,8 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -31,6 +34,7 @@ public class PolarCacheService {
 	private final StringRedisTemplate redisTemplate;
 	private final PolarMeterService polarMeterService;
 	private final TenantRepository tenantRepository;
+	private final SubmissionRepository submissionRepository;
 	private final PolarHttpClient polarHttpClient;
 	private final ObjectMapper objectMapper;
 	private final EntitlementsCacheService entitlementsCacheService;
@@ -123,14 +127,29 @@ public class PolarCacheService {
 	public long syncAndCacheMeterBalance(UUID tenantId) {
 		String key = getRedisKey(tenantId);
 		try {
-			long liveBalance = polarMeterService.getRemainingSubmissionsBalance(tenantId);
+			Entitlements entitlements = entitlementsCacheService.getEntitlements(tenantId);
+			long liveBalance;
+
+			if (entitlements.isFree()) {
+				// Calculate local free-tier balance
+				Instant cycleStart = entitlements.refreshAt() != null 
+					? entitlements.refreshAt().minus(30, ChronoUnit.DAYS) 
+					: Instant.now().minus(30, ChronoUnit.DAYS);
+				OffsetDateTime since = OffsetDateTime.ofInstant(cycleStart, ZoneOffset.UTC);
+				long consumed = submissionRepository.countByTenantIdAndCreatedAtAfter(tenantId, since);
+				liveBalance = Math.max(0, entitlements.submissionsLimit() - consumed);
+				log.debug("Free-tier tenant local submissions balance evaluated. Limit: {}, Consumed: {}, Remaining: {}", 
+					entitlements.submissionsLimit(), consumed, liveBalance);
+			} else {
+				liveBalance = polarMeterService.getRemainingSubmissionsBalance(tenantId);
+			}
 
 			redisTemplate.opsForValue().set(key, String.valueOf(liveBalance), Expiration.from(CACHE_TTL_HOURS, TimeUnit.HOURS));
 
-			log.debug("Synchronized Redis meter balance cache to Polar ground-truth ({}) for tenant: {}", liveBalance, tenantId);
+			log.debug("Synchronized Redis meter balance cache ({}) for tenant: {}", liveBalance, tenantId);
 			return liveBalance;
 		} catch (Exception e) {
-			log.error("Failed to sync updated Polar meter balance to Redis cache for tenant: {}", tenantId, e);
+			log.error("Failed to sync updated Polar meter/local balance to Redis cache for tenant: {}", tenantId, e);
 			return 0L;
 		}
 	}

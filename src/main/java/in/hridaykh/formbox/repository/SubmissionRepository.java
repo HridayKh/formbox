@@ -8,11 +8,15 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
 public interface SubmissionRepository extends JpaRepository<Submission, UUID> {
 	List<SubmissionItem> findAllByFormId(UUID formId);
+
+	@Query("SELECT COUNT(s) FROM Submission s WHERE s.form.tenant.id = :tenantId AND s.createdAt >= :since")
+	long countByTenantIdAndCreatedAtAfter(@Param("tenantId") UUID tenantId, @Param("since") OffsetDateTime since);
 
 	@Modifying
 	@Transactional

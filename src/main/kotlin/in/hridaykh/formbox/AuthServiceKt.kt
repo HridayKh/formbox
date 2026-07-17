@@ -126,10 +126,11 @@ class AuthServiceKt(private val supabaseProps: SupabaseProperties) {
 				refreshToken = currentSession.refreshToken
 			)
 		} catch (e: AuthRestException) {
+			e.errorCode
 			log.warn(
 				"Supabase reject authenticating credential profile for email: {}", request.email, e
 			)
-			throw InvalidCredentialsException("Invalid email or password.")
+			throw InvalidCredentialsException("Invalid email/password or email unverified!")
 		} catch (e: AuthSessionMissingException) {
 			log.error(
 				"Identity management pool returned valid confirmation status but zero session payload for email: {}",

@@ -1,5 +1,7 @@
 package in.hridaykh.formbox.billing.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import in.hridaykh.formbox.constant.FreeTierDefaults;
 import lombok.Builder;
@@ -20,6 +22,7 @@ import java.time.Instant;
  * This record stores only the MAX LIMITS and feature flags.
  */
 @Builder
+@JsonIgnoreProperties(ignoreUnknown = true)
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public record Entitlements(
 	@JsonProperty("tier_name") String tierName,
@@ -72,6 +75,7 @@ public record Entitlements(
 	/**
 	 * Convenience: is this tenant on the free tier?
 	 */
+	@JsonIgnore
 	public boolean isFree() {
 		return FreeTierDefaults.TIER_NAME.equalsIgnoreCase(tierName);
 	}
