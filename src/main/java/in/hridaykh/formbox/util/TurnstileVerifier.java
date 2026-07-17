@@ -1,5 +1,6 @@
 package in.hridaykh.formbox.util;
 
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import tools.jackson.databind.ObjectMapper;
@@ -18,12 +19,13 @@ public class TurnstileVerifier {
 	private static final HttpClient httpClient = HttpClient.newBuilder().build();
 	private static final String CLOUDFLARE_VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 
+	@WithSpan
 	public static boolean turnstileFailed(Map<String, String> payload, String turnstileSecretKey, ObjectMapper objectMapper) {
 		String turnstileCode = payload.getOrDefault("cf-turnstile-response", "");
 		payload.remove("cf-turnstile-response");
 
 		if (turnstileSecretKey == null || turnstileSecretKey.isBlank()) {
-			log.info("Turnstile validation skipped or failed due to missing token or secret key.");
+			log.debug("Turnstile validation skipped or failed due to missing token or secret key.");
 			return false;
 		}
 
@@ -45,11 +47,11 @@ public class TurnstileVerifier {
 				String body = response.body();
 				return body == null || !objectMapper.readTree(body).get("success").asBoolean();
 			} else {
-				log.error("Cloudflare Turnstile API returned unexpected status code: {}", response.statusCode());
+				log.warn("Cloudflare Turnstile API returned unexpected status code: {}", response.statusCode());
 			}
 
 		} catch (Exception e) {
-			log.error("Exception occurred while communicating with Cloudflare Turnstile API", e);
+			log.warn("Exception occurred while communicating with Cloudflare Turnstile API", e);
 		}
 
 		return false;

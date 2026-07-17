@@ -36,7 +36,7 @@ public class GlobalExceptionHandler {
 
 	@ExceptionHandler(HttpRequestMethodNotSupportedException.class)
 	public ModelAndView handle40Error(HttpRequestMethodNotSupportedException ex) {
-		log.info("Invalid Request Method: {}", ex.getMethod());
+		log.warn("Invalid Request Method: {}", ex.getMethod());
 		return buildErrorResponse("", ex.getMessage(), HttpStatus.NOT_FOUND);
 	}
 
@@ -44,11 +44,11 @@ public class GlobalExceptionHandler {
 	public ModelAndView handleMultipartException(MultipartException ex) {
 		Throwable rootCause = ex.getRootCause();
 		if (rootCause instanceof java.io.EOFException || ex.getMessage().contains("parse multipart")) {
-			log.info("Client disconnected or sent malformed data during multipart upload: {}", ex.getMessage());
+			log.warn("Client disconnected or sent malformed data during multipart upload: {}", ex.getMessage());
 			return buildErrorResponse("Incomplete multipart request", "", HttpStatus.BAD_REQUEST);
 		}
 
-		log.info("Multipart exception encountered: ", ex);
+		log.warn("Multipart exception encountered", ex);
 		return buildErrorResponse("Malformed request", "", HttpStatus.BAD_REQUEST);
 	}
 

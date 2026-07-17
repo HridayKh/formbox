@@ -4,6 +4,7 @@ import in.hridaykh.formbox.billing.model.Entitlements;
 import in.hridaykh.formbox.constant.CacheNames;
 import in.hridaykh.formbox.model.entity.Tenant;
 import in.hridaykh.formbox.repository.TenantRepository;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -32,7 +33,9 @@ public class PolarCacheService {
 	private final TenantRepository tenantRepository;
 	private final PolarHttpClient polarHttpClient;
 	private final ObjectMapper objectMapper;
+	private final EntitlementsCacheService entitlementsCacheService;
 
+	@WithSpan
 	public long getCachedSubmissionBalance(UUID tenantId) {
 		ensureEntitlementsRefresh(tenantId);
 		String key = getRedisKey(tenantId);
@@ -52,12 +55,12 @@ public class PolarCacheService {
 	}
 
 	private void ensureEntitlementsRefresh(UUID tenantId) {
-		Tenant tenant = tenantRepository.findById(tenantId).orElse(null);
-		if (tenant == null) {
-			return;
-		}
-		Entitlements entitlements = tenant.getEntitlementsOrDefaults();
+		Entitlements entitlements = entitlementsCacheService.getEntitlements(tenantId);
 		if (entitlements.refreshAt() != null && Instant.now().isAfter(entitlements.refreshAt())) {
+			Tenant tenant = tenantRepository.findById(tenantId).orElse(null);
+			if (tenant == null) {
+				return;
+			}
 			Instant nextRefresh = entitlements.refreshAt();
 			Instant now = Instant.now();
 			while (!nextRefresh.isAfter(now)) {
@@ -90,6 +93,7 @@ public class PolarCacheService {
 
 			tenant.setEntitlements(updated);
 			tenantRepository.saveAndFlush(tenant);
+			entitlementsCacheService.updateEntitlementsCache(tenantId, updated);
 
 			// Reset submissions balance cache in Redis
 			String key = getRedisKey(tenantId);
@@ -99,6 +103,7 @@ public class PolarCacheService {
 		}
 	}
 
+	@WithSpan
 	public void decrementCachedSubmissionBalance(UUID tenantId) {
 		String key = getRedisKey(tenantId);
 		getCachedSubmissionBalance(tenantId);
@@ -114,6 +119,7 @@ public class PolarCacheService {
 		});
 	}
 
+	@WithSpan
 	public long syncAndCacheMeterBalance(UUID tenantId) {
 		String key = getRedisKey(tenantId);
 		try {
@@ -133,6 +139,7 @@ public class PolarCacheService {
 		return String.format("formbox:%s:%s", CacheNames.METER_BALANCE, tenantId);
 	}
 
+	@WithSpan
 	public String getPolarProductIdBySlug(String slug) {
 		String targetName = slug;
 		if ("starter-v1".equalsIgnoreCase(slug)) {

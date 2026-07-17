@@ -8,13 +8,14 @@ import in.hridaykh.formbox.model.dto.FormSettingsRequest;
 import in.hridaykh.formbox.model.dto.FormSubmissionsResponse;
 import in.hridaykh.formbox.model.dto.TierValidationResult;
 import in.hridaykh.formbox.model.entity.Form;
-import in.hridaykh.formbox.model.entity.Tenant;
 import in.hridaykh.formbox.repository.FormRepository;
 import in.hridaykh.formbox.repository.TenantRepository;
+import in.hridaykh.formbox.billing.service.EntitlementsCacheService;
 import in.hridaykh.formbox.service.cache.FormCacheService;
 import in.hridaykh.formbox.service.cache.SubmissionCacheService;
 import in.hridaykh.formbox.service.form.FormSettingsService;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -37,16 +38,17 @@ public class FormController {
 	private final SubmissionCacheService submissionCacheService;
 	private final FormCacheService formCacheService;
 	private final FormSettingsService formSettingsService;
+	private final EntitlementsCacheService entitlementsCacheService;
 
 	@PostMapping
+	@WithSpan
 	public String createForm(@RequestAttribute JwtPayload userMetadata, @RequestParam("name") String name, @RequestParam(value = "redirectUrl", required = false) String redirectUrl, HttpServletResponse response) {
 		log.debug("Processing request to create a new form. Name: [{}], Requested Redirect URL: [{}]", name, redirectUrl);
 
 		UUID tenantId = UUID.fromString(Objects.requireNonNull(userMetadata.getSub()));
 		List<CachedForm> forms = formCacheService.getTenantForms(tenantId);
 
-		Tenant tenant = tenantRepository.findById(tenantId).orElse(null);
-		Entitlements entitlements = (tenant != null) ? tenant.getEntitlementsOrDefaults() : Entitlements.freeDefaults();
+		Entitlements entitlements = entitlementsCacheService.getEntitlements(tenantId);
 
 		if (forms.size() >= entitlements.formsLimit()) {
 			String msg = "Your have Reached Your Forms Limit, Upgrade For More!";
@@ -77,6 +79,7 @@ public class FormController {
 	}
 
 	@GetMapping
+	@WithSpan
 	public String listForms(@RequestAttribute JwtPayload userMetadata, Model model) {
 		String tenantId = userMetadata.getSub();
 		log.trace("Processing request to render forms row table layout map context for user reference: {}", tenantId);
@@ -94,25 +97,25 @@ public class FormController {
 	}
 
 	@GetMapping("/{formId}")
+	@WithSpan
 	public String manageForm(@RequestAttribute JwtPayload userMetadata, @PathVariable UUID formId, @RequestParam(value = "msg", required = false) String msg, Model model) {
 		log.debug("Loading primary console management data array structure for form ID: {} triggered by user: {}", formId, userMetadata.getSub());
 		CachedForm form = formCacheService.getCachedForm(formId);
 
 		if (!form.tenantId().toString().equals(userMetadata.getSub())) {
-			log.error("Security authorization intercept triggered. User: {} failed ownership check rule bounds for form ID: {} belonging to tenant: {}", userMetadata.getSub(), formId, form.tenantId());
+			log.warn("Security authorization intercept triggered. User: {} failed ownership check rule bounds for form ID: {} belonging to tenant: {}", userMetadata.getSub(), formId, form.tenantId());
 			throw new RuntimeException("Unauthorized access to form system.");
 		}
 
 		if ("upgrade_required_for_redirect".equals(msg)) {
-			log.trace("Injecting contextual warning constraint flag context into rendering engine stack variables.");
+			log.trace("Redirect upgrade warning detected in query parameters");
 			model.addAttribute("warningMessage", "Form created successfully! However, custom redirects are only available on paid tiers.");
 		}
 
 		FormSubmissionsResponse submissions = submissionCacheService.getFormSubmissionsGrouped(formId);
-		Tenant tenant = tenantRepository.findById(form.tenantId()).orElse(null);
-		Entitlements entitlements = (tenant != null) ? tenant.getEntitlementsOrDefaults() : Entitlements.freeDefaults();
+		Entitlements entitlements = entitlementsCacheService.getEntitlements(form.tenantId());
 
-		log.trace("Aggregated presentation variables completely loaded for form context identifier: {}. Submissions collection count: {}, Spam flags matched: {}", formId, submissions.submissions().size(), submissions.spam().size());
+		log.trace("Loaded dashboard variables for form {}: {} submissions, {} spam", formId, submissions.submissions().size(), submissions.spam().size());
 
 		model.addAttribute("form", form);
 		model.addAttribute("redirectUrlNotAllowed", !entitlements.redirectUrlsAllowed());
@@ -123,6 +126,7 @@ public class FormController {
 	}
 
 	@PutMapping("/{id}")
+	@WithSpan
 	public String updateForm(@RequestAttribute JwtPayload userMetadata, @PathVariable("id") UUID formId, @ModelAttribute FormSettingsRequest request, Model model) {
 
 		log.debug("Initiating settings update for form ID: {}", formId);
@@ -143,17 +147,18 @@ public class FormController {
 
 	@DeleteMapping("/{id}")
 	@ResponseBody
+	@WithSpan
 	public void deleteForm(@RequestAttribute JwtPayload userMetadata, @PathVariable("id") UUID formId) {
-		log.debug("Received explicit destruction request targeting form reference ID entity index mapping: {}", formId);
+		log.debug("Deleting form with ID: {}", formId);
 		CachedForm form = formCacheService.getCachedForm(formId);
 
 		if (!form.tenantId().toString().equals(userMetadata.getSub())) {
-			log.error("Security authorization intercept triggered. Non-owner identity: {} denied deletion execution rights over form index payload: {}", userMetadata.getSub(), formId);
+			log.warn("Unauthorized delete attempt of form {} by user {}", formId, userMetadata.getSub());
 			return;
 		}
 
 		formRepository.deleteById(form.id());
-		log.info("Form record data reference permanently dropped from standard database collections. ID: {}", formId);
+		log.info("Permanently deleted form ID: {}", formId);
 
 		formCacheService.evictFormCache(formId);
 		formCacheService.evictTenantForms(form.tenantId());

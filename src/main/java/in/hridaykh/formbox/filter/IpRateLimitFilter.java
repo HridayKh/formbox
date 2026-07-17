@@ -47,7 +47,7 @@ public class IpRateLimitFilter extends OncePerRequestFilter {
 
 		if (clientIp == null) {
 			filterChain.doFilter(request, response);
-			log.info("time: {}ms", System.currentTimeMillis() - start);
+			log.debug("IP rate limit check completed in {}ms", System.currentTimeMillis() - start);
 			return;
 		}
 
@@ -75,7 +75,7 @@ public class IpRateLimitFilter extends OncePerRequestFilter {
 		}
 
 		if (result != null && result == 1) {
-			log.info("time: {}ms", System.currentTimeMillis() - start);
+			log.debug("IP rate limit check completed in {}ms", System.currentTimeMillis() - start);
 			filterChain.doFilter(request, response);
 		} else {
 			log.warn("IP Rate Limit exceeded for IP: {}", clientIp);

@@ -2,6 +2,7 @@ package in.hridaykh.formbox.billing.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import in.hridaykh.formbox.billing.PolarIdProperties;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,7 @@ public class PolarMeterService {
 	private final PolarIdProperties polarIdProperties;
 	private final Polar polar;
 
+	@WithSpan
 	public long getRemainingSubmissionsBalance(UUID tenantId) {
 		String externalUserId = tenantId.toString();
 		try {
@@ -48,6 +50,7 @@ public class PolarMeterService {
 		}
 	}
 
+	@WithSpan
 	public void reportSubmissionUsageEvent(UUID tenantId) {
 		String externalUserId = tenantId.toString();
 		try {

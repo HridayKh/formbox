@@ -6,6 +6,7 @@ import in.hridaykh.formbox.model.entity.Submission;
 import in.hridaykh.formbox.repository.FormRepository;
 import in.hridaykh.formbox.repository.SubmissionRepository;
 import in.hridaykh.formbox.service.cache.SubmissionCacheService;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.Part;
@@ -45,6 +46,7 @@ public class FormSubmissionService {
 	private final SubmissionCacheService submissionCacheService;
 
 	// step 2: per form rate limit (error 429)
+	@WithSpan
 	public boolean rateLimitPassed(UUID formId, Integer rateLimitRpm) {
 		String redisKey = String.format("formbox:%s:%s", CacheNames.FORM_RATE_LIMIT_RPM, formId);
 		try {
@@ -71,6 +73,7 @@ public class FormSubmissionService {
 	// step 5: check honeypot
 	// step 6: check turnstile
 	// step 10: save form payload and metadata
+	@WithSpan
 	public void saveSubmission(UUID formId, String remoteAddr, Map<String, String> payload, boolean isSpam) {
 		var s = new Submission(formRepository.getReferenceById(formId), payload, remoteAddr, isSpam);
 		submissionRepository.save(s);
@@ -78,6 +81,7 @@ public class FormSubmissionService {
 	}
 
 	// step 8: abort request if invalid mime type on file (error 400)
+	@WithSpan
 	public boolean filesHaveValidMimeTypes(HttpServletRequest request) {
 		if (request.getContentType() == null || !request.getContentType().startsWith("multipart/")) {
 			log.debug("Request is not a multipart form submission; skipping file validation.");
@@ -94,8 +98,8 @@ public class FormSubmissionService {
 					continue;
 				String contentType = part.getContentType();
 				if (contentType == null || contentType.isBlank()) continue;
-				if (ALLOWED_MIME_TYPES.contains(contentType.trim().toLowerCase())) {
-					log.info("Invalid MIME type detected: {} for file field: {}", contentType, part.getName());
+				if (!ALLOWED_MIME_TYPES.contains(contentType.trim().toLowerCase())) {
+					log.warn("Invalid MIME type detected: {} for file field: {}", contentType, part.getName());
 					return false;
 				}
 			}

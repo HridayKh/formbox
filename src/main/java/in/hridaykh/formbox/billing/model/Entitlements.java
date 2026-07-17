@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import in.hridaykh.formbox.constant.FreeTierDefaults;
 import lombok.Builder;
 import tools.jackson.databind.PropertyNamingStrategies;
-import tools.jackson.databind.annotation.JsonDeserialize;
 import tools.jackson.databind.annotation.JsonNaming;
 
 import java.time.Duration;
@@ -21,7 +20,6 @@ import java.time.Instant;
  * This record stores only the MAX LIMITS and feature flags.
  */
 @Builder
-@JsonDeserialize(builder = Entitlements.EntitlementsBuilder.class)
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public record Entitlements(
 	@JsonProperty("tier_name") String tierName,

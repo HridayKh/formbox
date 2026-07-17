@@ -4,6 +4,7 @@ import in.hridaykh.formbox.billing.model.Entitlements;
 import in.hridaykh.formbox.model.entity.Tenant;
 import in.hridaykh.formbox.repository.TenantRepository;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,7 @@ public class TenantService {
 	private final ObjectMapper objectMapper;
 
 	@Transactional
+	@WithSpan
 	public void getOrCreateTenantWithFreeSubscription(JwtPayload userMetadata) {
 		UUID userId = UUID.fromString(Objects.requireNonNull(userMetadata.getSub()));
 		log.debug("Initiating onboarding after auth callback for: {}", userId);
@@ -43,7 +45,7 @@ public class TenantService {
 	}
 
 	private void ensureFreeSubscriptionProvisioned(Tenant tenant) {
-		log.info("Provisioning baseline Polar Free Subscription context for account email: {}", tenant.getEmail());
+		log.info("Provisioning Polar Free Subscription for tenant: {}", tenant.getEmail());
 
 		try {
 			createCustomer(tenant.getId().toString(), tenant.getEmail());
@@ -99,7 +101,7 @@ public class TenantService {
 
 		try {
 			var createdCustomer = polar.customers().create(reqBody);
-			log.info("Successfully established remote customer identifier reference tracking mirror within Polar cloud infrastructure framework layout. Internal target mapping token: {}", createdCustomer.id());
+			log.info("Successfully created Polar customer with ID: {}", createdCustomer.id());
 		} catch (Exception e) {
 			log.error("Failed to push customer metadata mapping pipeline configuration record down to remote Polar payment engine architectures for target ID: {}", userId, e);
 			throw e;

@@ -10,6 +10,7 @@ import in.hridaykh.formbox.service.AuthService;
 import io.github.jan.supabase.SupabaseClient;
 import io.github.jan.supabase.auth.exception.AuthWeakPasswordException;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -27,6 +28,7 @@ public class AuthController {
 	private final AuthService authService;
 
 	@GetMapping(PathRegistry.Auth.LOGIN)
+	@WithSpan
 	public String loginPage(@RequestParam(required = false) String msg, @RequestAttribute(required = false) JwtPayload userMetadata, HttpServletResponse response) {
 		log.trace("Processing HTTP GET for Login view rendering. Message parameter: [{}], Active User Context: [{}]", msg, userMetadata != null ? userMetadata.getSub() : "anonymous");
 		if (userMetadata != null) {
@@ -38,6 +40,7 @@ public class AuthController {
 	}
 
 	@GetMapping(PathRegistry.Auth.SIGNUP)
+	@WithSpan
 	public String signupPage(@RequestAttribute(required = false) JwtPayload userMetadata) {
 		log.trace("Processing HTTP GET for Signup view rendering. Active User Context: [{}]", userMetadata != null ? userMetadata.getSub() : "anonymous");
 		if (userMetadata != null) {
@@ -48,6 +51,7 @@ public class AuthController {
 	}
 
 	@PostMapping(PathRegistry.Auth.SIGNUP)
+	@WithSpan
 	public String handleSignup(@RequestParam String email, @RequestParam String password, @RequestParam("cf-turnstile-response") String turnstileResponse, @RequestAttribute SupabaseClient supabaseClient, HttpServletResponse response, Model model) {
 		log.debug("Processing HTTP POST registration payload submission for email: {}", email);
 		try {
@@ -68,6 +72,7 @@ public class AuthController {
 	}
 
 	@PostMapping(PathRegistry.Auth.LOGIN)
+	@WithSpan
 	public String handleLogin(@RequestParam String email, @RequestParam String password, @RequestParam("cf-turnstile-response") String turnstileResponse, @RequestAttribute SupabaseClient supabaseClient, HttpServletResponse response, Model model) {
 		log.debug("Processing HTTP POST authentication payload submission for email: {}", email);
 		try {
@@ -77,7 +82,7 @@ public class AuthController {
 			model.addAttribute("error", e.getMessage());
 			return ViewRegistry.Auth.Fragments.ERROR_ALERT;
 		} catch (InvalidCredentialsException e) {
-			log.info("Authentication clearance challenge failed for target identifier: {}", email);
+			log.warn("Authentication failed for user: {}", email);
 			model.addAttribute("error", e.getMessage());
 			return ViewRegistry.Auth.Fragments.ERROR_ALERT;
 		} catch (Exception e) {
@@ -88,6 +93,7 @@ public class AuthController {
 	}
 
 	@PostMapping(PathRegistry.Auth.LOGOUT)
+	@WithSpan
 	public String logout(HttpServletResponse response, @CookieValue(name = "sb_token", required = false) String accessToken, @CookieValue(name = "sb_refresh", required = false) String refreshToken, @RequestAttribute SupabaseClient supabaseClient) {
 		log.debug("Processing HTTP POST logout sequence. Access token present: {}, Refresh token present: {}", accessToken != null, refreshToken != null);
 		authService.terminateSession(supabaseClient, accessToken, refreshToken, response);
@@ -95,6 +101,7 @@ public class AuthController {
 	}
 
 	@PostMapping(PathRegistry.Auth.RESEND_CONFIRMATION)
+	@WithSpan
 	public String resend(@RequestParam String email, @RequestParam("cf-turnstile-response") String turnstileResponse, Model model, @RequestAttribute SupabaseClient supabaseClient) {
 		log.debug("Processing HTTP POST request for verification email resend pipeline targeting: {}", email);
 		try {
@@ -115,6 +122,7 @@ public class AuthController {
 
 	@PostMapping(PathRegistry.Auth.SESSION_CALLBACK)
 	@ResponseBody
+	@WithSpan
 	public void handleSessionCallback(@RequestParam("access_token") String accessToken, @RequestParam("refresh_token") String refreshToken, @RequestParam("expires_in") int expiresInSeconds, @RequestAttribute SupabaseClient supabaseClient, HttpServletResponse response) {
 		log.debug("Processing HTTP POST OAuth session callback hook. Evaluated expiration lifecycle limit: {}s", expiresInSeconds);
 		try {
@@ -126,6 +134,7 @@ public class AuthController {
 	}
 
 	@GetMapping(PathRegistry.Auth.CALLBACK)
+	@WithSpan
 	public String sessionCallback() {
 		log.trace("Processing HTTP GET for standard OAuth redirect UI interceptor view rendering.");
 		return ViewRegistry.Auth.CALLBACK;

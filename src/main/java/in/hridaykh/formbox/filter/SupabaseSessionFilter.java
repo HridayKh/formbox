@@ -58,9 +58,9 @@ public class SupabaseSessionFilter extends OncePerRequestFilter {
 				try {
 					userMetadata = authServiceKt.getUserMetadata(supabaseClient, oldAccessToken);
 				} catch (IllegalArgumentException e) {
-					log.warn("Access token structurally invalid: {}. Falling back to token rotation.", e.getMessage());
+					log.warn("Access token structurally invalid: {}. Falling back to token rotation.", e.getMessage(), e);
 				} catch (Exception e) {
-					log.warn("Unexpected exception during access token processing: {}", e.getMessage());
+					log.warn("Unexpected exception during access token processing: {}", e.getMessage(), e);
 				}
 			}
 
@@ -81,7 +81,7 @@ public class SupabaseSessionFilter extends OncePerRequestFilter {
 			try {
 				newSession = authServiceKt.refreshSession(supabaseClient, oldRefreshToken);
 			} catch (Exception e) {
-				log.warn("Unexpected error during session token rotation: {}", e.getMessage());
+				log.warn("Unexpected error during session token rotation", e);
 				authService.clearAuthCookies(response);
 				handleUnauthorizedRedirect(request, response, filterChain);
 				return;

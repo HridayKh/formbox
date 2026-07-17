@@ -2,6 +2,7 @@ package in.hridaykh.formbox.service.form;
 
 import in.hridaykh.formbox.repository.FormRepository;
 import in.hridaykh.formbox.repository.SubmissionRepository;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -23,17 +24,18 @@ public class FormCleanupScheduler {
 	private static final long PAUSE_MS = 100;
 
 	@Scheduled(fixedDelay = 10 * 60 * 1000)
+	@WithSpan
 	public void cleanupDeletedForms() {
-		log.info("Starting scheduled cleanup of soft-deleted forms...");
+		log.debug("Starting scheduled cleanup of soft-deleted forms...");
 
 		List<UUID> softDeletedFormIds = formRepository.findSoftDeletedFormIds(FORM_LIMIT_PER_RUN);
 		if (softDeletedFormIds.isEmpty()) {
-			log.info("No soft-deleted forms found for cleanup.");
+			log.debug("No soft-deleted forms found for cleanup.");
 			return;
 		}
 
 		for (UUID formId : softDeletedFormIds) {
-			log.info("Cleaning up submissions for Form ID: {}", formId);
+			log.debug("Cleaning up submissions for Form ID: {}", formId);
 			try {
 				int deletedCount;
 				long totalDeletedSubmissions = 0;
@@ -57,6 +59,6 @@ public class FormCleanupScheduler {
 			}
 		}
 
-		log.info("Finished scheduled cleanup of soft-deleted forms.");
+		log.debug("Finished scheduled cleanup of soft-deleted forms.");
 	}
 }

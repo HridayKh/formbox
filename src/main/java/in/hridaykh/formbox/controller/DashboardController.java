@@ -4,10 +4,9 @@ import in.hridaykh.formbox.billing.model.Entitlements;
 import in.hridaykh.formbox.billing.service.PolarCacheService;
 import in.hridaykh.formbox.constant.PathRegistry;
 import in.hridaykh.formbox.constant.ViewRegistry;
-import in.hridaykh.formbox.model.entity.Tenant;
-import in.hridaykh.formbox.repository.TenantRepository;
-import in.hridaykh.formbox.service.cache.TenantCacheService;
+import in.hridaykh.formbox.billing.service.EntitlementsCacheService;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -20,15 +19,16 @@ import java.util.UUID;
 @Slf4j
 public class DashboardController {
 
-	private final TenantRepository tenantRepository;
+	private final EntitlementsCacheService entitlementsCacheService;
 	private final PolarCacheService polarCacheService;
 
-	public DashboardController(TenantRepository tenantRepository, PolarCacheService polarCacheService) {
-		this.tenantRepository = tenantRepository;
+	public DashboardController(EntitlementsCacheService entitlementsCacheService, PolarCacheService polarCacheService) {
+		this.entitlementsCacheService = entitlementsCacheService;
 		this.polarCacheService = polarCacheService;
 	}
 
 	@GetMapping
+	@WithSpan
 	public String showDashboard(@RequestAttribute JwtPayload userMetadata, @RequestParam(name = "customer_session_token", required = false) String customerSessionToken, @RequestParam(required = false) String msg, Model model) {
 		log.trace("Initiating dashboard view generation request routing context.");
 
@@ -38,8 +38,7 @@ public class DashboardController {
 		}
 
 		UUID tenantId = UUID.fromString(userMetadata.getSub());
-		Tenant tenant = tenantRepository.findById(tenantId).orElse(null);
-		Entitlements entitlements = (tenant != null) ? tenant.getEntitlementsOrDefaults() : Entitlements.freeDefaults();
+		Entitlements entitlements = entitlementsCacheService.getEntitlements(tenantId);
 		log.debug("Resolved entitlements for Tenant ID: {}, Service Tier: {}", tenantId, entitlements.tierName());
 
 		boolean isFreeTier = entitlements.isFree();
@@ -54,7 +53,7 @@ public class DashboardController {
 		model.addAttribute("balanceLeft", polarCacheService.getCachedSubmissionBalance(tenantId));
 
 		if (customerSessionToken != null && !customerSessionToken.isBlank()) {
-			log.info("Detected Polar query string authentication fallback parameter payload. Cleaning execution URL state via dynamic client-side refresh redirect loop.");
+			log.debug("Detected customer_session_token parameter; redirecting to dashboard without query string.");
 			return "redirect:" + PathRegistry.DASHBOARD;
 		}
 

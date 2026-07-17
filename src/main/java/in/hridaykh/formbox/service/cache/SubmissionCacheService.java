@@ -4,6 +4,7 @@ import in.hridaykh.formbox.constant.CacheNames;
 import in.hridaykh.formbox.model.dto.FormSubmissionsResponse;
 import in.hridaykh.formbox.model.dto.SubmissionItem;
 import in.hridaykh.formbox.repository.SubmissionRepository;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -13,7 +14,6 @@ import tools.jackson.databind.ObjectMapper;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -25,6 +25,7 @@ public class SubmissionCacheService {
 	private final StringRedisTemplate redisTemplate;
 	private final ObjectMapper objectMapper;
 
+	@WithSpan
 	public FormSubmissionsResponse getFormSubmissionsGrouped(UUID formId) {
 		log.trace("Fetching grouped form submissions for form ID: {}", formId);
 		String cacheKey = String.format("formbox:%s:%s", CacheNames.FORM_SUBMISSIONS, formId);
@@ -63,6 +64,7 @@ public class SubmissionCacheService {
 		return resp;
 	}
 
+	@WithSpan
 	public void updateFormSubmissionsCache(UUID formId, SubmissionItem newSubmission) {
 		String cacheKey = String.format("formbox:%s:%s", CacheNames.FORM_SUBMISSIONS, formId);
 

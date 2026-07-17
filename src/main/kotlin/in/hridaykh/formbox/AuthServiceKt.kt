@@ -18,6 +18,7 @@ import io.github.jan.supabase.auth.user.UserInfo
 import io.github.jan.supabase.auth.user.UserSession
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.logging.LogLevel
+import io.opentelemetry.instrumentation.annotations.WithSpan
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -45,6 +46,7 @@ class AuthServiceKt(private val supabaseProps: SupabaseProperties) {
 		client.close()
 	}
 
+	@WithSpan
 	fun signUp(client: SupabaseClient, request: SignUpRequest): Unit = runBlocking {
 		log.debug("Initiating Supabase authentication signup pipeline for email: {}", request.email)
 		try {
@@ -62,13 +64,14 @@ class AuthServiceKt(private val supabaseProps: SupabaseProperties) {
 			}
 			log.info("Supabase signup transaction successfully finalized for email: {}", request.email)
 		} catch (e: AuthWeakPasswordException) {
-			log.info("Sign-up rejected: Weak password rules unmet for target address {}", request.email)
+			log.warn("Sign-up rejected: Weak password rules unmet for target address: {}", request.email, e)
 			throw e
 		} catch (e: AuthRestException) {
-			log.error(
+			log.warn(
 				"Supabase engine error during user registration [Error Code: {}]: {}",
 				e.errorCode,
-				e.errorDescription
+				e.errorDescription,
+				e
 			)
 			throw AuthException("Registration API error: ${e.errorDescription}")
 		} catch (e: Exception) {
@@ -77,6 +80,7 @@ class AuthServiceKt(private val supabaseProps: SupabaseProperties) {
 		}
 	}
 
+	@WithSpan
 	fun resendConfirmation(client: SupabaseClient, email: String) = runBlocking {
 		log.debug("Initiating verification recovery flow dispatcher targeting email: {}", email)
 		try {
@@ -87,7 +91,7 @@ class AuthServiceKt(private val supabaseProps: SupabaseProperties) {
 				email
 			)
 		} catch (e: AuthRestException) {
-			log.error("Supabase endpoint error during token dispatch to {}: {}", email, e.errorDescription)
+			log.warn("Supabase endpoint error during token dispatch to {}: {}", email, e.errorDescription, e)
 			throw AuthException("Verification server error: ${e.errorDescription}")
 		} catch (e: Exception) {
 			log.error("Failed handling automated token renewal flow for target destination: {}", email, e)
@@ -95,6 +99,7 @@ class AuthServiceKt(private val supabaseProps: SupabaseProperties) {
 		}
 	}
 
+	@WithSpan
 	fun login(client: SupabaseClient, request: LoginRequest): AuthResponse = runBlocking {
 		log.debug("Initiating primary authentication verification loop for address: {}", request.email)
 		try {
@@ -122,7 +127,7 @@ class AuthServiceKt(private val supabaseProps: SupabaseProperties) {
 			)
 		} catch (e: AuthRestException) {
 			log.warn(
-				"Supabase reject authenticating credential profile [{}]", request.email, e
+				"Supabase reject authenticating credential profile for email: {}", request.email, e
 			)
 			throw InvalidCredentialsException("Invalid email or password.")
 		} catch (e: AuthSessionMissingException) {
@@ -133,7 +138,7 @@ class AuthServiceKt(private val supabaseProps: SupabaseProperties) {
 			)
 			throw InvalidCredentialsException("Session initialization failure. Please try again.")
 		} catch (e: InvalidJwtException) {
-			log.error(
+			log.warn(
 				"Token structural formatting rejection error during credential payload exchange for target: {}",
 				request.email,
 				e
@@ -145,6 +150,7 @@ class AuthServiceKt(private val supabaseProps: SupabaseProperties) {
 		}
 	}
 
+	@WithSpan
 	fun logout(client: SupabaseClient, accessToken: String, refreshToken: String): Unit = runBlocking {
 		log.debug("Initiating backend logout state invalidation pipeline sequence.")
 		val dummySession = UserSession(
@@ -157,9 +163,9 @@ class AuthServiceKt(private val supabaseProps: SupabaseProperties) {
 		try {
 			client.auth.importSession(dummySession)
 			client.auth.signOut()
-			log.info("Remote session revocation completed successfully against network endpoint.")
+			log.debug("Remote session revocation completed successfully against network endpoint.")
 		} catch (e: Exception) {
-			log.error(
+			log.warn(
 				"Supabase failed to properly acknowledge explicit session termination tracking arguments.",
 				e
 			)
@@ -167,6 +173,7 @@ class AuthServiceKt(private val supabaseProps: SupabaseProperties) {
 		}
 	}
 
+	@WithSpan
 	fun getUserMetadata(client: SupabaseClient, accessToken: String?): JwtPayload? = runBlocking {
 		log.trace("Resolving claims parsing profile layer context against active token mapping.")
 		if (accessToken.isNullOrBlank()) {
@@ -178,7 +185,7 @@ class AuthServiceKt(private val supabaseProps: SupabaseProperties) {
 			log.trace("User session security claims metadata decoded successfully.")
 			return@runBlocking claims
 		} catch (e: Exception) {
-			log.info(
+			log.warn(
 				"Failed to decode user security claims context array from raw access token payload string.",
 				e
 			)
@@ -186,10 +193,11 @@ class AuthServiceKt(private val supabaseProps: SupabaseProperties) {
 		}
 	}
 
+	@WithSpan
 	fun refreshSession(client: SupabaseClient, refreshToken: String): UserSession = runBlocking {
 		log.debug("Issuing downstream token rotation refresh verification exchange handler sequence.")
 		val session = client.auth.refreshSession(refreshToken)
-		log.info("Session context tokens rolled successfully through asynchronous infrastructure channel.")
+		log.debug("Session context tokens rolled successfully through asynchronous infrastructure channel.")
 		return@runBlocking session
 	}
 }

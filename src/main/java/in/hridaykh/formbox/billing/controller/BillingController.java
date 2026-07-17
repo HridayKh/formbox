@@ -2,9 +2,10 @@ package in.hridaykh.formbox.billing.controller;
 
 import in.hridaykh.formbox.constant.PathRegistry;
 import in.hridaykh.formbox.billing.model.Entitlements;
-import in.hridaykh.formbox.service.cache.TenantCacheService;
+import in.hridaykh.formbox.billing.service.EntitlementsCacheService;
 import in.hridaykh.formbox.billing.service.PolarCacheService;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -28,16 +29,18 @@ public class BillingController {
 	private final Polar polar;
 	private final PolarHttpClient polarHttpClient;
 	private final PolarCacheService polarCacheService;
-	private final TenantCacheService tenantCacheService;
+	private final EntitlementsCacheService entitlementsCacheService;
 
 
 	@GetMapping("/upgrade/{plan}")
+	@WithSpan
 	public String redirectToCheckoutGet(@PathVariable String plan, @RequestAttribute JwtPayload userMetadata, HttpServletRequest request) {
 		log.debug("Processing standard GET redirect checkout request for plan: {} from user: {}", plan, userMetadata.getSub());
 		return "redirect:" + generateCheckoutUrl(plan, userMetadata, request);
 	}
 
 	@GetMapping(PathRegistry.Billing.PORTAL)
+	@WithSpan
 	public String redirectToCustomerPortal(@RequestAttribute JwtPayload userMetadata, HttpServletRequest request, HttpServletResponse response) {
 		String userId = userMetadata.getSub();
 		log.debug("GET request received to generate customer portal session for user ID: {}", userId);
@@ -51,8 +54,8 @@ public class BillingController {
 			return "redirect:" + PathRegistry.Auth.Hx.LOGIN_UNAUTHORIZED;
 		}
 
-		String tier = tenantCacheService.resolveHighestActiveTierNonNull(UUID.fromString(userId));
-		if ("free".equalsIgnoreCase(tier)) {
+		Entitlements entitlements = entitlementsCacheService.getEntitlements(UUID.fromString(userId));
+		if (entitlements.isFree()) {
 			log.warn("Customer {} attempted to redirect to portal on free tier!", userId);
 
 			String errorMessage = java.net.URLEncoder.encode("Cannot manage subscription on free tier!", java.nio.charset.StandardCharsets.UTF_8);
@@ -95,7 +98,8 @@ public class BillingController {
 		}
 
 		UUID tierUuid = UUID.fromString(Objects.requireNonNull(userMetadata.getSub()));
-		String tier = tenantCacheService.resolveHighestActiveTierNonNull(tierUuid);
+		Entitlements entitlements = entitlementsCacheService.getEntitlements(tierUuid);
+		String tier = entitlements.tierName();
 
 		if (plan.equalsIgnoreCase(tier)) {
 			log.debug("User already on requested plan {}. Skipping checkout routing, redirecting straight to dashboard.", plan);
@@ -109,7 +113,7 @@ public class BillingController {
 
 		String polarProductId = polarCacheService.getPolarProductIdBySlug(plan);
 		if (polarProductId == null) {
-			log.error("Resolution mismatch error. Target checkout schema strategy maps to an unknown plan: {}", plan);
+			log.error("Resolution mismatch: target checkout plan '{}' is unknown", plan);
 			throw new IllegalArgumentException("Unknown plan: " + plan);
 		}
 
@@ -126,7 +130,7 @@ public class BillingController {
 			log.info("Successfully provisioned Polar hosted checkout pipeline context link instance for plan product: {} (ID: {})", plan, polarProductId);
 			return polar.checkouts().create(customBody).url();
 		} catch (Exception e) {
-			log.error("Failed to complete remote checkout generation handshake structure with external Polar API engine parameters.", e);
+			log.error("Failed to generate Polar checkout URL for plan: {}", plan, e);
 			throw e;
 		}
 	}

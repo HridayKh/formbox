@@ -2,6 +2,7 @@ package in.hridaykh.formbox.billing.controller;
 
 import in.hridaykh.formbox.billing.service.WebhookService;
 import in.hridaykh.formbox.constant.PathRegistry;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +27,7 @@ public class PolarWebhookController {
 	private final WebhookService webhooksService;
 
 	@PostMapping(PathRegistry.Webhooks.POLAR)
+	@WithSpan
 	public ResponseEntity<Map<String, Object>> handlePolarWebhook(HttpServletRequest request) {
 		log.trace("Received incoming webhook HTTP request payload from Polar platform.");
 		Map<String, Object> responseBody = new LinkedHashMap<>();
@@ -35,7 +37,7 @@ public class PolarWebhookController {
 			try (BufferedReader reader = request.getReader()) {
 				body = reader.lines().collect(Collectors.joining(System.lineSeparator()));
 			} catch (IOException e) {
-				log.error("Failed to parse or read structural string request input buffer stream context from webhook body.", e);
+				log.error("Failed to read body from webhook request", e);
 				responseBody.put("status", "rejected");
 				return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(responseBody);
 			}
@@ -52,27 +54,52 @@ public class PolarWebhookController {
 		try {
 			isValid = polarWebhookVerifier.verify(body, webhookId, timestamp, signature);
 		} catch (Exception e) {
-			log.error("Cryptographic execution failure thrown during payload authenticity verification matching tasks.", e);
+			log.warn("Cryptographic verification failed for webhook ID: {}", webhookId, e);
 		}
 
 		HttpStatus status = HttpStatus.UNAUTHORIZED;
 		responseBody.put("status", "rejected");
 
 		if (isValid) {
-			log.info("Polar incoming webhook event payload successfully authenticated for execution. Event ID: {}", webhookId);
+			log.info("Polar incoming webhook event payload successfully authenticated. Event ID: {}", webhookId);
 			status = HttpStatus.OK;
 			responseBody.put("status", "accepted");
 
 			try {
 				webhooksService.processHook(body);
-				log.debug("Downstream processing service completed webhook ingestion task asynchronously or sequentially.");
+				log.debug("Webhook processing completed for ID: {}", webhookId);
 			} catch (Exception e) {
-				log.error("Internal business layer logic failure crashed during webhook consumption payload mapping pipeline for ID: {}", webhookId, e);
+				log.error("Failed to process webhook for ID: {}", webhookId, e);
 			}
 		} else {
-			log.warn("Security rejection. Incoming request headers failed signature validation verification bounds for payload ID: {}", webhookId);
+			log.warn("Security rejection: Incoming request failed signature validation for webhook ID: {}", webhookId);
 		}
 
 		return ResponseEntity.status(status).body(responseBody);
+	}
+
+	@PostMapping("/webhooks/polar/test")
+	public ResponseEntity<Map<String, Object>> handlePolarWebhookTest(HttpServletRequest request) {
+		log.warn("RECEIVED MOCK WEBHOOK INGESTION REQUEST FOR LOCAL TESTING");
+		Map<String, Object> responseBody = new LinkedHashMap<>();
+		String body = "";
+		if (request.getContentLengthLong() > 0) {
+			try (BufferedReader reader = request.getReader()) {
+				body = reader.lines().collect(Collectors.joining(System.lineSeparator()));
+			} catch (IOException e) {
+				log.error("Failed to read body", e);
+				responseBody.put("status", "rejected");
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responseBody);
+			}
+		}
+		try {
+			webhooksService.processHook(body);
+			responseBody.put("status", "accepted");
+			return ResponseEntity.ok(responseBody);
+		} catch (Exception e) {
+			log.error("Failed downstream webhook test consumption", e);
+			responseBody.put("status", "error");
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(responseBody);
+		}
 	}
 }

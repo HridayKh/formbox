@@ -4,14 +4,14 @@ import in.hridaykh.formbox.billing.model.Entitlements;
 import in.hridaykh.formbox.constant.ViewRegistry;
 import in.hridaykh.formbox.exception.FormNotFoundException;
 import in.hridaykh.formbox.model.dto.CachedForm;
-import in.hridaykh.formbox.model.entity.Tenant;
-import in.hridaykh.formbox.repository.TenantRepository;
+import in.hridaykh.formbox.billing.service.EntitlementsCacheService;
 import in.hridaykh.formbox.service.form.FormFileService;
 import in.hridaykh.formbox.service.form.FormSubmissionService;
 import in.hridaykh.formbox.service.cache.FormCacheService;
 import in.hridaykh.formbox.billing.service.PolarCacheService;
 import in.hridaykh.formbox.util.TurnstileVerifier;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.Part;
@@ -37,15 +37,17 @@ public class IndexController {
 	private final FormCacheService formCacheService;
 	private final FormFileService formFileService;
 	private final ObjectMapper objectMapper;
-	private final TenantRepository tenantRepository;
+	private final EntitlementsCacheService entitlementsCacheService;
 
 	@GetMapping("/")
+	@WithSpan
 	public String index(@RequestAttribute(required = false) JwtPayload userMetadata, Model model) {
 		model.addAttribute("loggedIn", userMetadata != null && userMetadata.getSub() != null);
 		return ViewRegistry.INDEX;
 	}
 
 	@PostMapping("/f/{formId}")
+	@WithSpan
 	public String submission(@PathVariable UUID formId, @RequestParam Map<String, String> payload, HttpServletRequest request, HttpServletResponse response) throws IOException {
 		log.debug("Processing incoming webhook submission request path channel for form ID: {}", formId);
 
@@ -54,7 +56,7 @@ public class IndexController {
 		try {
 			form = formCacheService.getCachedForm(formId);
 		} catch (FormNotFoundException e) {
-			log.info("Submission rejected. Form destination completely missing from structural records for ID: {}", formId);
+			log.warn("Submission rejected. Form ID {} not found.", formId);
 			response.setStatus(HttpServletResponse.SC_NOT_FOUND);
 			return "submit/form-not-found";
 		}
@@ -124,7 +126,7 @@ public class IndexController {
 		// step 14: async 3rd party webhooks and notifs
 		formFileService.uploadFilesAndInitNotifsWebhooks(form, payload, request);
 
-		log.debug("processed the form!!!!!!!!!");
+		log.info("Successfully processed submission for form ID: {}", formId);
 
 		// step 12: return 200 ok
 		if (isContentTypeJson) {
@@ -132,8 +134,7 @@ public class IndexController {
 			response.setContentType("application/json");
 			return "submit/json-response";
 		}
-		Tenant tenant = tenantRepository.findById(form.tenantId()).orElse(null);
-		Entitlements entitlements = (tenant != null) ? tenant.getEntitlementsOrDefaults() : Entitlements.freeDefaults();
+		Entitlements entitlements = entitlementsCacheService.getEntitlements(form.tenantId());
 		if (form.redirectUrl() == null || form.redirectUrl().isBlank() || !entitlements.redirectUrlsAllowed())
 			return "submit/thanks";
 		return "redirect:" + form.redirectUrl();

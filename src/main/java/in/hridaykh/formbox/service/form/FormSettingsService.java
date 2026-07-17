@@ -8,9 +8,10 @@ import in.hridaykh.formbox.model.dto.TierValidationResult;
 import in.hridaykh.formbox.model.entity.Form;
 import in.hridaykh.formbox.repository.FormRepository;
 import in.hridaykh.formbox.service.cache.FormCacheService;
-import in.hridaykh.formbox.service.cache.TenantCacheService;
 import in.hridaykh.formbox.util.FormTierValidator;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,20 +19,23 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class FormSettingsService {
 
 	private final FormRepository formRepository;
-	private final TenantCacheService tenantCacheService;
 	private final FormCacheService formCacheService;
 	private final FormTierValidator tierValidator;
 
 	@Transactional
+	@WithSpan
 	public TierValidationResult updateFormSettings(UUID formId, String userId, FormSettingsRequest request) {
+		log.debug("Updating form settings for form ID: {} by user: {}", formId, userId);
 		Form form = formRepository.findById(formId)
 			.orElseThrow(() -> new FormNotFoundException(formId));
 
 		// 1. Enforce Authorization Guard
 		if (!form.getTenant().getId().toString().equals(userId)) {
+			log.warn("Unauthorized settings update attempt for form ID: {} by user: {}", formId, userId);
 			throw new SessionExpiredException("Unauthorized access to form system.");
 		}
 
@@ -58,6 +62,7 @@ public class FormSettingsService {
 
 		validationResult.setUpdatedForm(savedForm.toCachedFormDto());
 
+		log.info("Successfully updated form settings for form ID: {} (tenant: {})", formId, savedForm.getTenant().getId());
 		return validationResult;
 	}
 }

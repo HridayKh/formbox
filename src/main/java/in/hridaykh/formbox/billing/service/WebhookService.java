@@ -9,6 +9,7 @@ import in.hridaykh.formbox.billing.model.GrantedBenefits;
 import in.hridaykh.formbox.constant.FreeTierDefaults;
 import in.hridaykh.formbox.model.entity.Tenant;
 import in.hridaykh.formbox.repository.TenantRepository;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -28,16 +29,18 @@ public class WebhookService {
 	private final ObjectMapper objectMapper;
 	private final TenantRepository tenantRepository;
 	private final PolarIdProperties polarIdProperties;
+	private final EntitlementsCacheService entitlementsCacheService;
 
+	@WithSpan
 	public void processHook(String rawBody) {
 		JsonNode root = objectMapper.readTree(rawBody);
 		if (!"customer.state_changed".equals(root.path("type").asString())) {
-			log.error("Invalid event type received\n{}", rawBody);
+			log.warn("Invalid event type received in webhook: {}", root.path("type").asString());
 			throw new IllegalArgumentException();
 		}
 		JsonNode dataNode = root.path("data");
 		if (dataNode.isMissingNode()) {
-			log.error("Data node missing in webhook\n{}", rawBody);
+			log.warn("Data node missing in webhook: {}", rawBody);
 			throw new IllegalArgumentException();
 		}
 		var state = objectMapper.convertValue(dataNode, new TypeReference<CustomerStateChanged>() {
@@ -45,13 +48,15 @@ public class WebhookService {
 		UUID tenantId = UUID.fromString(state.externalId());
 		var tenantOptional = tenantRepository.findById(tenantId);
 		if (tenantOptional.isEmpty()) {
-			log.error("tenant given in webhook not found\n{}", rawBody);
+			log.warn("Tenant {} not found for webhook: {}", tenantId, rawBody);
 			throw new IllegalArgumentException();
 		}
 		Tenant tenant = tenantOptional.get();
-		tenant.setEntitlements(createEntitlements(state));
+		Entitlements entitlements = createEntitlements(state);
+		tenant.setEntitlements(entitlements);
 		tenantRepository.save(tenant);
-		log.info("Entitlements updated for tenant {} (tier: {})", tenantId, tenant.getEntitlements().tierName());
+		entitlementsCacheService.updateEntitlementsCache(tenantId, entitlements);
+		log.info("Entitlements updated for tenant {} (tier: {})", tenantId, entitlements.tierName());
 	}
 
 	/**

@@ -7,6 +7,7 @@ import in.hridaykh.formbox.model.entity.Form;
 import in.hridaykh.formbox.model.entity.Tenant;
 import in.hridaykh.formbox.repository.FormRepository;
 import in.hridaykh.formbox.repository.TenantRepository;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -34,6 +35,7 @@ public class FormCacheService {
 
 	@Transactional(readOnly = true)
 	@Cacheable(value = CacheNames.FORM_METADATA, key = "#formId")
+	@WithSpan
 	public CachedForm getCachedForm(UUID formId) {
 		log.trace("Caffeine L1 cache MISS for form ID: {}", formId);
 
@@ -56,7 +58,7 @@ public class FormCacheService {
 
 		log.debug("Redis L2 cache MISS for form ID: {}. Fetching from persistent database...", formId);
 		Form form = formRepository.findById(formId).orElseThrow(() -> {
-			log.info("Form retrieval failed. Record not found in database for ID: {}", formId);
+			log.warn("Form retrieval failed. Record not found in database for ID: {}", formId);
 			return new FormNotFoundException(formId);
 		});
 
@@ -73,6 +75,7 @@ public class FormCacheService {
 	}
 
 	@CachePut(value = CacheNames.FORM_METADATA, key = "#updatedForm.id")
+	@WithSpan
 	public CachedForm updateFormCache(Form updatedForm) {
 		UUID formId = updatedForm.getId();
 		log.debug("Synchronizing state updates to cache layers for form ID: {}", formId);
@@ -82,7 +85,7 @@ public class FormCacheService {
 
 		try {
 			redisTemplate.opsForValue().set(redisKey, objectMapper.writeValueAsString(cachedFormDto), Duration.ofDays(2));
-			log.debug("Redis L2 cache successfully updated for form ID: {}", formId);
+			log.trace("Redis L2 cache successfully updated for form ID: {}", formId);
 		} catch (Exception e) {
 			log.error("Failed to update execution write-through to Redis L2 cache for form ID: {}", formId, e);
 		}
@@ -91,6 +94,7 @@ public class FormCacheService {
 	}
 
 	@CacheEvict(value = CacheNames.FORM_METADATA, key = "#formId")
+	@WithSpan
 	public void evictFormCache(UUID formId) {
 		log.debug("Evicting multi-layer form metadata caches for form ID: {}", formId);
 		try {
@@ -101,6 +105,7 @@ public class FormCacheService {
 		}
 	}
 
+	@WithSpan
 	public List<CachedForm> getTenantForms(UUID tenantId) {
 		String cacheKey = String.format("formbox:%s:%s", CacheNames.TENANT_FORMS, tenantId);
 
@@ -130,6 +135,7 @@ public class FormCacheService {
 		return dbForms;
 	}
 
+	@WithSpan
 	public void evictTenantForms(UUID tenantId) {
 		log.debug("Request received to drop tenant forms collection cache for tenant ID: {}", tenantId);
 		try {
