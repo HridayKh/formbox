@@ -12,11 +12,11 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import sh.polar.sdk.PolarWebhookVerifier;
 
-import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Controller
 @Slf4j
@@ -33,14 +33,12 @@ public class PolarWebhookController {
 		Map<String, Object> responseBody = new LinkedHashMap<>();
 
 		String body = "";
-		if (request.getContentLengthLong() > 0) {
-			try (BufferedReader reader = request.getReader()) {
-				body = reader.lines().collect(Collectors.joining(System.lineSeparator()));
-			} catch (IOException e) {
-				log.error("Failed to read body from webhook request", e);
-				responseBody.put("status", "rejected");
-				return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(responseBody);
-			}
+		try (InputStream is = request.getInputStream()) {
+			body = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+		} catch (IOException e) {
+			log.error("Failed to read body from webhook request", e);
+			responseBody.put("status", "rejected");
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(responseBody);
 		}
 
 		String webhookId = request.getHeader("webhook-id");
@@ -83,14 +81,12 @@ public class PolarWebhookController {
 		log.warn("RECEIVED MOCK WEBHOOK INGESTION REQUEST FOR LOCAL TESTING");
 		Map<String, Object> responseBody = new LinkedHashMap<>();
 		String body = "";
-		if (request.getContentLengthLong() > 0) {
-			try (BufferedReader reader = request.getReader()) {
-				body = reader.lines().collect(Collectors.joining(System.lineSeparator()));
-			} catch (IOException e) {
-				log.error("Failed to read body", e);
-				responseBody.put("status", "rejected");
-				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responseBody);
-			}
+		try (InputStream is = request.getInputStream()) {
+			body = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+		} catch (IOException e) {
+			log.error("Failed to read body", e);
+			responseBody.put("status", "rejected");
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responseBody);
 		}
 		try {
 			webhooksService.processHook(body);
