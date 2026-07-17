@@ -23,6 +23,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.HttpServletResponse;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -67,6 +69,9 @@ public class FormController {
 		newForm.setTenant(tenantRepository.getReferenceById(tenantId));
 		newForm.setName(name);
 		newForm.setRedirectUrl(redirectUrl);
+		newForm.setAllowJson(entitlements.jsonFormsAllowed());
+		newForm.setAllowFiles(entitlements.fileUploadsAllowed());
+		newForm.setRateLimitRpm(Math.min(20, entitlements.maxRateLimitRpm()));
 
 		Form savedForm = formRepository.save(newForm);
 		log.info("Successfully persisted new Form Entity. ID: {} for tenant ID: {}", savedForm.getId(), tenantId);
@@ -119,6 +124,7 @@ public class FormController {
 
 		model.addAttribute("form", form);
 		model.addAttribute("redirectUrlNotAllowed", !entitlements.redirectUrlsAllowed());
+		model.addAttribute("fieldValidationsNotAllowed", !entitlements.fieldValidationsAllowed());
 		model.addAttribute("submissions", submissions.submissions());
 		model.addAttribute("spamSubmissions", submissions.spam());
 
@@ -127,12 +133,41 @@ public class FormController {
 
 	@PutMapping("/{id}")
 	@WithSpan
-	public String updateForm(@RequestAttribute JwtPayload userMetadata, @PathVariable("id") UUID formId, @ModelAttribute FormSettingsRequest request, Model model) {
+	public String updateForm(@RequestAttribute JwtPayload userMetadata, 
+	                         @PathVariable("id") UUID formId, 
+	                         @RequestParam(value = "fieldValidationsRaw", required = false) String fieldValidationsRaw, 
+	                         @ModelAttribute FormSettingsRequest request, 
+	                         Model model) {
 
 		log.debug("Initiating settings update for form ID: {}", formId);
 
+		List<String> validations = new ArrayList<>();
+		if (fieldValidationsRaw != null) {
+			validations = Arrays.stream(fieldValidationsRaw.split("\\r?\\n"))
+				.map(String::strip)
+				.filter(s -> !s.isEmpty())
+				.toList();
+		}
+
+		FormSettingsRequest fullRequest = new FormSettingsRequest(
+			request.name(),
+			request.redirectUrl(),
+			request.isActive(),
+			request.turnstileSecretKey(),
+			request.honeypotName(),
+			request.rateLimitRpm(),
+			request.allowFiles(),
+			request.allowHtmx(),
+			request.allowJson(),
+			validations
+		);
+
 		// Execute core business logic
-		TierValidationResult result = formSettingsService.updateFormSettings(formId, userMetadata.getSub(), request);
+		TierValidationResult result = formSettingsService.updateFormSettings(formId, userMetadata.getSub(), fullRequest);
+
+		Entitlements entitlements = entitlementsCacheService.getEntitlements(UUID.fromString(userMetadata.getSub()));
+		model.addAttribute("redirectUrlNotAllowed", !entitlements.redirectUrlsAllowed());
+		model.addAttribute("fieldValidationsNotAllowed", !entitlements.fieldValidationsAllowed());
 
 		if (result.hasWarnings()) {
 			model.addAttribute("warningMessage", result.getFirstWarning());

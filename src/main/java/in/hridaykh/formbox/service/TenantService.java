@@ -10,10 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sh.polar.sdk.Polar;
-import sh.polar.sdk.http.PolarHttpClient;
 import sh.polar.sdk.models.customer.PolarCustomerResponse;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
 
 import java.util.*;
 
@@ -23,16 +20,14 @@ import java.util.*;
 public class TenantService {
 
 	private final TenantRepository tenantRepository;
-	private final PolarHttpClient polarHttpClient;
 	private final Polar polar;
-	private final ObjectMapper objectMapper;
 
 	@Transactional
 	@WithSpan
 	public void getOrCreateTenantWithFreeSubscription(JwtPayload userMetadata) {
 		UUID userId = UUID.fromString(Objects.requireNonNull(userMetadata.getSub()));
 		log.debug("Initiating onboarding after auth callback for: {}", userId);
-		Tenant tenant = tenantRepository.findById(userId).orElseGet(() -> {
+		tenantRepository.findById(userId).orElseGet(() -> {
 			log.info("Tenant workspace record missing from local database storage. Registering new tenant row for ID: {}", userId);
 			Tenant newTenant = new Tenant();
 			newTenant.setId(userId);
@@ -40,46 +35,9 @@ public class TenantService {
 			newTenant.setEntitlements(Entitlements.freeDefaults());
 			return tenantRepository.saveAndFlush(newTenant);
 		});
-
-//		ensureFreeSubscriptionProvisioned(tenant);
 	}
 
-	private void ensureFreeSubscriptionProvisioned(Tenant tenant) {
-		log.info("Provisioning Polar Free Subscription for tenant: {}", tenant.getEmail());
-
-		try {
-			createCustomer(tenant.getId().toString(), tenant.getEmail());
-
-			// Retrieve products from Polar to locate the "Free Plan"
-			String productsJson = polarHttpClient.get("/products/", String.class);
-			JsonNode productsNode = objectMapper.readTree(productsJson);
-			String freeProductId = null;
-			for (JsonNode item : productsNode.path("items")) {
-				if ("Free Plan".equalsIgnoreCase(item.path("name").asString())) {
-					freeProductId = item.path("id").asString();
-					break;
-				}
-			}
-
-			if (freeProductId == null) {
-				log.error("Baseline Free Plan product not found on Polar Sandbox platform.");
-				throw new IllegalStateException("Free Plan product not configured on Polar");
-			}
-
-			Map<String, Object> subscriptionRequest = new HashMap<>();
-			subscriptionRequest.put("product_id", freeProductId);
-			subscriptionRequest.put("external_customer_id", tenant.getId().toString());
-
-			log.debug("Dispatching request downstream to Polar infrastructure API to create free baseline subscription mapping.");
-			polarHttpClient.post("/subscriptions/", subscriptionRequest, Void.class);
-
-			log.info("Successfully provisioned Polar Free Subscription for: {}", tenant.getEmail());
-		} catch (Exception e) {
-			log.error("Failed to recover or assign dynamic Polar free subscription on active dashboard load for email: {}", tenant.getEmail(), e);
-		}
-	}
-
-	private void createCustomer(String userId, String email) {
+	public void ensurePolarCustomerExists(String userId, String email) {
 		log.trace("Verifying remote customer identity mirror layer presence with tracking external user index parameter: {}", userId);
 		try {
 			PolarCustomerResponse existingCustomer = polar.customers().getByExternalId(userId);

@@ -10,11 +10,9 @@
 
 ## Billing Upgrade Notes
 
-1. Map Java Record to all feature flags and limits (current balance per user + max balance per user)
-2. tenant.getEntitlements().whateverFeatureFlagOrLimitHere()
-3. ts can be cached ez
-4. annual and lifetime plans
-5. go over the `customer.state_changed` and process all the fields
+1. how we handling non monthly plan's meters?????? 
+2. ask a fresh convo to study and model the billing system
+
 
 ## Experiments
 

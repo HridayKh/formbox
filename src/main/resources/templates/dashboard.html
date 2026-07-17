@@ -47,13 +47,10 @@
 
             <!-- Upgrades -->
             <div style="display: flex; gap: 12px; align-items: center;">
-                <a th:if="${showUpgradeStarter}" href="/billing/upgrade/starter-v1" class="btn btn-secondary btn-small">Upgrade
-                    to Starter</a>
-                <a th:if="${showUpgradePro}" href="/billing/upgrade/pro-v1" class="btn btn-primary btn-small">Upgrade to
-                    Pro</a>
+                <a th:if="${showUpgradeStarter || showUpgradePro}" href="/billing/upgrade" class="btn btn-primary btn-small">Upgrade Plan</a>
             </div>
             <button th:if="${showManageSubscription}" class="btn btn-secondary btn-small">
-                <a href="billing/portal">Manage Subscription</a>
+                <a href="/billing/portal">Manage Subscription</a>
             </button>
 
             <!-- Logout (Icon only for cleanliness, or text) -->
@@ -163,7 +160,7 @@
                     <p th:if="redirectUrlNotAllowed"
                        style="color: var(--stamp-red); font-family: var(--font-mono),serif; font-size: 0.76rem; margin-top: 8px;">
                         Custom redirects are a premium feature.<br>
-                        <a href="/billing/upgrade/starter-v1"
+                        <a href="/billing/upgrade"
                            style="color: var(--air-gold); text-decoration: underline; text-underline-offset: 3px;">Upgrade
                             your plan</a> to unlock.
                     </p>

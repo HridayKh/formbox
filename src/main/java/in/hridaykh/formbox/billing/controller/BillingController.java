@@ -2,13 +2,16 @@ package in.hridaykh.formbox.billing.controller;
 
 import in.hridaykh.formbox.constant.PathRegistry;
 import in.hridaykh.formbox.billing.model.Entitlements;
+import in.hridaykh.formbox.billing.model.PolarProductDetails;
 import in.hridaykh.formbox.billing.service.EntitlementsCacheService;
 import in.hridaykh.formbox.billing.service.PolarCacheService;
+import in.hridaykh.formbox.service.TenantService;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -30,13 +33,68 @@ public class BillingController {
 	private final PolarHttpClient polarHttpClient;
 	private final PolarCacheService polarCacheService;
 	private final EntitlementsCacheService entitlementsCacheService;
+	private final TenantService tenantService;
 
+
+	@GetMapping("/upgrade")
+	@WithSpan
+	public String showUpgradeOptions(@RequestAttribute JwtPayload userMetadata, Model model) {
+		UUID userId = UUID.fromString(userMetadata.getSub());
+		Entitlements entitlements = entitlementsCacheService.getEntitlements(userId);
+		
+		List<PolarProductDetails> allProducts = polarCacheService.getAllProducts();
+		List<PolarProductDetails> upgradeOptions = allProducts.stream()
+			.filter(p -> p.priority() > entitlements.tierPriority())
+			.toList();
+
+		model.addAttribute("currentTier", entitlements.tierName() == null ? "free" : entitlements.tierName());
+		model.addAttribute("upgradeOptions", upgradeOptions);
+		return "dashboard/upgrade-options";
+	}
 
 	@GetMapping("/upgrade/{plan}")
 	@WithSpan
 	public String redirectToCheckoutGet(@PathVariable String plan, @RequestAttribute JwtPayload userMetadata, HttpServletRequest request) {
-		log.debug("Processing standard GET redirect checkout request for plan: {} from user: {}", plan, userMetadata.getSub());
-		return "redirect:" + generateCheckoutUrl(plan, userMetadata, request);
+		UUID userId = UUID.fromString(userMetadata.getSub());
+		Entitlements entitlements = entitlementsCacheService.getEntitlements(userId);
+
+		PolarProductDetails targetProduct = polarCacheService.getPolarProductDetailsBySlug(plan);
+		if (targetProduct == null) {
+			log.error("Plan not found: {}", plan);
+			return "redirect:" + PathRegistry.DASHBOARD;
+		}
+
+		// Only allow checkouts if the target tier priority is higher than current
+		if (targetProduct.priority() <= entitlements.tierPriority()) {
+			log.warn("User {} attempted to checkout plan {} with priority {}, but current priority is {}", 
+				userId, plan, targetProduct.priority(), entitlements.tierPriority());
+			return "redirect:/billing/upgrade";
+		}
+
+		// Ensure customer exists on Polar for free-tier users
+		if (entitlements.isFree()) {
+			try {
+				tenantService.ensurePolarCustomerExists(userId.toString(), userMetadata.getEmail());
+			} catch (Exception e) {
+				log.error("Failed to ensure Polar customer existence before checkout for user: {}", userId, e);
+			}
+		}
+
+		String successUrl = ServletUriComponentsBuilder.fromContextPath(request).path(PathRegistry.DASHBOARD).toUriString();
+		Map<String, Object> customBody = new HashMap<>();
+		customBody.put("products", List.of(targetProduct.id()));
+		customBody.put("customer_email", userMetadata.getEmail());
+		customBody.put("success_url", successUrl);
+		customBody.put("external_customer_id", userId.toString());
+
+		try {
+			String url = polar.checkouts().create(customBody).url();
+			log.info("Successfully provisioned Polar hosted checkout pipeline context link instance for plan product: {} (ID: {})", plan, targetProduct.id());
+			return "redirect:" + url;
+		} catch (Exception e) {
+			log.error("Failed to generate Polar checkout link", e);
+			return "redirect:/billing/upgrade";
+		}
 	}
 
 	@GetMapping(PathRegistry.Billing.PORTAL)
@@ -86,52 +144,6 @@ public class BillingController {
 				return null;
 			}
 			return "redirect:" + fallbackUrl;
-		}
-	}
-
-	private String generateCheckoutUrl(String plan, JwtPayload userMetadata, HttpServletRequest request) {
-		log.trace("Initiating checkout URL generation workflow for requested plan token: {}", plan);
-
-		if ("free".equalsIgnoreCase(plan) || "free-v1".equalsIgnoreCase(plan)) {
-			log.debug("Plan parameter detected as tier baseline default [free]. Skipping checkout routing, redirecting straight to dashboard.");
-			return PathRegistry.DASHBOARD;
-		}
-
-		UUID tierUuid = UUID.fromString(Objects.requireNonNull(userMetadata.getSub()));
-		Entitlements entitlements = entitlementsCacheService.getEntitlements(tierUuid);
-		String tier = entitlements.tierName();
-
-		if (plan.equalsIgnoreCase(tier)) {
-			log.debug("User already on requested plan {}. Skipping checkout routing, redirecting straight to dashboard.", plan);
-			return PathRegistry.DASHBOARD;
-		}
-
-		if ("pro-v1".equalsIgnoreCase(tier)) {
-			log.debug("Pro user cannot upgrade further. Skipping checkout routing, redirecting straight to dashboard.");
-			return PathRegistry.DASHBOARD;
-		}
-
-		String polarProductId = polarCacheService.getPolarProductIdBySlug(plan);
-		if (polarProductId == null) {
-			log.error("Resolution mismatch: target checkout plan '{}' is unknown", plan);
-			throw new IllegalArgumentException("Unknown plan: " + plan);
-		}
-
-		String successUrl = ServletUriComponentsBuilder.fromContextPath(request).path(PathRegistry.DASHBOARD).toUriString();
-		log.trace("Configured callback endpoint fallback resolution tracking target url context to: {}", successUrl);
-
-		Map<String, Object> customBody = new HashMap<>();
-		customBody.put("products", List.of(polarProductId));
-		customBody.put("customer_email", userMetadata.getEmail());
-		customBody.put("success_url", successUrl);
-		customBody.put("external_customer_id", userMetadata.getSub());
-
-		try {
-			log.info("Successfully provisioned Polar hosted checkout pipeline context link instance for plan product: {} (ID: {})", plan, polarProductId);
-			return polar.checkouts().create(customBody).url();
-		} catch (Exception e) {
-			log.error("Failed to generate Polar checkout URL for plan: {}", plan, e);
-			throw e;
 		}
 	}
 }

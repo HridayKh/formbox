@@ -23,7 +23,7 @@ public class FormCleanupScheduler {
 	private static final int BATCH_SIZE = 500;
 	private static final long PAUSE_MS = 100;
 
-	@Scheduled(fixedDelay = 10 * 60 * 1000)
+	@Scheduled(fixedDelay = 60 * 60 * 1000)
 	@WithSpan
 	public void cleanupDeletedForms() {
 		log.debug("Starting scheduled cleanup of soft-deleted forms...");

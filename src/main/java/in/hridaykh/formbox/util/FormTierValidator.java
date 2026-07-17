@@ -50,6 +50,13 @@ public class FormTierValidator {
 			warnings.add("Rate limit cannot exceed " + entitlements.maxRateLimitRpm() + " RPM on your current tier.");
 		}
 
+		// Rule 6: Field validations
+		List<String> sanitizedFieldValidations = request.fieldValidations();
+		if (!entitlements.fieldValidationsAllowed() && !sanitizedFieldValidations.isEmpty()) {
+			sanitizedFieldValidations = List.of();
+			warnings.add("Field validations require a premium tier. Please upgrade!");
+		}
+
 		FormSettingsRequest sanitizedRequest = new FormSettingsRequest(
 			request.name(),
 			sanitizedRedirectUrl,
@@ -60,7 +67,7 @@ public class FormTierValidator {
 			sanitizedAllowFiles,
 			request.allowHtmx(),
 			sanitizedAllowJson,
-			request.fieldValidations()
+			sanitizedFieldValidations
 		);
 
 		return new TierValidationResult(sanitizedRequest, warnings, null);

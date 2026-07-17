@@ -1,6 +1,7 @@
 package in.hridaykh.formbox.billing.service;
 
 import in.hridaykh.formbox.billing.model.Entitlements;
+import in.hridaykh.formbox.billing.model.PolarProductDetails;
 import in.hridaykh.formbox.constant.CacheNames;
 import in.hridaykh.formbox.model.entity.Tenant;
 import in.hridaykh.formbox.repository.TenantRepository;
@@ -11,15 +12,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.types.Expiration;
 import org.springframework.stereotype.Service;
-import sh.polar.sdk.http.PolarHttpClient;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
+import sh.polar.sdk.Polar;
+import sh.polar.sdk.models.common.PolarListResponse;
+import sh.polar.sdk.models.product.PolarProductResponse;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -35,9 +38,8 @@ public class PolarCacheService {
 	private final PolarMeterService polarMeterService;
 	private final TenantRepository tenantRepository;
 	private final SubmissionRepository submissionRepository;
-	private final PolarHttpClient polarHttpClient;
-	private final ObjectMapper objectMapper;
 	private final EntitlementsCacheService entitlementsCacheService;
+	private final Polar polar;
 
 	@WithSpan
 	public long getCachedSubmissionBalance(UUID tenantId) {
@@ -102,7 +104,7 @@ public class PolarCacheService {
 			// Reset submissions balance cache in Redis
 			String key = getRedisKey(tenantId);
 			redisTemplate.opsForValue().set(key, String.valueOf(updated.submissionsLimit()), Expiration.from(CACHE_TTL_HOURS, TimeUnit.HOURS));
-			log.info("Entitlements monthly refresh boundary crossed. Reset submission counter to {} and refreshAt to {} for tenant: {}", 
+			log.info("Entitlements monthly refresh boundary crossed. Reset submission counter to {} and refreshAt to {} for tenant: {}",
 				updated.submissionsLimit(), nextRefresh, tenantId);
 		}
 	}
@@ -132,13 +134,13 @@ public class PolarCacheService {
 
 			if (entitlements.isFree()) {
 				// Calculate local free-tier balance
-				Instant cycleStart = entitlements.refreshAt() != null 
-					? entitlements.refreshAt().minus(30, ChronoUnit.DAYS) 
+				Instant cycleStart = entitlements.refreshAt() != null
+					? entitlements.refreshAt().minus(30, ChronoUnit.DAYS)
 					: Instant.now().minus(30, ChronoUnit.DAYS);
 				OffsetDateTime since = OffsetDateTime.ofInstant(cycleStart, ZoneOffset.UTC);
 				long consumed = submissionRepository.countByTenantIdAndCreatedAtAfter(tenantId, since);
 				liveBalance = Math.max(0, entitlements.submissionsLimit() - consumed);
-				log.debug("Free-tier tenant local submissions balance evaluated. Limit: {}, Consumed: {}, Remaining: {}", 
+				log.debug("Free-tier tenant local submissions balance evaluated. Limit: {}, Consumed: {}, Remaining: {}",
 					entitlements.submissionsLimit(), consumed, liveBalance);
 			} else {
 				liveBalance = polarMeterService.getRemainingSubmissionsBalance(tenantId);
@@ -159,7 +161,76 @@ public class PolarCacheService {
 	}
 
 	@WithSpan
-	public String getPolarProductIdBySlug(String slug) {
+	public List<PolarProductDetails> getAllProducts() {
+		try {
+			PolarListResponse<PolarProductResponse> response = polar.products().list(100);
+			List<PolarProductDetails> list = new ArrayList<>();
+
+			if (response == null || response.items() == null) {
+				return list;
+			}
+			for (PolarProductResponse item : response.items()) {
+				if (item.isArchived())
+					continue;
+				String name = item.name();
+				String itemId = item.id().toString();
+
+				int priority = 0;
+				if (item.metadata() != null && item.metadata().containsKey("priority")) {
+					Object val = item.metadata().get("priority");
+					if (val instanceof Number) {
+						priority = ((Number) val).intValue();
+					} else if (val instanceof String) {
+						try {
+							priority = Integer.parseInt((String) val);
+						} catch (NumberFormatException e) {
+							// ignore
+						}
+					}
+				}
+
+				if (priority == 0) {
+					String lowerName = name.toLowerCase();
+					int basePriority = 0;
+					if (lowerName.contains("pro")) {
+						basePriority = 200;
+					} else if (lowerName.contains("starter")) {
+						basePriority = 100;
+					}
+					if (basePriority > 0) {
+						if (lowerName.contains("annual") || lowerName.contains("yearly")) {
+							priority = basePriority + 10;
+						} else if (lowerName.contains("ltd") || lowerName.contains("lifetime")) {
+							priority = basePriority + 20;
+						} else {
+							priority = basePriority; // monthly
+						}
+					}
+				}
+
+				if (name.toLowerCase().contains("free")) {
+					continue;
+				}
+
+				String slug = name.toLowerCase().replace(" ", "-");
+				if (name.equalsIgnoreCase("Starter Monthly")) {
+					slug = "starter-v1";
+				} else if (name.equalsIgnoreCase("Pro Monthly")) {
+					slug = "pro-v1";
+				}
+
+				list.add(new PolarProductDetails(itemId, name, priority, slug));
+			}
+			list.sort(Comparator.comparingInt(PolarProductDetails::priority));
+			return list;
+		} catch (Exception e) {
+			log.error("Failed to retrieve Polar products list", e);
+			return List.of();
+		}
+	}
+
+	@WithSpan
+	public PolarProductDetails getPolarProductDetailsBySlug(String slug) {
 		String targetName = slug;
 		if ("starter-v1".equalsIgnoreCase(slug)) {
 			targetName = "Starter Monthly";
@@ -167,34 +238,12 @@ public class PolarCacheService {
 			targetName = "Pro Monthly";
 		}
 
-		String redisKey = "formbox:product-slug-id:" + targetName.toLowerCase().replace(" ", "-");
-		String cachedId = redisTemplate.opsForValue().get(redisKey);
-		if (cachedId != null) {
-			return cachedId;
-		}
+		String targetSlug = targetName.toLowerCase().replace(" ", "-");
+		final String finalTargetName = targetName;
 
-		try {
-			log.debug("Cache miss for product name/slug {}. Fetching live products list from Polar...", targetName);
-			String responseJson = polarHttpClient.get("/products/", String.class);
-			JsonNode root = objectMapper.readTree(responseJson);
-			String targetId = null;
-
-			for (JsonNode item : root.path("items")) {
-				String itemSlug = item.path("name").asString().toLowerCase().replace(" ", "-");
-				String itemName = item.path("name").asString();
-				String itemId = item.path("id").asString();
-
-				// Cache resolved product ID
-				redisTemplate.opsForValue().set("formbox:product-slug-id:" + itemSlug, itemId, Duration.ofDays(7));
-
-				if (itemName.equalsIgnoreCase(targetName) || itemSlug.equalsIgnoreCase(targetName.replace(" ", "-"))) {
-					targetId = itemId;
-				}
-			}
-			return targetId;
-		} catch (Exception e) {
-			log.error("Failed to retrieve or parse Polar products list for target: {}", targetName, e);
-			return null;
-		}
+		return getAllProducts().stream()
+			.filter(p -> p.slug().equalsIgnoreCase(targetSlug) || p.name().equalsIgnoreCase(finalTargetName))
+			.findFirst()
+			.orElse(null);
 	}
 }

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Upgrade Options</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { font-family: sans-serif; padding: 2rem; max-width: 600px; margin: 0 auto; line-height: 1.5; background: #fafafa; color: #333; }
+        .card { background: white; padding: 1.5rem; border-radius: 6px; border: 1px solid #ddd; margin-bottom: 1.5rem; }
+        .btn { display: inline-block; background: #7c5cfc; color: white; padding: 0.5rem 1rem; border-radius: 4px; text-decoration: none; font-weight: bold; }
+        .btn:hover { background: #6849e6; }
+        .badge { background: #e0e7ff; color: #4338ca; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.85rem; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <p><a href="/dashboard">← Back to Dashboard</a></p>
+    <h1>Subscription Upgrade Options</h1>
+    <p>Your current plan is: <span class="badge" th:text="${currentTier}">free</span></p>
+    
+    <div th:if="${#lists.isEmpty(upgradeOptions)}">
+        <p>You are on the highest tier and cannot upgrade further!</p>
+    </div>
+    
+    <div th:unless="${#lists.isEmpty(upgradeOptions)}">
+        <div th:each="option : ${upgradeOptions}" class="card">
+            <h3 th:text="${option.name}">Plan Name</h3>
+            <p>Priority level: <span th:text="${option.priority}">0</span></p>
+            <a th:href="@{'/billing/upgrade/' + ${option.slug}}" class="btn">Upgrade Now</a>
+        </div>
+    </div>
+</body>
+</html>

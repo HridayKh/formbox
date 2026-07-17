@@ -1029,6 +1029,27 @@
                     </label>
                 </fieldset>
 
+                <hr class="settings-divider"/>
+
+                <fieldset class="settings-section">
+                    <legend class="settings-legend">Field Validations</legend>
+                    <p class="card__subtitle" style="margin-bottom: var(--space-4);">Add custom validation rules for your form fields (one rule per line, e.g. <code>email:required</code> or <code>age:min:18</code>)</p>
+                    
+                    <div class="form-block">
+                        <label class="form-label" for="fieldValidationsInput">Custom Validation Rules</label>
+                        <textarea class="input" id="fieldValidationsInput" name="fieldValidationsRaw" 
+                                  rows="4" placeholder="email:required&#10;age:min:18"
+                                  th:text="${form.fieldValidations != null ? T(java.lang.String).join('\n', form.fieldValidations) : ''}"
+                                  th:disabled="${fieldValidationsNotAllowed}"></textarea>
+                        
+                        <p class="upgrade-message" th:if="${fieldValidationsNotAllowed}"
+                           style="color: #ef4444; font-size: 0.875rem; margin-top: 0.25rem;">
+                            Field validations are a premium feature.
+                            <a href="/billing/upgrade" style="text-decoration: underline;">Upgrade your plan</a> to unlock.
+                        </p>
+                    </div>
+                </fieldset>
+
                 <div class="form-actions">
                     <button class="btn btn--primary" type="submit">
                         <span class="btn-label">Save Configurations</span>
