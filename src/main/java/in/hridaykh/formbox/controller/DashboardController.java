@@ -42,9 +42,7 @@ public class DashboardController {
 		log.debug("Resolved entitlements for Tenant ID: {}, Service Tier: {}", tenantId, entitlements.tierName());
 
 		boolean isFreeTier = entitlements.isFree();
-		boolean isStarterTier = "starter-v1".equalsIgnoreCase(entitlements.tierName());
-		model.addAttribute("showUpgradeStarter", isFreeTier);
-		model.addAttribute("showUpgradePro", isFreeTier || isStarterTier);
+		model.addAttribute("showUpgradeCta", true); // always show — portal handles plan selection
 		model.addAttribute("showManageSubscription", !isFreeTier);
 
 		model.addAttribute("redirectUrlNotAllowed", !entitlements.redirectUrlsAllowed());

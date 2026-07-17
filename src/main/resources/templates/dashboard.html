@@ -47,7 +47,7 @@
 
             <!-- Upgrades -->
             <div style="display: flex; gap: 12px; align-items: center;">
-                <a th:if="${showUpgradeStarter || showUpgradePro}" href="/billing/upgrade" class="btn btn-primary btn-small">Upgrade Plan</a>
+                <a th:if="${showUpgradeCta}" href="/billing/upgrade" class="btn btn-primary btn-small">Upgrade Plan</a>
             </div>
             <button th:if="${showManageSubscription}" class="btn btn-secondary btn-small">
                 <a href="/billing/portal">Manage Subscription</a>

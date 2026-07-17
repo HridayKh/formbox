@@ -123,8 +123,12 @@ public class FormController {
 		log.trace("Loaded dashboard variables for form {}: {} submissions, {} spam", formId, submissions.submissions().size(), submissions.spam().size());
 
 		model.addAttribute("form", form);
+		model.addAttribute("entitlements", entitlements);
 		model.addAttribute("redirectUrlNotAllowed", !entitlements.redirectUrlsAllowed());
 		model.addAttribute("fieldValidationsNotAllowed", !entitlements.fieldValidationsAllowed());
+		model.addAttribute("turnstileNotAllowed", !entitlements.turnstileAllowed());
+		model.addAttribute("jsonFormsNotAllowed", !entitlements.jsonFormsAllowed());
+		model.addAttribute("fileUploadsNotAllowed", !entitlements.fileUploadsAllowed());
 		model.addAttribute("submissions", submissions.submissions());
 		model.addAttribute("spamSubmissions", submissions.spam());
 
@@ -166,11 +170,15 @@ public class FormController {
 		TierValidationResult result = formSettingsService.updateFormSettings(formId, userMetadata.getSub(), fullRequest);
 
 		Entitlements entitlements = entitlementsCacheService.getEntitlements(UUID.fromString(userMetadata.getSub()));
+		model.addAttribute("entitlements", entitlements);
 		model.addAttribute("redirectUrlNotAllowed", !entitlements.redirectUrlsAllowed());
 		model.addAttribute("fieldValidationsNotAllowed", !entitlements.fieldValidationsAllowed());
+		model.addAttribute("turnstileNotAllowed", !entitlements.turnstileAllowed());
+		model.addAttribute("jsonFormsNotAllowed", !entitlements.jsonFormsAllowed());
+		model.addAttribute("fileUploadsNotAllowed", !entitlements.fileUploadsAllowed());
 
 		if (result.hasWarnings()) {
-			model.addAttribute("warningMessage", result.getFirstWarning());
+			model.addAttribute("warnings", result.warnings());
 		} else {
 			model.addAttribute("message", "Form configurations updated successfully!");
 		}

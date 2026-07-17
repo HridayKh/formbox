@@ -8,12 +8,6 @@
 4. usebasin.com
 5. slapform.com
 
-## Billing Upgrade Notes
-
-1. how we handling non monthly plan's meters?????? 
-2. ask a fresh convo to study and model the billing system
-
-
 ## Experiments
 
 1. how long does the pipeline take without turnstile and the 2 redis lookups (on prod, near redis)
@@ -26,12 +20,11 @@
 
 ## Todo
 
-### Billing, Monetization & Launch Strategy
+### Dashboard & Frontend UX
 
-* **[High Priority]**: Fix billing.
-* **[Medium Priority]**: Add "Annual Plans (Coming Soon)" to the index page.
-* **[Near Launch]**: Build a dashboard page to manage/buy plans if the Polar-hosted checkout doesn't cover it.
-* **[Near Launch]**: Add a "Contact Us" custom enterprise plan to the frontend alongside a scheduling call link.
+* **[Medium Priority]**: Revamp the overall form display layout and implement pagination.
+* **[LOw Priority]**: Reimagine the **Manage Form** page
+* **[Near Launch]**: Tally all the tier features and sync them all with the frontend! (maybe even dynamically generate them?)
 
 ### Core Form Features & Integrations
 
@@ -39,11 +32,6 @@
 * **[Low Priority]**: Magic `mailto:` links.
 * **[Low Priority]**: Email Digests
 * **[Low Priority]**: Webhook routing
-
-### Dashboard & Frontend UX
-
-* **[Medium Priority]**: Revamp the overall form display layout and implement pagination.
-* **[LOw Priority]**: Reimagine the **Manage Form** page
 
 ### Backend, Infrastructure & Operations
 
@@ -62,6 +50,7 @@
 ### Roadmap
 
 1. Retry setting up the Sentry agent.
+2. should also handle benifit_grant.updated
 2. Change `isSpam` boolean to a `spamReason` enum (e.g., `notSpam`, `turnstileFailed`)
 3. Build the internal Admin Panel web based
 4. Build an `/onboarding` page post-signup that auto-generates a mock form with fields to get users started instantly

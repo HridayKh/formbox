@@ -526,33 +526,128 @@
            MESSAGES
         ════════════════════════════════════════════════════ */
         .alert {
+            display: flex;
+            align-items: flex-start;
+            gap: var(--space-3);
             padding: var(--space-4) var(--space-5);
             border-radius: var(--radius-md);
             margin-bottom: var(--space-5);
             font-size: 0.92rem;
         }
 
+        .alert__icon {
+            flex-shrink: 0;
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        .alert__body {
+            flex: 1;
+        }
+
+        .alert__title {
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .alert__desc {
+            font-weight: 400;
+            opacity: 0.85;
+        }
+
+        .alert a {
+            font-weight: 600;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+
         .alert--success {
-            background: rgba(52, 211, 153, 0.12);
+            background: rgba(52, 211, 153, 0.10);
             border: 1px solid rgba(52, 211, 153, 0.35);
             color: var(--color-success);
         }
 
         .alert--error {
-            background: rgba(243, 100, 100, 0.12);
+            background: rgba(243, 100, 100, 0.10);
             border: 1px solid rgba(243, 100, 100, 0.35);
             color: var(--color-danger);
         }
 
         .alert--warning {
-            background: rgba(242, 184, 75, 0.12);
+            background: rgba(242, 184, 75, 0.10);
             border: 1px solid rgba(242, 184, 75, 0.35);
             color: var(--color-warning);
+        }
+
+        .alert--info {
+            background: var(--color-accent-soft);
+            border: 1px solid rgba(124, 92, 252, 0.3);
+            color: var(--color-accent-bright);
         }
 
         .alert p {
             margin: 0;
             font-weight: 500;
+        }
+
+        /* ════════════════════════════════════════════════════
+           FEATURE LOCK BANNERS
+        ════════════════════════════════════════════════════ */
+        .feature-lock {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            padding: var(--space-3) var(--space-4);
+            background: rgba(242, 184, 75, 0.06);
+            border: 1px solid rgba(242, 184, 75, 0.25);
+            border-radius: var(--radius-md);
+            margin-top: var(--space-3);
+            font-size: 0.875rem;
+        }
+
+        .feature-lock__icon {
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+
+        .feature-lock__text {
+            color: var(--color-warning);
+            font-weight: 500;
+        }
+
+        .feature-lock__text a {
+            color: var(--color-warning);
+            font-weight: 700;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+
+        .lock-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            background: rgba(242, 184, 75, 0.12);
+            border: 1px solid rgba(242, 184, 75, 0.3);
+            border-radius: var(--radius-sm);
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--color-warning);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            vertical-align: middle;
+            margin-left: var(--space-2);
+        }
+
+        .input:disabled, .textarea:disabled, .select:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .checkbox-group--locked {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
         }
 
         /* ════════════════════════════════════════════════════
@@ -877,14 +972,13 @@
         </p>
     </div>
 
-    <div th:if="${warningMessage}" class="alert alert--warning"
-         style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 1rem; margin-bottom: 1.5rem; color: #991b1b; border-radius: 4px;">
-        <p style="margin: 0; font-size: 0.95rem;">
-            <span th:text="${warningMessage}">Warning message</span>
-            <a href="/billing/upgrade"
-               style="text-decoration: underline; font-weight: bold; color: #b91c1c; margin-left: 0.5rem;">Upgrade
-                now</a>.
-        </p>
+    <div th:if="${warningMessage}" class="alert alert--warning">
+        <span class="alert__icon">⚠️</span>
+        <div class="alert__body">
+            <div class="alert__title">Plan Limit Reached</div>
+            <div class="alert__desc" th:text="${warningMessage}">Warning message</div>
+            <a href="/billing/upgrade" style="margin-top: 4px; display: inline-block;">Upgrade now →</a>
+        </div>
     </div>
 
     <div id="settings-panel-container">
@@ -934,19 +1028,24 @@
                 </div>
             </div>
 
-            <div th:if="${message}" class="alert alert--success"
-                 style="background-color: #f0fdf4; border-left: 4px solid #22c55e; padding: 1rem; margin-bottom: 1.5rem; color: #166534; border-radius: 4px;">
-                <p th:text="${message}" style="margin: 0; font-size: 0.95rem;">Saved!</p>
+            <div th:if="${message}" class="alert alert--success">
+                <span class="alert__icon">✅</span>
+                <div class="alert__body">
+                    <div class="alert__title">Saved</div>
+                    <div class="alert__desc" th:text="${message}">Saved!</div>
+                </div>
             </div>
 
-            <div th:if="${warningMessage}" class="alert alert--warning"
-                 style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 1rem; margin-bottom: 1.5rem; color: #991b1b; border-radius: 4px;">
-                <p style="margin: 0; font-size: 0.95rem;">
-                    <span th:text="${warningMessage}">Warning Notice</span>
-                    <a href="/billing/upgrade"
-                       style="text-decoration: underline; font-weight: bold; color: #b91c1c; margin-left: 0.5rem;">Upgrade
-                        now</a>.
-                </p>
+            <!-- Multiple per-rule warnings from TierValidationResult -->
+            <div th:if="${warnings != null and !#lists.isEmpty(warnings)}">
+                <div th:each="warn : ${warnings}" class="alert alert--warning">
+                    <span class="alert__icon">🔒</span>
+                    <div class="alert__body">
+                        <div class="alert__title">Plan Restriction Applied</div>
+                        <div class="alert__desc" th:text="${warn}">Warning</div>
+                        <a href="/billing/upgrade" style="margin-top: 4px; display: inline-block;">Upgrade your plan →</a>
+                    </div>
+                </div>
             </div>
             <form th:attr="hx-put=|/forms/${form.id}|" hx-target="#settings-panel-container" hx-swap="innerHTML"
                   class="settings-form">
@@ -960,16 +1059,20 @@
                     </div>
 
                     <div class="form-block">
-                        <label class="form-label" for="redirectUrl">Custom Redirect URL (Optional)</label>
+                        <label class="form-label" for="redirectUrl">
+                            Custom Redirect URL (Optional)
+                            <span th:if="${redirectUrlNotAllowed}" class="lock-badge">🔒 Pro</span>
+                        </label>
                         <input class="input" type="url" id="redirectUrl" name="redirectUrl"
                                th:value="${form.redirectUrl}"
                                placeholder="https://your-site.com/thanks" th:disabled="${redirectUrlNotAllowed}"/>
 
-                        <p class="upgrade-message" th:if="${redirectUrlNotAllowed}"
-                           style="color: #ef4444; font-size: 0.875rem; margin-top: 0.25rem;">
-                            Custom redirects are a premium feature.
-                            <a href="#" style="text-decoration: underline;">Upgrade your plan</a> to unlock.
-                        </p>
+                        <div class="feature-lock" th:if="${redirectUrlNotAllowed}">
+                            <span class="feature-lock__icon">🔒</span>
+                            <span class="feature-lock__text">Custom redirect URLs are a <strong>Pro feature</strong>.
+                                <a href="/billing/upgrade">Upgrade your plan</a> to unlock them.
+                            </span>
+                        </div>
                     </div>
 
                     <label class="checkbox-group" for="isActive">
@@ -993,15 +1096,37 @@
                     </div>
 
                     <div class="form-block">
-                        <label class="form-label" for="turnstileSecretKey">Cloudflare Turnstile Secret Key (Leave empty to disable)</label>
+                        <label class="form-label" for="turnstileSecretKey">
+                            Cloudflare Turnstile Secret Key (Leave empty to disable)
+                            <span th:if="${turnstileNotAllowed}" class="lock-badge">🔒 Pro</span>
+                        </label>
                         <input class="input" type="password" id="turnstileSecretKey" name="turnstileSecretKey"
-                               th:value="${form.turnstileSecretKey}" placeholder="0x4AAAAAA..."/>
+                               th:value="${form.turnstileSecretKey}" placeholder="0x4AAAAAA..."
+                               th:disabled="${turnstileNotAllowed}"/>
+
+                        <div class="feature-lock" th:if="${turnstileNotAllowed}">
+                            <span class="feature-lock__icon">🔒</span>
+                            <span class="feature-lock__text">Cloudflare Turnstile is a <strong>Pro feature</strong>.
+                                <a href="/billing/upgrade">Upgrade your plan</a> to enable bot protection.
+                            </span>
+                        </div>
                     </div>
 
                     <div class="form-block">
                         <label class="form-label" for="rateLimitRpm">Rate Limit (Requests per Minute)</label>
                         <input class="input" type="number" id="rateLimitRpm" name="rateLimitRpm"
-                               th:value="${form.rateLimitRpm}" min="1" max="1000" required/>
+                               th:value="${form.rateLimitRpm}" min="1"
+                               th:max="${entitlements != null ? entitlements.maxRateLimitRpm() : 1000}" required/>
+                        <div class="feature-lock" th:if="${entitlements != null}" style="background: rgba(124,92,252,0.06); border-color: rgba(124,92,252,0.25);">
+                            <span class="feature-lock__icon">ℹ️</span>
+                            <span style="color: var(--color-accent-bright); font-weight: 500; font-size: 0.875rem;">
+                                Your plan allows up to <strong th:text="${entitlements.maxRateLimitRpm()}">10</strong> RPM.
+                                Values above this cap will be automatically lowered.
+                                <span th:if="${entitlements.isFree()}">
+                                    <a href="/billing/upgrade" style="color: var(--color-accent-bright); font-weight: 700; text-decoration: underline;">Upgrade</a> for higher limits.
+                                </span>
+                            </span>
+                        </div>
                     </div>
                 </fieldset>
 
@@ -1010,11 +1135,22 @@
                 <fieldset class="settings-section">
                     <legend class="settings-legend">Integrations & Format Controls</legend>
 
-                    <label class="checkbox-group" for="allowFiles">
-                        <input type="checkbox" id="allowFiles" name="allowFiles" value="true"
-                               th:checked="${form.allowFiles}"/>
-                        <label for="allowFiles" style="margin: 0;">Allow File Uploads</label>
-                    </label>
+                    <div>
+                        <label class="checkbox-group" th:classappend="${fileUploadsNotAllowed} ? 'checkbox-group--locked'" for="allowFiles">
+                            <input type="checkbox" id="allowFiles" name="allowFiles" value="true"
+                                   th:checked="${form.allowFiles}" th:disabled="${fileUploadsNotAllowed}"/>
+                            <label for="allowFiles" style="margin: 0;">
+                                Allow File Uploads
+                                <span th:if="${fileUploadsNotAllowed}" class="lock-badge">🔒 Pro</span>
+                            </label>
+                        </label>
+                        <div class="feature-lock" th:if="${fileUploadsNotAllowed}">
+                            <span class="feature-lock__icon">🔒</span>
+                            <span class="feature-lock__text">File uploads are a <strong>Pro feature</strong>.
+                                <a href="/billing/upgrade">Upgrade your plan</a> to accept attachments.
+                            </span>
+                        </div>
+                    </div>
 
                     <label class="checkbox-group" for="allowHtmx">
                         <input type="checkbox" id="allowHtmx" name="allowHtmx" value="true"
@@ -1022,11 +1158,22 @@
                         <label for="allowHtmx" style="margin: 0;">Allow AJAX / HTMX Submissions</label>
                     </label>
 
-                    <label class="checkbox-group" for="allowJson">
-                        <input type="checkbox" id="allowJson" name="allowJson" value="true"
-                               th:checked="${form.allowJson}"/>
-                        <label for="allowJson" style="margin: 0;">Allow JSON API Submissions</label>
-                    </label>
+                    <div>
+                        <label class="checkbox-group" th:classappend="${jsonFormsNotAllowed} ? 'checkbox-group--locked'" for="allowJson">
+                            <input type="checkbox" id="allowJson" name="allowJson" value="true"
+                                   th:checked="${form.allowJson}" th:disabled="${jsonFormsNotAllowed}"/>
+                            <label for="allowJson" style="margin: 0;">
+                                Allow JSON API Submissions
+                                <span th:if="${jsonFormsNotAllowed}" class="lock-badge">🔒 Pro</span>
+                            </label>
+                        </label>
+                        <div class="feature-lock" th:if="${jsonFormsNotAllowed}">
+                            <span class="feature-lock__icon">🔒</span>
+                            <span class="feature-lock__text">JSON API submissions are a <strong>Pro feature</strong>.
+                                <a href="/billing/upgrade">Upgrade your plan</a> to enable API access.
+                            </span>
+                        </div>
+                    </div>
                 </fieldset>
 
                 <hr class="settings-divider"/>
@@ -1036,17 +1183,21 @@
                     <p class="card__subtitle" style="margin-bottom: var(--space-4);">Add custom validation rules for your form fields (one rule per line, e.g. <code>email:required</code> or <code>age:min:18</code>)</p>
                     
                     <div class="form-block">
-                        <label class="form-label" for="fieldValidationsInput">Custom Validation Rules</label>
+                        <label class="form-label" for="fieldValidationsInput">
+                            Custom Validation Rules
+                            <span th:if="${fieldValidationsNotAllowed}" class="lock-badge">🔒 Pro</span>
+                        </label>
                         <textarea class="input" id="fieldValidationsInput" name="fieldValidationsRaw" 
                                   rows="4" placeholder="email:required&#10;age:min:18"
                                   th:text="${form.fieldValidations != null ? T(java.lang.String).join('\n', form.fieldValidations) : ''}"
                                   th:disabled="${fieldValidationsNotAllowed}"></textarea>
                         
-                        <p class="upgrade-message" th:if="${fieldValidationsNotAllowed}"
-                           style="color: #ef4444; font-size: 0.875rem; margin-top: 0.25rem;">
-                            Field validations are a premium feature.
-                            <a href="/billing/upgrade" style="text-decoration: underline;">Upgrade your plan</a> to unlock.
-                        </p>
+                        <div class="feature-lock" th:if="${fieldValidationsNotAllowed}">
+                            <span class="feature-lock__icon">🔒</span>
+                            <span class="feature-lock__text">Field validations are a <strong>Pro feature</strong>.
+                                <a href="/billing/upgrade">Upgrade your plan</a> to add custom validation rules.
+                            </span>
+                        </div>
                     </div>
                 </fieldset>
 
