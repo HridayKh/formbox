@@ -1,101 +1,82 @@
+<!--
+  =============================================================================
+  MODEL CONTRACT: Auth - Login Page (`auth/login.html`)
+  -----------------------------------------------------------------------------
+  Required Model Attributes:
+  - ${param.msg}: String[] - URL parameter array (check_email, logged_out, unauthorized)
+  =============================================================================
+-->
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Login | FormBox</title>
+    <title>Login | Formbox</title>
+    <!-- PicoCSS v2 Pumpkin Theme -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.pumpkin.min.css"/>
     <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.10/dist/htmx.min.js"></script>
-    <link rel="stylesheet" th:href="'/assets/styles.css'" href="/../static/assets/styles.css">
     <link rel="preconnect" href="https://challenges.cloudflare.com"/>
 </head>
 <body>
 
-<main class="wrap auth-wrapper step">
+    <main class="container" style="max-width: 600px; padding-top: 3rem; padding-bottom: 3rem;">
+        
+        <p><a href="/">← Back to Home Page</a></p>
 
-    <a href="/" class="btn btn-secondary btn-small"
-       style="margin-bottom: 32px; border-color: transparent; padding-left: 0;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-             stroke-linejoin="round" style="width: 16px; height: 16px;">
-            <path d="M19 12H5M12 19l-7-7 7-7"/>
-        </svg>
-        Back to Home Page
-    </a>
+        <article>
+            <header>
+                <h2>Sign In to Formbox</h2>
+                <p>Welcome back! Please enter your account credentials.</p>
+            </header>
 
-    <div class="section-head" style="margin-bottom: 32px;">
-        <h2 style="font-size: 2rem;">Login to FormBox</h2>
-        <p class="section-sub" style="font-size: 0.95rem;">Welcome back! Please enter your details.</p>
-    </div>
-
-    <div id="alert-container" style="margin-bottom: 24px;">
-        <div th:if="${param.msg != null and param.msg[0] == 'check_email'}" class="stamp-badge" style="width: 100%;">
-            <div class="stamp-ring"></div>
-            Registration successful! <br/> Please check your email.
-        </div>
-        <div th:if="${param.msg != null and param.msg[0] == 'logged_out'}" class="stamp-badge"
-             style="width: 100%; border-color: rgba(171, 176, 201, 0.4); color: var(--text-on-ink-muted);">
-            <div class="stamp-ring"
-                 style="background: var(--text-on-ink-muted); box-shadow: 0 0 0 3px rgba(171, 176, 201, 0.15);"></div>
-            You have been safely logged out.
-        </div>
-        <div th:if="${param.msg != null and param.msg[0] == 'unauthorized'}" class="stamp-badge"
-             style="width: 100%; border-color: rgba(192, 67, 43, 0.55); color: var(--stamp-red);">
-            <div class="stamp-ring" style="background: var(--stamp-red); box-shadow: none;"></div>
-            Please log in to access this resource.
-        </div>
-    </div>
-
-    <form hx-post="/auth/login" hx-target="#alert-container" hx-swap="innerHTML" class="waitlist-form">
-        <div class="input-group">
-            <label for="login-email" class="eyebrow" style="display: block; margin-bottom: 10px;">Email</label>
-            <input type="email" id="login-email" name="email" required autocomplete="email" style="width: 100%;"/>
-        </div>
-
-        <div class="input-group">
-            <label for="login-password" class="eyebrow" style="display: block; margin-bottom: 10px;">Password</label>
-            <input type="password" id="login-password" name="password" required autocomplete="current-password"/>
-        </div>
-
-        <button type="submit" class="btn btn-primary"
-                style="width: 100%; margin-top: 12px; font-size: 1.05rem; padding: 14px 22px;">Sign In
-        </button>
-        <div class="cf-turnstile" data-sitekey="0x4AAAAAAD1xEDYqYOi7tGNB"></div>
-    </form>
-
-    <div style="margin-top: 36px; border-top: 1px dashed var(--line-on-ink); padding-top: 24px; text-align: center;">
-        <p style="font-size: 0.92rem; color: var(--text-on-ink-muted);">
-            Don't have an account? <a href="/auth/signup"
-                                      style="color: var(--air-gold); font-weight: 600; text-decoration: none;">Register
-            here</a>
-        </p>
-
-        <div style="margin-top: 24px;">
-            <div class="resend-container"
-                 style="background: var(--ink-deep); padding: 20px; border-radius: var(--radius-m); border: 1px solid var(--line-on-ink); text-align: left;">
-                <form hx-post="/auth/resend-confirmation" hx-target="#alert-container" hx-swap="innerHTML"
-                      class="waitlist-form" style="display: block;">
-
-                    <p style="font-family: var(--font-display),serif; font-size: 1rem; color: var(--text-on-ink); font-weight: 600; margin-bottom: 16px;">
-                        Didn't get the link?</p>
-
-                    <div class="input-group" style="margin-bottom: 16px;">
-                        <label for="resend-email" class="eyebrow"
-                               style="display: block; margin-bottom: 10px; font-size: 0.72rem;">Enter email to
-                            resend</label>
-                        <input type="email" id="resend-email" name="email" placeholder="name@example.com"
-                               required style="width: 100%; flex: none;"/>
-                    </div>
-
-                    <button type="submit" class="btn btn-secondary btn-small"
-                            style="width: 100%; justify-content: center;">Resend Confirmation
-                    </button>
-                    <div class="cf-turnstile" data-sitekey="0x4AAAAAAD1xEDYqYOi7tGNB"></div>
-                </form>
+            <!-- Dynamic Alert Container -->
+            <div id="alert-container" style="margin-bottom: 1.5rem;">
+                <mark th:if="${param.msg != null and param.msg[0] == 'check_email'}">
+                    Registration successful! Please check your email for the confirmation link.
+                </mark>
+                <mark th:if="${param.msg != null and param.msg[0] == 'logged_out'}">
+                    You have been safely logged out.
+                </mark>
+                <mark th:if="${param.msg != null and param.msg[0] == 'unauthorized'}">
+                    Please log in to access your dashboard.
+                </mark>
             </div>
-        </div>
-    </div>
-</main>
 
-<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+            <!-- Login Form -->
+            <form hx-post="/auth/login" hx-target="#alert-container" hx-swap="innerHTML">
+                <fieldset>
+                    <label for="login-email">
+                        Email Address
+                        <input type="email" id="login-email" name="email" required autocomplete="email" placeholder="name@domain.com"/>
+                    </label>
 
+                    <label for="login-password">
+                        Password
+                        <input type="password" id="login-password" name="password" required autocomplete="current-password"/>
+                    </label>
+                </fieldset>
+
+                <button type="submit" class="contrast" style="margin-top: 1rem;">Sign In</button>
+                <div class="cf-turnstile" data-sitekey="0x4AAAAAAD1xEDYqYOi7tGNB" style="margin-top: 1rem;"></div>
+            </form>
+
+            <footer style="margin-top: 2rem;">
+                <p>Don't have an account? <a href="/auth/signup">Register here →</a></p>
+
+                <!-- Resend Confirmation -->
+                <details style="margin-top: 1rem;">
+                    <summary>Didn't receive confirmation email?</summary>
+                    <form hx-post="/auth/resend-confirmation" hx-target="#alert-container" hx-swap="innerHTML" style="margin-top: 1rem;">
+                        <label for="resend-email">Enter your email</label>
+                        <input type="email" id="resend-email" name="email" placeholder="name@domain.com" required/>
+                        <button type="submit" class="secondary outline" style="margin-top: 0.5rem;">Resend Confirmation Link</button>
+                    </form>
+                </details>
+            </footer>
+        </article>
+
+    </main>
+
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </body>
 </html>

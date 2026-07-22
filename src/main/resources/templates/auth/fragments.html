@@ -1,12 +1,18 @@
+<!--
+  =============================================================================
+  MODEL CONTRACT: Auth Fragments (`auth/fragments.html`)
+  -----------------------------------------------------------------------------
+  Required Model Attributes:
+  - ${error}: String (optional error text)
+  - ${message}: String (optional success text)
+  =============================================================================
+-->
 <div th:fragment="empty-frag" hx-trigger="load" hx-redirect="/dashboard"></div>
 
-<div th:fragment="error-alert" class="alert alert--danger" role="alert" th:text="${error}">
-    An error occurred.
-</div>
+<mark th:fragment="error-alert" role="alert" th:text="${error}">
+    An error occurred during authentication.
+</mark>
 
-<div th:fragment="success-alert" class="alert alert--success" role="alert" th:text="${message}">
-    Success!
-</div>
-
-</body>
-</html>
+<ins th:fragment="success-alert" role="alert" th:text="${message}">
+    Action completed successfully!
+</ins>

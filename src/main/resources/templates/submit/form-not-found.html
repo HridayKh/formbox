@@ -4,99 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Form Not Found | FormBox</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com"/>
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono&display=swap"
-          rel="stylesheet"/>
-    <style>
-        :root {
-            --color-bg: #09090B;
-            --color-surface: #121218;
-            --color-border: #27272A;
-            --color-text: #F4F4F6;
-            --color-text-dim: #A3A3AE;
-            --color-accent: #7C5CFC;
-        }
-
-        *, *::before, *::after {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            background: var(--color-bg);
-            color: var(--color-text);
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            padding: 24px;
-        }
-
-        .error-card {
-            background: var(--color-surface);
-            border: 1px solid var(--color-border);
-            border-radius: 12px;
-            padding: 32px 24px;
-            max-width: 360px;
-            width: 100%;
-            text-align: center;
-            box-shadow: 0 12px 32px -16px rgba(0, 0, 0, 0.6);
-        }
-
-        .code-badge {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.75rem;
-            letter-spacing: 0.05em;
-            color: var(--color-accent);
-            background: rgba(124, 92, 252, 0.1);
-            padding: 4px 10px;
-            border-radius: 6px;
-            display: inline-block;
-            margin-bottom: 16px;
-        }
-
-        h1 {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin-bottom: 8px;
-            letter-spacing: -0.01em;
-        }
-
-        p {
-            font-size: 0.9rem;
-            color: var(--color-text-dim);
-            line-height: 1.5;
-            margin-bottom: 28px;
-        }
-
-        .brand-link {
-            font-size: 0.8rem;
-            color: var(--color-text-dim);
-            text-decoration: none;
-            font-weight: 500;
-            transition: color 0.15s ease;
-        }
-
-        .brand-link span {
-            color: var(--color-accent);
-            font-weight: 600;
-        }
-
-        .brand-link:hover {
-            color: var(--color-text);
-        }
-    </style>
+    <link rel="stylesheet" th:href="'/assets/styles.css'" href="/../static/assets/styles.css">
 </head>
 <body>
 
-<main class="error-card">
-    <div class="code-badge">ENDPOINT_NOT_FOUND</div>
+<main>
+    <div>ENDPOINT_NOT_FOUND</div>
     <h1>Form Not Found</h1>
     <p>The form backend endpoint you submitted data to does not exist or has been deactivated.</p>
-    <a href="/static" class="brand-link">Powered by <span>FormBox</span></a>
+    <a href="/static">Powered by <span>FormBox</span></a>
 </main>
 
 </body>

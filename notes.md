@@ -23,7 +23,7 @@
 ### Dashboard & Frontend UX
 
 * **[Medium Priority]**: Revamp the overall form display layout and implement pagination.
-* **[LOw Priority]**: Reimagine the **Manage Form** page
+* **[Low Priority]**: Reimagine the **Manage Form** page
 * **[Near Launch]**: Tally all the tier features and sync them all with the frontend! (maybe even dynamically generate them?)
 
 ### Core Form Features & Integrations

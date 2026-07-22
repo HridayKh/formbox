@@ -5,113 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Error</title>
     <link rel="stylesheet" th:href="'/assets/styles.css'" href="/../static/assets/styles.css">
-    <style>
-        .error-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            padding: 24px;
-        }
-
-        .error-card {
-            background: var(--ink-raised);
-            border: 1px solid var(--line-on-ink);
-            border-radius: var(--radius-l);
-            padding: 48px 40px;
-            max-width: 540px;
-            text-align: center;
-            box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.55);
-            position: relative;
-        }
-
-        .error-card::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: var(--airmail-stripe);
-            border-radius: var(--radius-l) var(--radius-l) 0 0;
-        }
-
-        .error-icon {
-            width: 88px;
-            height: 88px;
-            margin: 0 auto 28px;
-            border-radius: 50%;
-            background: rgba(192, 67, 43, 0.15);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 2px solid var(--stamp-red);
-        }
-
-        .error-icon::before {
-            content: "!";
-            font-family: var(--font-display);
-            font-size: 3.5rem;
-            font-weight: 700;
-            color: var(--stamp-red);
-            line-height: 1;
-        }
-
-        .error-card h2 {
-            font-family: var(--font-display);
-            font-weight: 700;
-            font-size: 1.8rem;
-            color: var(--text-on-ink);
-            margin-bottom: 12px;
-        }
-
-        .error-card p {
-            color: var(--text-on-ink-muted);
-            margin-bottom: 28px;
-            line-height: 1.6;
-        }
-
-        .error-actions {
-            display: flex;
-            gap: 12px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .error-actions .btn {
-            flex: 1;
-            min-width: 140px;
-        }
-
-        @media (max-width: 480px) {
-            .error-card {
-                padding: 36px 24px;
-            }
-
-            .error-card h2 {
-                font-size: 1.4rem;
-            }
-
-            .error-actions {
-                flex-direction: column;
-                gap: 10px;
-            }
-
-            .error-actions .btn {
-                width: 100%;
-            }
-        }
-    </style>
 </head>
 <body>
-<div class="error-container">
-    <div class="error-card">
-        <div class="error-icon"></div>
+<div>
+    <div>
+        <div></div>
         <h2 th:text="${errorTitle}">Something went wrong!</h2>
         <p th:text="${errorMessage}">Please check the URL path or return to the login page to get back on track.</p>
         <p th:text="${errorStatus}"></p>
-        <div class="error-actions">
-            <a href="/" class="btn btn-primary">Go to Main Page</a>
+        <div>
+            <a href="/">Go to Main Page</a>
         </div>
     </div>
 </div>

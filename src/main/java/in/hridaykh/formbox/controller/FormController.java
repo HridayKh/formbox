@@ -132,7 +132,7 @@ public class FormController {
 		model.addAttribute("submissions", submissions.submissions());
 		model.addAttribute("spamSubmissions", submissions.spam());
 
-		return "dashboard/manage-form";
+		return "pages/manage-form";
 	}
 
 	@PutMapping("/{id}")

@@ -1,122 +1,50 @@
+<!--
+  =============================================================================
+  MODEL CONTRACT: Auth - Callback Verification Page (`auth/callback.html`)
+  -----------------------------------------------------------------------------
+  Required Model Attributes: None (Client JS parses token hash)
+  =============================================================================
+-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Verifying Session | FormBox</title>
-    <link rel="stylesheet" th:href="'/assets/styles.css'" href="/../static/assets/styles.css">
+    <title>Verifying Session | Formbox</title>
+    <!-- PicoCSS v2 Pumpkin Theme -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.pumpkin.min.css"/>
     <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.10/dist/htmx.min.js"></script>
-    <style>
-        .verify-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            padding: 24px;
-        }
-
-        .auth-card {
-            background: var(--ink-raised);
-            border: 1px solid var(--line-on-ink);
-            border-radius: var(--radius-l);
-            padding: 48px 40px;
-            max-width: 420px;
-            text-align: center;
-            box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.55);
-            position: relative;
-        }
-
-        .auth-card::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: var(--airmail-stripe);
-            border-radius: var(--radius-l) var(--radius-l) 0 0;
-        }
-
-        .spinner {
-            width: 48px;
-            height: 48px;
-            border: 3px solid rgba(243, 236, 221, 0.2);
-            border-top-color: var(--air-gold);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 28px;
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        .auth-card h3 {
-            font-family: var(--font-display);
-            font-weight: 700;
-            font-size: 1.4rem;
-            color: var(--text-on-ink);
-            margin: 0 0 8px;
-        }
-
-        .auth-card p {
-            color: var(--text-on-ink-muted);
-            margin: 0;
-            font-size: 0.96rem;
-            line-height: 1.5;
-        }
-
-        @media (max-width: 480px) {
-            .auth-card {
-                padding: 36px 24px;
-            }
-
-            .auth-card h3 {
-                font-size: 1.2rem;
-            }
-
-            .spinner {
-                width: 40px;
-                height: 40px;
-                border-width: 2px;
-            }
-        }
-    </style>
 </head>
 <body>
-<div class="verify-container">
-    <div class="auth-card">
-        <div class="spinner"></div>
-        <h3>Verifying Session</h3>
-        <p>Finalizing verification, please wait...</p>
-    </div>
-</div>
 
-<script>
-    function getHashParams() {
-        const hash = window.location.hash.substring(1);
-        const params = new URLSearchParams(hash);
+    <main class="container" style="max-width: 500px; padding-top: 5rem; text-align: center;">
+        <article>
+            <header>
+                <h3 aria-busy="true">Verifying Session</h3>
+            </header>
+            <p>Finalizing authentication, please wait a moment...</p>
+        </article>
+    </main>
 
-        return {
-            access_token: params.get("access_token"),
-            refresh_token: params.get("refresh_token"),
-            expires_in: params.get("expires_in") || 3600
-        };
-    }
-
-    window.addEventListener("DOMContentLoaded", () => {
-        if (window.location.hash) {
-            const tokens = getHashParams();
-
-            htmx.ajax('POST', '/auth/session-callback', {
-                values: tokens
-            });
-        } else {
-            window.location.href = "/auth/login";
+    <script>
+        function getHashParams() {
+            const hash = window.location.hash.substring(1);
+            const params = new URLSearchParams(hash);
+            return {
+                access_token: params.get("access_token"),
+                refresh_token: params.get("refresh_token"),
+                expires_in: params.get("expires_in") || 3600
+            };
         }
-    });
-</script>
+
+        window.addEventListener("DOMContentLoaded", () => {
+            if (window.location.hash) {
+                const tokens = getHashParams();
+                htmx.ajax('POST', '/auth/session-callback', { values: tokens });
+            } else {
+                window.location.href = "/auth/login";
+            }
+        });
+    </script>
 </body>
 </html>

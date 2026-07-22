@@ -2,7 +2,7 @@ package in.hridaykh.formbox.constant;
 
 public interface ViewRegistry {
 	String INDEX = "index";
-	String DASHBOARD = "dashboard";
+	String DASHBOARD = "pages/index";
 
 	interface Auth {
 		String LOGIN = "auth/login";
@@ -18,7 +18,7 @@ public interface ViewRegistry {
 	}
 
 	interface Fragments {
-		String FORM_ROWS = "fragments/form-list :: form-rows";
-		String SETTINGS = "dashboard/manage-form :: settings-panel";
+		String FORM_ROWS = "fragments/submissions/table-row :: form-rows";
+		String SETTINGS = "fragments/manage/tab-settings :: settings-panel";
 	}
 }
