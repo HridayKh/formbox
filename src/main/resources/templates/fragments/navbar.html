@@ -1,0 +1,40 @@
+<!--
+  =============================================================================
+  MODEL CONTRACT: Fragment - Navbar (`fragments/navbar.html`)
+  -----------------------------------------------------------------------------
+  Required Model Attributes:
+  - ${user}: io.github.jan.supabase.auth.jwt.JwtPayload (email, sub)
+  - ${showUpgradeCta}: boolean - indicate if Upgrade button should render
+  - ${showManageSubscription}: boolean - indicate if Manage Subscription link should render
+  - ${balanceLeft}: Long - remaining submission balance count
+  =============================================================================
+-->
+<nav th:fragment="navbar" aria-label="Primary Navigation">
+    <ul>
+        <li>
+            <a href="/" aria-label="Formbox Home">
+                <strong>Formbox</strong>
+            </a>
+        </li>
+        <li>
+            <a href="/dashboard">Dashboard</a>
+        </li>
+    </ul>
+    <ul>
+        <li th:if="${balanceLeft != null}">
+            <kbd th:text="${balanceLeft} + ' Submissions Left'">0 Submissions Left</kbd>
+        </li>
+        <li th:if="${user != null}">
+            <small th:text="${user.email}">user@domain.com</small>
+        </li>
+        <li th:if="${showUpgradeCta}">
+            <a href="/billing/upgrade" role="button" class="contrast">Upgrade Plan</a>
+        </li>
+        <li th:if="${showManageSubscription}">
+            <a href="/billing/portal" role="button" class="secondary">Manage Subscription</a>
+        </li>
+        <li>
+            <button hx-post="/auth/logout" hx-target="body" class="outline">Logout</button>
+        </li>
+    </ul>
+</nav>

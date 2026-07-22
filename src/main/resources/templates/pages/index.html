@@ -1,0 +1,107 @@
+<!--
+  =============================================================================
+  MODEL CONTRACT: Page - Dashboard Index (`pages/index.html`)
+  -----------------------------------------------------------------------------
+  Required Model Attributes:
+  - ${user}: io.github.jan.supabase.auth.jwt.JwtPayload (email, sub)
+  - ${balanceLeft}: Long - remaining submission balance count
+  - ${showUpgradeCta}: boolean - flag indicating upgrade CTA visibility
+  - ${showManageSubscription}: boolean - flag indicating paid user portal link
+  - ${redirectUrlNotAllowed}: boolean - flag indicating custom redirect restriction
+  - ${msg}: String - optional notification alert message
+  =============================================================================
+-->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      lang="en"
+      th:replace="~{layouts/main :: layout(~{::title}, ~{::#dashboard-content})}">
+<head>
+    <title>Form Endpoints Dashboard | Formbox</title>
+</head>
+<body>
+
+<div id="dashboard-content">
+
+    <!-- Page Header & Action Bar Card -->
+    <article style="margin-bottom: 2.5rem; padding: 2rem;">
+        <header class="grid" style="align-items: center; margin-bottom: 0;">
+            <div>
+                <h1 style="margin-bottom: 0.5rem;">Form Endpoints</h1>
+                <p style="margin-bottom: 0;">Welcome back! You have <strong th:text="${balanceLeft}">0</strong> submissions remaining in your billing period.</p>
+            </div>
+            <div style="text-align: right;">
+                <button onclick="document.getElementById('create-form-modal').showModal()" class="contrast" style="margin-bottom: 0;">+ New Form Endpoint</button>
+            </div>
+        </header>
+    </article>
+
+    <!-- Create Form Modal -->
+    <dialog id="create-form-modal">
+        <article style="min-width: 480px; padding: 2rem;">
+            <header style="margin-bottom: 1.5rem;">
+                <button aria-label="Close" rel="prev" onclick="document.getElementById('create-form-modal').close()"></button>
+                <h3>Create New Form Endpoint</h3>
+            </header>
+            <form hx-post="/forms"
+                  hx-target="#endpoints-tbody"
+                  hx-swap="beforeend"
+                  onsubmit="document.getElementById('create-form-modal').close()">
+                <fieldset style="margin-bottom: 2rem;">
+                    <label for="form-name" style="margin-bottom: 1.25rem;">
+                        Form Name
+                        <input id="form-name" name="name" type="text" placeholder="e.g. Contact Form" required style="margin-top: 0.5rem;"/>
+                    </label>
+
+                    <label for="form-redirect">
+                        Custom Redirect URL <em>(Optional)</em>
+                        <small th:if="${redirectUrlNotAllowed}">
+                            <mark>🔒 Pro Feature</mark>
+                        </small>
+                        <input id="form-redirect" name="redirectUrl" type="url"
+                               placeholder="https://yoursite.com/thank-you"
+                               th:disabled="${redirectUrlNotAllowed}"
+                               style="margin-top: 0.5rem;"/>
+                    </label>
+
+                    <p th:if="${redirectUrlNotAllowed}" style="margin-top: 0.5rem;">
+                        <small>
+                            Custom redirects are restricted on your current plan.
+                            <a href="#" onclick="openUpgradeModal(); return false;">Upgrade plan</a> to enable custom redirect handling.
+                        </small>
+                    </p>
+                </fieldset>
+                <footer class="grid" style="margin-top: 1.5rem;">
+                    <button type="button" class="secondary" onclick="document.getElementById('create-form-modal').close()">Cancel</button>
+                    <button type="submit" class="contrast">Create Endpoint</button>
+                </footer>
+            </form>
+        </article>
+    </dialog>
+
+    <!-- Form Endpoints Table Card -->
+    <article style="padding: 2rem;">
+        <header style="margin-bottom: 1.5rem;">
+            <h2>Active Endpoints</h2>
+            <p>List of all registered HTML form endpoints for your account.</p>
+        </header>
+        <table role="grid">
+            <thead>
+            <tr>
+                <th scope="col">Form Name</th>
+                <th scope="col">Endpoint Path</th>
+                <th scope="col">Status</th>
+                <th scope="col">Actions</th>
+            </tr>
+            </thead>
+            <tbody id="endpoints-tbody" hx-get="/forms" hx-trigger="load" hx-swap="innerHTML">
+            <tr>
+                <td colspan="4" aria-busy="true">Loading endpoints...</td>
+            </tr>
+            </tbody>
+        </table>
+    </article>
+
+</div>
+
+</body>
+</html>

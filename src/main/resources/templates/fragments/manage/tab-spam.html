@@ -1,0 +1,56 @@
+<!--
+  =============================================================================
+  MODEL CONTRACT: Fragment - Tab Spam Submissions (`fragments/manage/tab-spam.html`)
+  -----------------------------------------------------------------------------
+  Required Model Attributes:
+  - ${form}: in.hridaykh.formbox.model.dto.CachedForm
+      id (UUID), name (String)
+  - ${entitlements}: in.hridaykh.formbox.billing.model.Entitlements
+  - ${spamSubmissions}: List<in.hridaykh.formbox.model.dto.SubmissionItem>
+      id (UUID), payload (Map<String, String>), senderIp (String), createdAt (OffsetDateTime), isSpam (boolean)
+  =============================================================================
+-->
+<div th:fragment="tab-spam" id="tab-spam-content">
+
+    <article>
+        <header>
+            <h3>Spam Submissions Log</h3>
+            <p>Submissions flagged as automated spam by honeypot or bot protection mechanisms.</p>
+        </header>
+
+        <!-- Empty State -->
+        <div th:if="${#lists.isEmpty(spamSubmissions)}">
+            <p><em>🎉 No spam submissions detected. Your anti-spam filters are keeping your inbox clean!</em></p>
+        </div>
+
+        <!-- Spam Submissions Table -->
+        <table role="grid" th:unless="${#lists.isEmpty(spamSubmissions)}">
+            <thead>
+            <tr>
+                <th scope="col">Date & Time</th>
+                <th scope="col">Sender IP</th>
+                <th scope="col">Flagged Payload Data</th>
+            </tr>
+            </thead>
+            <tbody id="spam-submissions-tbody">
+            <tr th:each="sub : ${spamSubmissions}">
+                <td>
+                    <small th:text="${#temporals.format(sub.createdAt, 'yyyy-MM-dd HH:mm:ss')}">2026-07-22 21:00:00</small>
+                </td>
+                <td>
+                    <kbd th:text="${sub.senderIp}">127.0.0.1</kbd>
+                </td>
+                <td>
+                    <ul>
+                        <li th:each="entry : ${sub.payload}">
+                            <strong th:text="${entry.key} + ':'">Field:</strong>
+                            <span th:text="${entry.value}">Value</span>
+                        </li>
+                    </ul>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </article>
+
+</div>

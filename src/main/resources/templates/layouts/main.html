@@ -1,0 +1,68 @@
+<!--
+  =============================================================================
+  MODEL CONTRACT: Layout - Main (`layouts/main.html`)
+  -----------------------------------------------------------------------------
+  Required Model Attributes:
+  - ${user}: io.github.jan.supabase.auth.jwt.JwtPayload (sub, email, etc.)
+  - ${showUpgradeCta}: boolean - flag indicating whether to show upgrade button
+  - ${showManageSubscription}: boolean - flag indicating paid user subscription portal access
+  - ${balanceLeft}: Long - remaining submission balance
+  - ${entitlements}: in.hridaykh.formbox.billing.model.Entitlements (optional context)
+  - ${msg}: String (optional alert notification message)
+  =============================================================================
+-->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en" th:fragment="layout(title, content)">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title th:replace="${title}">Formbox | Hypermedia Dashboard</title>
+    <meta name="description" content="Formbox - Form backend for static sites powered by Cloudflare edge."/>
+    <!-- PicoCSS v2 Pumpkin Theme -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.pumpkin.min.css"/>
+    <!-- HTMX Library -->
+    <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.10/dist/htmx.min.js"></script>
+</head>
+<body>
+
+    <!-- Global Header Navigation -->
+    <header class="container" th:replace="~{fragments/navbar :: navbar}"></header>
+
+    <!-- Alert Notification if present -->
+    <div class="container" th:if="${msg}">
+        <mark th:text="${msg}">Notification message</mark>
+    </div>
+
+    <!-- Main Container -->
+    <main class="container" th:replace="${content}">
+        <p>Default Layout Content</p>
+    </main>
+
+    <!-- Global Upgrade Modal -->
+    <div th:replace="~{fragments/upgrade-modal :: upgrade-modal}"></div>
+
+    <!-- Global Footer -->
+    <footer class="container">
+        <small>&copy; 2026 Formbox. Edge-powered form management backend.</small>
+    </footer>
+
+    <script>
+        function openUpgradeModal() {
+            const dialog = document.getElementById('upgrade-modal');
+            if (dialog && typeof dialog.showModal === 'function') {
+                dialog.showModal();
+            } else if (dialog) {
+                dialog.setAttribute('open', 'true');
+            }
+        }
+        function closeUpgradeModal() {
+            const dialog = document.getElementById('upgrade-modal');
+            if (dialog && typeof dialog.close === 'function') {
+                dialog.close();
+            } else if (dialog) {
+                dialog.removeAttribute('open');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,259 @@
+<!--
+  =============================================================================
+  MODEL CONTRACT: Fragment - Tab Settings (`fragments/manage/tab-settings.html`)
+  -----------------------------------------------------------------------------
+  Required Model Attributes:
+  - ${form}: in.hridaykh.formbox.model.dto.CachedForm
+      id (UUID), name (String), redirectUrl (String), isActive (boolean), turnstileSecretKey (String),
+      honeypotName (String), rateLimitRpm (int), allowFiles (boolean), allowHtmx (boolean),
+      allowJson (boolean), fieldValidations (List<String>)
+  - ${entitlements}: in.hridaykh.formbox.billing.model.Entitlements
+      tierName (String), tierPriority (int), refreshAt (Instant), recurringInterval (String),
+      submissionsLimit (long), formsLimit (long), storageLimitBytes (long),
+      discordNotifsAllowed (boolean), turnstileAllowed (boolean), redirectUrlsAllowed (boolean),
+      jsonFormsAllowed (boolean), fileUploadsAllowed (boolean), fieldValidationsAllowed (boolean),
+      slackNotifsAllowed (boolean), telegramNotifsAllowed (boolean), customWebhooksAllowed (boolean),
+      csvExportsAllowed (boolean), emailDigestsAllowed (boolean), altchaAllowed (boolean),
+      maxRateLimitRpm (int), maxFileSizeBytes (long)
+  - ${message}: String - optional success alert message
+  - ${warnings}: List<String> - optional warning messages array
+  - ${redirectUrlNotAllowed}: boolean - boolean flag
+  - ${turnstileNotAllowed}: boolean - boolean flag
+  - ${fieldValidationsNotAllowed}: boolean - boolean flag
+  - ${jsonFormsNotAllowed}: boolean - boolean flag
+  - ${fileUploadsNotAllowed}: boolean - boolean flag
+  =============================================================================
+-->
+<div th:fragment="settings-panel" id="settings-panel-container" style="padding: 1.5rem 0;">
+
+    <!-- Feedback Alerts -->
+    <mark th:if="${message}" th:text="${message}" style="margin-bottom: 1.5rem; display: block;">Settings saved successfully!</mark>
+
+    <div th:if="${warnings != null and !#lists.isEmpty(warnings)}" style="margin-bottom: 1.5rem;">
+        <article th:each="warn : ${warnings}" style="margin-bottom: 1rem; padding: 1rem;">
+            <p><mark th:text="${warn}">Warning message</mark></p>
+            <button class="secondary" onclick="openUpgradeModal()">Upgrade Plan →</button>
+        </article>
+    </div>
+
+    <!-- Main Settings Form -->
+    <form th:attr="hx-put=|/forms/${form.id}|" hx-target="#settings-panel-container" hx-swap="innerHTML">
+
+        <!-- SECTION 1: GENERAL SETTINGS -->
+        <article style="margin-bottom: 2rem; padding: 2rem;">
+            <header style="margin-bottom: 1.5rem;">
+                <h3>⚙️ General Configuration</h3>
+            </header>
+
+            <fieldset>
+                <label for="form-name-input" style="margin-bottom: 1.5rem;">
+                    Form Name
+                    <input type="text" id="form-name-input" name="name" th:value="${form.name}" required style="margin-top: 0.5rem;"/>
+                </label>
+
+                <label for="form-active-toggle" style="margin-bottom: 1.5rem;">
+                    <input type="checkbox" id="form-active-toggle" name="isActive" value="true"
+                           th:checked="${form.isActive}"/>
+                    Endpoint is Active & Accepting Submissions
+                </label>
+
+                <!-- Redirect URLs (Gated by entitlements.redirectUrlsAllowed) -->
+                <label for="redirectUrl" style="margin-bottom: 1rem;">
+                    Custom Redirect URL
+                    <small th:unless="${entitlements.redirectUrlsAllowed()}">
+                        <mark>🔒 Upgrade Required</mark>
+                        <button type="button" class="outline secondary" onclick="openUpgradeModal()" style="margin-left: 0.5rem; padding: 0.2rem 0.6rem;">[Upgrade]</button>
+                    </small>
+                    <input type="url" id="redirectUrl" name="redirectUrl"
+                           th:value="${form.redirectUrl}"
+                           placeholder="https://yoursite.com/thank-you"
+                           th:disabled="${!entitlements.redirectUrlsAllowed()}"
+                           style="margin-top: 0.5rem;"/>
+                </label>
+            </fieldset>
+        </article>
+
+        <!-- SECTION 2: SECURITY, SPAM & RATE LIMITS -->
+        <article style="margin-bottom: 2rem; padding: 2rem;">
+            <header style="margin-bottom: 1.5rem;">
+                <h3>🛡️ Security, Spam & Rate Limits</h3>
+            </header>
+
+            <fieldset>
+                <!-- Honeypot -->
+                <label for="honeypotName" style="margin-bottom: 1.5rem;">
+                    Honeypot Trap Field Name
+                    <input type="text" id="honeypotName" name="honeypotName"
+                           th:value="${form.honeypotName}" placeholder="_gotcha" required style="margin-top: 0.5rem;"/>
+                    <small>Hidden field in your HTML form. Bots filling this field will be silently flagged as spam.</small>
+                </label>
+
+                <!-- Turnstile (Gated by entitlements.turnstileAllowed) -->
+                <label for="turnstileSecretKey" style="margin-bottom: 1.5rem;">
+                    Cloudflare Turnstile Secret Key
+                    <small th:unless="${entitlements.turnstileAllowed()}">
+                        <mark>🔒 Upgrade Required</mark>
+                        <button type="button" class="outline secondary" onclick="openUpgradeModal()" style="margin-left: 0.5rem; padding: 0.2rem 0.6rem;">[Upgrade]</button>
+                    </small>
+                    <input type="password" id="turnstileSecretKey" name="turnstileSecretKey"
+                           th:value="${form.turnstileSecretKey}" placeholder="0x4AAAAAA..."
+                           th:disabled="${!entitlements.turnstileAllowed()}"
+                           style="margin-top: 0.5rem;"/>
+                </label>
+
+                <!-- Altcha Anti-Spam (Gated by entitlements.altchaAllowed) -->
+                <label for="altcha-enabled" style="margin-bottom: 1.5rem;">
+                    <input type="checkbox" id="altcha-enabled" name="altchaEnabled" value="true"
+                           th:disabled="${!entitlements.altchaAllowed()}"/>
+                    Enable Altcha Proof-of-Work Challenge
+                    <small th:unless="${entitlements.altchaAllowed()}">
+                        <mark>🔒 Upgrade Required</mark>
+                        <button type="button" class="outline secondary" onclick="openUpgradeModal()" style="margin-left: 0.5rem; padding: 0.2rem 0.6rem;">[Upgrade]</button>
+                    </small>
+                </label>
+
+                <!-- Rate Limit RPM -->
+                <label for="rateLimitRpm">
+                    Rate Limit (Requests Per Minute)
+                    <small th:text="'(Tier Max: ' + ${entitlements.maxRateLimitRpm()} + ' RPM)'">(Tier Max: 20 RPM)</small>
+                    <input type="number" id="rateLimitRpm" name="rateLimitRpm"
+                           th:value="${form.rateLimitRpm}" min="1"
+                           th:max="${entitlements.maxRateLimitRpm()}" required style="margin-top: 0.5rem;"/>
+                </label>
+            </fieldset>
+        </article>
+
+        <!-- SECTION 3: CAPABILITIES & DATA FORMAT CONTROLS -->
+        <article style="margin-bottom: 2rem; padding: 2rem;">
+            <header style="margin-bottom: 1.5rem;">
+                <h3>🎛️ Capabilities & Format Controls</h3>
+            </header>
+
+            <fieldset>
+                <!-- File Uploads (Gated by entitlements.fileUploadsAllowed) -->
+                <label for="allowFiles" style="margin-bottom: 1.5rem;">
+                    <input type="checkbox" id="allowFiles" name="allowFiles" value="true"
+                           th:checked="${form.allowFiles}"
+                           th:disabled="${!entitlements.fileUploadsAllowed()}"/>
+                    Allow File Attachment Uploads
+                    <small th:text="'(Max File Size: ' + ${#numbers.formatDecimal(entitlements.maxFileSizeBytes() / (1024.0 * 1024.0), 1, 1)} + ' MB)'">(Max 10 MB)</small>
+                    <small th:unless="${entitlements.fileUploadsAllowed()}">
+                        <mark>🔒 Upgrade Required</mark>
+                        <button type="button" class="outline secondary" onclick="openUpgradeModal()" style="margin-left: 0.5rem; padding: 0.2rem 0.6rem;">[Upgrade]</button>
+                    </small>
+                </label>
+
+                <!-- HTMX Submissions -->
+                <label for="allowHtmx" style="margin-bottom: 1.5rem;">
+                    <input type="checkbox" id="allowHtmx" name="allowHtmx" value="true"
+                           th:checked="${form.allowHtmx}"/>
+                    Allow AJAX / HTMX Form Submissions
+                </label>
+
+                <!-- JSON API Forms (Gated by entitlements.jsonFormsAllowed) -->
+                <label for="allowJson" style="margin-bottom: 1.5rem;">
+                    <input type="checkbox" id="allowJson" name="allowJson" value="true"
+                           th:checked="${form.allowJson}"
+                           th:disabled="${!entitlements.jsonFormsAllowed()}"/>
+                    Allow JSON API Submissions (Content-Type: application/json)
+                    <small th:unless="${entitlements.jsonFormsAllowed()}">
+                        <mark>🔒 Upgrade Required</mark>
+                        <button type="button" class="outline secondary" onclick="openUpgradeModal()" style="margin-left: 0.5rem; padding: 0.2rem 0.6rem;">[Upgrade]</button>
+                    </small>
+                </label>
+
+                <!-- Email Digests (Gated by entitlements.emailDigestsAllowed) -->
+                <label for="email-digests-enabled">
+                    <input type="checkbox" id="email-digests-enabled" name="emailDigestsEnabled" value="true"
+                           th:disabled="${!entitlements.emailDigestsAllowed()}"/>
+                    Enable Daily Email Digests
+                    <small th:unless="${entitlements.emailDigestsAllowed()}">
+                        <mark>🔒 Upgrade Required</mark>
+                        <button type="button" class="outline secondary" onclick="openUpgradeModal()" style="margin-left: 0.5rem; padding: 0.2rem 0.6rem;">[Upgrade]</button>
+                    </small>
+                </label>
+            </fieldset>
+        </article>
+
+        <!-- SECTION 4: INTEGRATIONS (DISCORD, SLACK, TELEGRAM, WEBHOOKS) -->
+        <article style="margin-bottom: 2rem; padding: 2rem;">
+            <header style="margin-bottom: 1.5rem;">
+                <h3>🔌 Notification Integrations</h3>
+            </header>
+
+            <fieldset>
+                <!-- Discord Notifications (Gated by entitlements.discordNotifsAllowed) -->
+                <label for="discordNotifs" style="margin-bottom: 1.5rem;">
+                    Discord Webhook Notifications
+                    <input type="checkbox" id="discordNotifs" name="discordNotifs" value="true"
+                           th:disabled="${!entitlements.discordNotifsAllowed()}"/>
+                    <small th:unless="${entitlements.discordNotifsAllowed()}">
+                        <mark>🔒 Upgrade Required</mark>
+                        <button type="button" class="outline secondary" onclick="openUpgradeModal()" style="margin-left: 0.5rem; padding: 0.2rem 0.6rem;">[Upgrade]</button>
+                    </small>
+                </label>
+
+                <!-- Slack Notifications (Gated by entitlements.slackNotifsAllowed) -->
+                <label for="slackNotifs" style="margin-bottom: 1.5rem;">
+                    Slack Channel Notifications
+                    <input type="checkbox" id="slackNotifs" name="slackNotifs" value="true"
+                           th:disabled="${!entitlements.slackNotifsAllowed()}"/>
+                    <small th:unless="${entitlements.slackNotifsAllowed()}">
+                        <mark>🔒 Upgrade Required</mark>
+                        <button type="button" class="outline secondary" onclick="openUpgradeModal()" style="margin-left: 0.5rem; padding: 0.2rem 0.6rem;">[Upgrade]</button>
+                    </small>
+                </label>
+
+                <!-- Telegram Notifications (Gated by entitlements.telegramNotifsAllowed) -->
+                <label for="telegramNotifs" style="margin-bottom: 1.5rem;">
+                    Telegram Bot Notifications
+                    <input type="checkbox" id="telegramNotifs" name="telegramNotifs" value="true"
+                           th:disabled="${!entitlements.telegramNotifsAllowed()}"/>
+                    <small th:unless="${entitlements.telegramNotifsAllowed()}">
+                        <mark>🔒 Upgrade Required</mark>
+                        <button type="button" class="outline secondary" onclick="openUpgradeModal()" style="margin-left: 0.5rem; padding: 0.2rem 0.6rem;">[Upgrade]</button>
+                    </small>
+                </label>
+
+                <!-- Custom Webhooks (Gated by entitlements.customWebhooksAllowed) -->
+                <label for="customWebhooks">
+                    Custom Webhook Dispatch Endpoint
+                    <input type="checkbox" id="customWebhooks" name="customWebhooks" value="true"
+                           th:disabled="${!entitlements.customWebhooksAllowed()}"/>
+                    <small th:unless="${entitlements.customWebhooksAllowed()}">
+                        <mark>🔒 Upgrade Required</mark>
+                        <button type="button" class="outline secondary" onclick="openUpgradeModal()" style="margin-left: 0.5rem; padding: 0.2rem 0.6rem;">[Upgrade]</button>
+                    </small>
+                </label>
+            </fieldset>
+        </article>
+
+        <!-- SECTION 5: FIELD VALIDATION RULES -->
+        <article style="margin-bottom: 2rem; padding: 2rem;">
+            <header style="margin-bottom: 1.5rem;">
+                <h3>📝 Custom Field Validation Rules</h3>
+                <p><small>Define validation rules (one rule per line, e.g. <code>email:required</code> or <code>age:min:18</code>)</small></p>
+            </header>
+
+            <fieldset>
+                <label for="fieldValidationsInput">
+                    Validation Rules
+                    <small th:unless="${entitlements.fieldValidationsAllowed()}">
+                        <mark>🔒 Upgrade Required</mark>
+                        <button type="button" class="outline secondary" onclick="openUpgradeModal()" style="margin-left: 0.5rem; padding: 0.2rem 0.6rem;">[Upgrade]</button>
+                    </small>
+                    <textarea id="fieldValidationsInput" name="fieldValidationsRaw" rows="4"
+                              placeholder="email:required&#10;age:min:18"
+                              th:text="${form.fieldValidations != null ? T(java.lang.String).join('\n', form.fieldValidations) : ''}"
+                              th:disabled="${!entitlements.fieldValidationsAllowed()}"
+                              style="margin-top: 0.5rem;"></textarea>
+                </label>
+            </fieldset>
+        </article>
+
+        <footer style="text-align: right; margin-top: 2rem;">
+            <button type="submit" class="contrast" style="padding: 0.8rem 2rem;">Save Form Configurations</button>
+        </footer>
+    </form>
+
+</div>

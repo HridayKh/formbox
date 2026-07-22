@@ -1,0 +1,73 @@
+<!--
+  =============================================================================
+  MODEL CONTRACT: Fragment - Tab Valid Submissions (`fragments/manage/tab-valid.html`)
+  -----------------------------------------------------------------------------
+  Required Model Attributes:
+  - ${form}: in.hridaykh.formbox.model.dto.CachedForm
+      id (UUID), name (String)
+  - ${entitlements}: in.hridaykh.formbox.billing.model.Entitlements
+      csvExportsAllowed (boolean)
+  - ${submissions}: List<in.hridaykh.formbox.model.dto.SubmissionItem>
+      id (UUID), payload (Map<String, String>), senderIp (String), createdAt (OffsetDateTime), isSpam (boolean)
+  =============================================================================
+-->
+<div th:fragment="tab-valid" id="tab-valid-content">
+
+    <!-- Action Bar & CSV Export -->
+    <article>
+        <header class="grid">
+            <div>
+                <h3>Valid Form Submissions</h3>
+                <p>Showing verified, non-spam submissions collected by this endpoint.</p>
+            </div>
+            <div>
+                <!-- CSV Export Button Gated by csvExportsAllowed -->
+                <a th:if="${entitlements.csvExportsAllowed}"
+                   th:href="@{/forms/{id}/export(id=${form.id}, type='csv')}"
+                   role="button" class="outline">
+                    📥 Export CSV
+                </a>
+                <button th:unless="${entitlements.csvExportsAllowed}"
+                        class="secondary outline"
+                        onclick="openUpgradeModal()">
+                    🔒 Export CSV (Upgrade Required)
+                </button>
+            </div>
+        </header>
+
+        <!-- Empty State -->
+        <div th:if="${#lists.isEmpty(submissions)}">
+            <p><em>No submissions received yet. Legitimate responses will appear here dynamically.</em></p>
+        </div>
+
+        <!-- Dynamic Submissions Table -->
+        <table role="grid" th:unless="${#lists.isEmpty(submissions)}">
+            <thead>
+            <tr>
+                <th scope="col">Date & Time</th>
+                <th scope="col">Sender IP</th>
+                <th scope="col">Payload Fields & Values</th>
+            </tr>
+            </thead>
+            <tbody id="valid-submissions-tbody">
+            <tr th:each="sub : ${submissions}">
+                <td>
+                    <small th:text="${#temporals.format(sub.createdAt, 'yyyy-MM-dd HH:mm:ss')}">2026-07-22 21:00:00</small>
+                </td>
+                <td>
+                    <kbd th:text="${sub.senderIp}">127.0.0.1</kbd>
+                </td>
+                <td>
+                    <ul>
+                        <li th:each="entry : ${sub.payload}">
+                            <strong th:text="${entry.key} + ':'">Field:</strong>
+                            <span th:text="${entry.value}">Value</span>
+                        </li>
+                    </ul>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </article>
+
+</div>

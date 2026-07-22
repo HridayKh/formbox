@@ -1,0 +1,117 @@
+<!--
+  =============================================================================
+  MODEL CONTRACT: Page - Manage Single Form (`pages/manage-form.html`)
+  -----------------------------------------------------------------------------
+  Required Model Attributes:
+  - ${form}: in.hridaykh.formbox.model.dto.CachedForm
+      id (UUID), tenantId (UUID), name (String), redirectUrl (String), isActive (boolean),
+      turnstileSecretKey (String), honeypotName (String), rateLimitRpm (int),
+      allowFiles (boolean), allowHtmx (boolean), allowJson (boolean), fieldValidations (List<String>)
+  - ${entitlements}: in.hridaykh.formbox.billing.model.Entitlements
+  - ${submissions}: List<in.hridaykh.formbox.model.dto.SubmissionItem>
+  - ${spamSubmissions}: List<in.hridaykh.formbox.model.dto.SubmissionItem>
+  - ${warningMessage}: String - optional warning message string
+  - ${redirectUrlNotAllowed}: boolean
+  - ${fieldValidationsNotAllowed}: boolean
+  - ${turnstileNotAllowed}: boolean
+  - ${jsonFormsNotAllowed}: boolean
+  - ${fileUploadsNotAllowed}: boolean
+  =============================================================================
+-->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      lang="en"
+      th:replace="~{layouts/main :: layout(~{::title}, ~{::#manage-form-content})}">
+<head>
+    <title th:text="'Manage Endpoint: ' + ${form.name} + ' | Formbox'">Manage Form | Formbox</title>
+</head>
+<body>
+
+<div id="manage-form-content">
+
+    <!-- Back Navigation & Header Card -->
+    <article style="margin-bottom: 2rem; padding: 2rem;">
+        <header style="margin-bottom: 0;">
+            <p style="margin-bottom: 0.5rem;"><a href="/dashboard">← Back to Dashboard</a></p>
+            <h1 th:text="'Managing: ' + ${form.name}" style="margin-bottom: 0.5rem;">Managing Form Endpoint</h1>
+            <p style="margin-bottom: 0;">
+                Endpoint Public Path: <code>/f/<span th:text="${form.id}">uuid</span></code>
+            </p>
+        </header>
+
+        <!-- Warning Message Banner -->
+        <mark th:if="${warningMessage}" th:text="${warningMessage}" style="margin-top: 1rem; display: block;">Warning banner</mark>
+    </article>
+
+    <!-- 4-Tab Navigation Controls -->
+    <nav aria-label="Form Console Tabs" style="margin-bottom: 2rem;">
+        <ul>
+            <li>
+                <button class="contrast" id="btn-tab-overview" onclick="switchFormTab('tab-overview-pane', 'btn-tab-overview')">
+                    📊 Overview
+                </button>
+            </li>
+            <li>
+                <button class="secondary outline" id="btn-tab-valid" onclick="switchFormTab('tab-valid-pane', 'btn-tab-valid')">
+                    ✅ Valid Submissions (<span th:text="${#lists.size(submissions)}">0</span>)
+                </button>
+            </li>
+            <li>
+                <button class="secondary outline" id="btn-tab-spam" onclick="switchFormTab('tab-spam-pane', 'btn-tab-spam')">
+                    🛡️ Spam Submissions (<span th:text="${#lists.size(spamSubmissions)}">0</span>)
+                </button>
+            </li>
+            <li>
+                <button class="secondary outline" id="btn-tab-settings" onclick="switchFormTab('tab-settings-pane', 'btn-tab-settings')">
+                    ⚙️ Form Settings
+                </button>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Tab 1: Overview -->
+    <div id="tab-overview-pane" class="form-tab-pane" style="margin-bottom: 2rem;">
+        <div th:replace="~{fragments/manage/tab-overview :: tab-overview}"></div>
+    </div>
+
+    <!-- Tab 2: Valid Submissions -->
+    <div id="tab-valid-pane" class="form-tab-pane" style="display: none; margin-bottom: 2rem;">
+        <div th:replace="~{fragments/manage/tab-valid :: tab-valid}"></div>
+    </div>
+
+    <!-- Tab 3: Spam Submissions -->
+    <div id="tab-spam-pane" class="form-tab-pane" style="display: none; margin-bottom: 2rem;">
+        <div th:replace="~{fragments/manage/tab-spam :: tab-spam}"></div>
+    </div>
+
+    <!-- Tab 4: Exhaustive Form Settings -->
+    <div id="tab-settings-pane" class="form-tab-pane" style="display: none; margin-bottom: 2rem;">
+        <div th:replace="~{fragments/manage/tab-settings :: settings-panel}"></div>
+    </div>
+
+    <script>
+        function switchFormTab(paneId, btnId) {
+            // Hide all tab panes
+            document.querySelectorAll('.form-tab-pane').forEach(pane => pane.style.display = 'none');
+
+            // Reset tab button styles
+            const buttons = ['btn-tab-overview', 'btn-tab-valid', 'btn-tab-spam', 'btn-tab-settings'];
+            buttons.forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) {
+                    btn.className = 'secondary outline';
+                }
+            });
+
+            // Show selected pane and set button active style
+            const selectedPane = document.getElementById(paneId);
+            const selectedBtn = document.getElementById(btnId);
+            if (selectedPane) selectedPane.style.display = 'block';
+            if (selectedBtn) selectedBtn.className = 'contrast';
+        }
+    </script>
+
+</div>
+
+</body>
+</html>

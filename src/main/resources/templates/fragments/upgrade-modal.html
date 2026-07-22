@@ -1,0 +1,35 @@
+<!--
+  =============================================================================
+  MODEL CONTRACT: Fragment - Upgrade Modal (`fragments/upgrade-modal.html`)
+  -----------------------------------------------------------------------------
+  Required Model Attributes:
+  - ${entitlements}: in.hridaykh.formbox.billing.model.Entitlements (tierName, tierPriority)
+  =============================================================================
+-->
+<dialog id="upgrade-modal" th:fragment="upgrade-modal">
+    <article>
+        <header>
+            <button aria-label="Close" rel="prev" onclick="closeUpgradeModal()"></button>
+            <h3>🚀 Feature Locked - Upgrade Required</h3>
+        </header>
+        <p>
+            This feature is unavailable on your current tier
+            <strong th:text="${entitlements != null ? entitlements.tierName : 'Free'}">Free</strong>.
+        </p>
+        <p>
+            Upgrade your Formbox subscription to unlock advanced capabilities including:
+        </p>
+        <ul>
+            <li>Custom Redirect URLs & Custom Webhooks</li>
+            <li>Cloudflare Turnstile & Altcha Bot Protection</li>
+            <li>File Attachments & File Size Quota Extensions</li>
+            <li>Custom Field Validation Rules</li>
+            <li>Slack, Discord & Telegram Instant Notifications</li>
+            <li>CSV Data Exports & Automated Email Digests</li>
+        </ul>
+        <footer>
+            <button class="secondary" onclick="closeUpgradeModal()">Cancel</button>
+            <a href="/billing/upgrade" role="button" class="contrast">Upgrade Now →</a>
+        </footer>
+    </article>
+</dialog>

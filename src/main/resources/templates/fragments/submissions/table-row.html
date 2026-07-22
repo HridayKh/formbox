@@ -1,0 +1,38 @@
+<!--
+  =============================================================================
+  MODEL CONTRACT: Fragment - Submissions Table Row (`fragments/submissions/table-row.html`)
+  -----------------------------------------------------------------------------
+  Required Model Attributes:
+  - ${forms}: List<in.hridaykh.formbox.model.dto.CachedForm>
+      id (UUID), tenantId (UUID), name (String), redirectUrl (String), isActive (boolean)
+  =============================================================================
+-->
+<th:block th:fragment="form-rows">
+    <tr th:each="form : ${forms}" th:id="'form-row-' + ${form.id}">
+        <td>
+            <strong th:text="${form.name}">Contact Form</strong>
+        </td>
+        <td>
+            <code>/f/<span th:text="${form.id}">uuid</span></code>
+        </td>
+        <td>
+            <mark th:text="${form.isActive} ? 'Active' : 'Disabled'">Active</mark>
+        </td>
+        <td>
+            <a th:href="@{/forms/{id}(id=${form.id})}" role="button" class="outline">Manage</a>
+            <button class="secondary outline"
+                    hx-trigger="click"
+                    th:hx-delete="|/forms/${form.id}|"
+                    th:hx-target="'#' + |form-row-${form.id}|"
+                    hx-swap="outerHTML"
+                    hx-confirm="Are you sure you want to delete this form endpoint?">
+                Delete
+            </button>
+        </td>
+    </tr>
+    <tr th:if="${#lists.isEmpty(forms)}">
+        <td colspan="4">
+            <em>No active form endpoints found. Create one above to get started!</em>
+        </td>
+    </tr>
+</th:block>

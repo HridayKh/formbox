@@ -1,0 +1,71 @@
+<!--
+  =============================================================================
+  MODEL CONTRACT: Fragment - Tab Overview (`fragments/manage/tab-overview.html`)
+  -----------------------------------------------------------------------------
+  Required Model Attributes:
+  - ${form}: in.hridaykh.formbox.model.dto.CachedForm
+      id (UUID), name (String), isActive (boolean)
+  - ${entitlements}: in.hridaykh.formbox.billing.model.Entitlements
+      tierName (String), submissionsLimit (long), formsLimit (long), storageLimitBytes (long)
+  - ${submissions}: List<in.hridaykh.formbox.model.dto.SubmissionItem>
+  - ${spamSubmissions}: List<in.hridaykh.formbox.model.dto.SubmissionItem>
+  =============================================================================
+-->
+<div th:fragment="tab-overview" id="tab-overview-content">
+
+    <!-- Analytics & Stats Grid -->
+    <div class="grid">
+
+        <!-- Card 1: Total Valid Submissions -->
+        <article>
+            <header>
+                <small>Valid Submissions</small>
+            </header>
+            <h2 th:text="${#lists.size(submissions)}">0</h2>
+            <footer>
+                <small th:text="'Quota Limit: ' + ${entitlements.submissionsLimit}">Quota: 250</small>
+                <progress th:value="${#lists.size(submissions)}" th:max="${entitlements.submissionsLimit > 0 ? entitlements.submissionsLimit : 1}"></progress>
+            </footer>
+        </article>
+
+        <!-- Card 2: Spam Submissions & Spam Rate -->
+        <article>
+            <header>
+                <small>Spam Submissions</small>
+            </header>
+            <h2 th:text="${#lists.size(spamSubmissions)}">0</h2>
+            <footer>
+                <small th:with="total=${#lists.size(submissions) + #lists.size(spamSubmissions)}"
+                       th:text="'Spam Rate: ' + ${total > 0 ? #numbers.formatDecimal((#lists.size(spamSubmissions) * 100.0) / total, 1, 1) + '%' : '0.0%'}">
+                    Spam Rate: 0.0%
+                </small>
+            </footer>
+        </article>
+
+        <!-- Card 3: Storage Quota -->
+        <article>
+            <header>
+                <small>Storage Allocation</small>
+            </header>
+            <h2 th:text="${#numbers.formatDecimal((entitlements.storageLimitBytes / (1024.0 * 1024.0)), 1, 1)} + ' MB'">0 MB</h2>
+            <footer>
+                <small th:text="'Tier: ' + ${entitlements.tierName}">Tier: Free</small>
+                <progress th:value="0" th:max="${entitlements.storageLimitBytes > 0 ? entitlements.storageLimitBytes : 1}"></progress>
+            </footer>
+        </article>
+
+    </div>
+
+    <!-- Quick Endpoint Integration Card -->
+    <article>
+        <header>
+            <h3>⚡ Quick Endpoint Integration Code</h3>
+            <p>Paste this HTML snippet into any static website (Astro, Next.js, HTML5, Hugo) to catch form data instantly.</p>
+        </header>
+        <pre><code th:text="'&lt;form action=&quot;https://formbox.dev/f/' + ${form.id} + '&quot; method=&quot;POST&quot;&gt;\n  &lt;input type=&quot;email&quot; name=&quot;email&quot; required /&gt;\n  &lt;textarea name=&quot;message&quot;&gt;&lt;/textarea&gt;\n  &lt;button type=&quot;submit&quot;&gt;Send&lt;/button&gt;\n&lt;/form&gt;'"></code></pre>
+        <footer>
+            <small>Cloudflare Edge verified • Anti-Spam protection ready</small>
+        </footer>
+    </article>
+
+</div>
