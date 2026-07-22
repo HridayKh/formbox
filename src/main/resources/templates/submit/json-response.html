@@ -1,0 +1,12 @@
+<!--
+  =============================================================================
+  MODEL CONTRACT: Form Submission - JSON Response (`submit/json-response.html`)
+  -----------------------------------------------------------------------------
+  Required Model Attributes: None
+  =============================================================================
+-->
+{
+  "status": "success",
+  "message": "Form submission successfully processed and saved.",
+  "timestamp": "[(${#temporals.format(T(java.time.OffsetDateTime).now(), 'yyyy-MM-dd HH:mm:ss')})]"
+}

@@ -20,12 +20,6 @@
 
 ## Todo
 
-### Dashboard & Frontend UX
-
-* **[Medium Priority]**: Revamp the overall form display layout and implement pagination.
-* **[Low Priority]**: Reimagine the **Manage Form** page
-* **[Near Launch]**: Tally all the tier features and sync them all with the frontend! (maybe even dynamically generate them?)
-
 ### Core Form Features & Integrations
 
 * **[Medium Priority]**: Add asynchronous Discord notifications via webhook URL (with an errors table to report dashboard failures).
@@ -42,20 +36,21 @@
 
 ### Admin & Documentation (Pre-Launch)
 
-* **[Medium Priority]**: Auth improvements: Password reset, forgot password, and OAuth for quick signup.
+* **[High Priority]**: Auth improvements: Password reset, forgot password, and OAuth for quick signup.
+* **[Medium Priority]**: Make the new ui look good
+* **[Medium Launch]**: Write the Knowledge Base / Help documentation.
+* **[Low Priority]**: Draft and publish Legal Docs (Privacy Policy, ToS).
 * **[Near Launch]**: Build SQL queries as an admin panel
-* **[Near Launch]**: Write the Knowledge Base / Help documentation.
-* **[Near Launch]**: Draft and publish Legal Docs (Privacy Policy, ToS).
 
 ### Roadmap
 
 1. Retry setting up the Sentry agent.
 2. should also handle benifit_grant.updated
-2. Change `isSpam` boolean to a `spamReason` enum (e.g., `notSpam`, `turnstileFailed`)
-3. Build the internal Admin Panel web based
-4. Build an `/onboarding` page post-signup that auto-generates a mock form with fields to get users started instantly
-5. Build 3rd-party library wrappers (React components, etc.)
-6. Slack webhooks
-7. Telegram Webhooks
-8. Form Error Handling: Let users decide error behavior per form (e.g., return `202 Accepted` even if validation fails for sub-20ms responses, or throw proper errors).
-9. deleted forms page
+3. Change `isSpam` boolean to a `spamReason` enum (e.g., `notSpam`, `turnstileFailed`)
+4. Build the internal Admin Panel web based
+5. Build an `/onboarding` page post-signup that auto-generates a mock form with fields to get users started instantly
+6. Build 3rd-party library wrappers (React components, etc.)
+7. Slack webhooks
+8. Telegram Webhooks
+9. Form Error Handling: Let users decide error behavior per form (e.g., return `202 Accepted` even if validation fails for sub-20ms responses, or throw proper errors).
+10. deleted forms page
