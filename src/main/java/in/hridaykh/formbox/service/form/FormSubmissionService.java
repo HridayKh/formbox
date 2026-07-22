@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.MediaType;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -74,7 +75,8 @@ public class FormSubmissionService {
 	// step 6: check turnstile
 	// step 10: save form payload and metadata
 	@WithSpan
-	public void saveSubmission(UUID formId, String remoteAddr, Map<String, String> payload, boolean isSpam) {
+	@Async
+	public void asyncSaveSubmission(UUID formId, String remoteAddr, Map<String, String> payload, boolean isSpam) {
 		var s = new Submission(formRepository.getReferenceById(formId), payload, remoteAddr, isSpam);
 		submissionRepository.save(s);
 		submissionCacheService.updateFormSubmissionsCache(formId, s.toSubmissionItem());
@@ -112,7 +114,7 @@ public class FormSubmissionService {
 	}
 
 	// step 9: check custom filters and validations (error 400)
-	public boolean validateFields(Map<String, String> payload, CachedForm form) {
+	public boolean validateFields(Map<String, String> ignoredPayload, CachedForm ignoredForm) {
 		return true;
 	}
 

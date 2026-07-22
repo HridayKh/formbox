@@ -32,7 +32,7 @@ public class PolarWebhookController {
 		log.trace("Received incoming webhook HTTP request payload from Polar platform.");
 		Map<String, Object> responseBody = new LinkedHashMap<>();
 
-		String body = "";
+		String body;
 		try (InputStream is = request.getInputStream()) {
 			body = new String(is.readAllBytes(), StandardCharsets.UTF_8);
 		} catch (IOException e) {
@@ -76,26 +76,4 @@ public class PolarWebhookController {
 		return ResponseEntity.status(status).body(responseBody);
 	}
 
-	@PostMapping("/webhooks/polar/test")
-	public ResponseEntity<Map<String, Object>> handlePolarWebhookTest(HttpServletRequest request) {
-		log.warn("RECEIVED MOCK WEBHOOK INGESTION REQUEST FOR LOCAL TESTING");
-		Map<String, Object> responseBody = new LinkedHashMap<>();
-		String body = "";
-		try (InputStream is = request.getInputStream()) {
-			body = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-		} catch (IOException e) {
-			log.error("Failed to read body", e);
-			responseBody.put("status", "rejected");
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responseBody);
-		}
-		try {
-			webhooksService.processHook(body);
-			responseBody.put("status", "accepted");
-			return ResponseEntity.ok(responseBody);
-		} catch (Exception e) {
-			log.error("Failed downstream webhook test consumption", e);
-			responseBody.put("status", "error");
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(responseBody);
-		}
-	}
 }

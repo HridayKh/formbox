@@ -1,7 +1,6 @@
 package in.hridaykh.formbox.billing.service;
 
 import in.hridaykh.formbox.billing.model.Entitlements;
-import in.hridaykh.formbox.billing.model.PolarProductDetails;
 import in.hridaykh.formbox.constant.CacheNames;
 import in.hridaykh.formbox.model.entity.Tenant;
 import in.hridaykh.formbox.repository.TenantRepository;
@@ -9,20 +8,17 @@ import in.hridaykh.formbox.repository.SubmissionRepository;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.types.Expiration;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import sh.polar.sdk.Polar;
-import sh.polar.sdk.models.common.PolarListResponse;
-import sh.polar.sdk.models.product.PolarProductResponse;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -39,9 +35,9 @@ public class PolarCacheService {
 	private final TenantRepository tenantRepository;
 	private final SubmissionRepository submissionRepository;
 	private final EntitlementsCacheService entitlementsCacheService;
-	private final Polar polar;
 
 	@WithSpan
+	@Cacheable(value = CacheNames.METER_BALANCE, key = "#tenantId.toString()")
 	public long getCachedSubmissionBalance(UUID tenantId) {
 		ensureEntitlementsRefresh(tenantId);
 		String key = getRedisKey(tenantId);
@@ -109,7 +105,9 @@ public class PolarCacheService {
 		}
 	}
 
+	@SuppressWarnings("SpringCacheableMethodCallsInspection")
 	@WithSpan
+	@CacheEvict(value = CacheNames.METER_BALANCE, key = "#tenantId.toString()")
 	public void decrementCachedSubmissionBalance(UUID tenantId) {
 		String key = getRedisKey(tenantId);
 		getCachedSubmissionBalance(tenantId);
@@ -126,6 +124,14 @@ public class PolarCacheService {
 	}
 
 	@WithSpan
+	@Async
+	@CacheEvict(value = CacheNames.METER_BALANCE, key = "#tenantId.toString()")
+	public void asyncDecrementCachedSubmissionBalance(UUID tenantId) {
+		decrementCachedSubmissionBalance(tenantId);
+	}
+
+	@WithSpan
+	@CacheEvict(value = CacheNames.METER_BALANCE, key = "#tenantId.toString()")
 	public long syncAndCacheMeterBalance(UUID tenantId) {
 		String key = getRedisKey(tenantId);
 		try {

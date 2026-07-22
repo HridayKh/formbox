@@ -1,2 +1,17 @@
-how we handling non monthly plan's meters??????
-ask a fresh convo to study and model the billing system
+Step 2 (Rate Limit check) took 166 ms
+Step 3 (Quota check) took 114 ms
+Step 10 (Save payload) took 763 ms
+Step 11 (Decrement quota balance) took 154 ms
+TOTAL request execution time for form ID 105c8471-e149-4721-9e78-1add73c1af87: 1206 ms
+
+
+
+Step 2 (Rate Limit check) took 78 ms
+Step 3 (Quota check) took 72 ms
+TOTAL request execution time for form ID 105c8471-e149-4721-9e78-1add73c1af87: 156 ms
+
+
+
+Step 2 (Rate Limit check) took 81 ms
+Step 3 (Quota check) took 75 ms
+TOTAL request execution time for form ID 105c8471-e149-4721-9e78-1add73c1af87: 161 ms
