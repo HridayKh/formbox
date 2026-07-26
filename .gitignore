@@ -6,6 +6,7 @@ build/
 !**/src/test/**/build/
 .kotlin/
 gradle/
+research
 
 ### STS ###
 .apt_generated

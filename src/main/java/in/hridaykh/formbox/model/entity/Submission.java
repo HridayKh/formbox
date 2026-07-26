@@ -1,10 +1,7 @@
 package in.hridaykh.formbox.model.entity;
 
-import in.hridaykh.formbox.model.dto.CachedForm;
 import in.hridaykh.formbox.model.dto.SubmissionItem;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.ColumnDefault;
@@ -12,7 +9,6 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.time.OffsetDateTime;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 

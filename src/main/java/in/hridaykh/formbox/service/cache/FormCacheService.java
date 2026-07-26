@@ -76,7 +76,7 @@ public class FormCacheService {
 
 	@CachePut(value = CacheNames.FORM_METADATA, key = "#updatedForm.id")
 	@WithSpan
-	public CachedForm updateFormCache(Form updatedForm) {
+	public void updateFormCache(Form updatedForm) {
 		UUID formId = updatedForm.getId();
 		log.debug("Synchronizing state updates to cache layers for form ID: {}", formId);
 
@@ -89,8 +89,6 @@ public class FormCacheService {
 		} catch (Exception e) {
 			log.error("Failed to update execution write-through to Redis L2 cache for form ID: {}", formId, e);
 		}
-
-		return cachedFormDto;
 	}
 
 	@CacheEvict(value = CacheNames.FORM_METADATA, key = "#formId")

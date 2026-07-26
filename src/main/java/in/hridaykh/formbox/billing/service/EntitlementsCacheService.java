@@ -65,7 +65,7 @@ public class EntitlementsCacheService {
 
 	@CachePut(value = CACHE_NAME, key = "#tenantId.toString()")
 	@WithSpan
-	public Entitlements updateEntitlementsCache(UUID tenantId, Entitlements entitlements) {
+	public void updateEntitlementsCache(UUID tenantId, Entitlements entitlements) {
 		log.debug("Updating entitlements cache for tenant ID: {}", tenantId);
 		String redisKey = String.format("formbox:%s:%s", CACHE_NAME, tenantId);
 
@@ -75,8 +75,6 @@ public class EntitlementsCacheService {
 		} catch (Exception e) {
 			log.error("Failed to update Redis L2 cache for tenant entitlements ID: {}", tenantId, e);
 		}
-
-		return entitlements;
 	}
 
 	@CacheEvict(value = CACHE_NAME, key = "#tenantId.toString()")
