@@ -1,10 +1,10 @@
 package in.hridaykh.formbox.controller;
 
 import in.hridaykh.formbox.billing.model.Entitlements;
-import in.hridaykh.formbox.constant.ViewRegistry;
 import in.hridaykh.formbox.exception.FormNotFoundException;
 import in.hridaykh.formbox.model.dto.CachedForm;
 import in.hridaykh.formbox.billing.service.EntitlementsCacheService;
+import in.hridaykh.formbox.repository.FormRepository;
 import in.hridaykh.formbox.service.form.FormFileService;
 import in.hridaykh.formbox.service.form.FormSubmissionService;
 import in.hridaykh.formbox.service.cache.FormCacheService;
@@ -38,12 +38,14 @@ public class IndexController {
 	private final FormFileService formFileService;
 	private final ObjectMapper objectMapper;
 	private final EntitlementsCacheService entitlementsCacheService;
+	private final FormRepository formRepository;
 
 	@GetMapping("/")
 	@WithSpan
-	public String index(@RequestAttribute(required = false) JwtPayload userMetadata, Model model) {
+	public String index(Model model, @RequestAttribute(required = false) JwtPayload userMetadata) {
 		model.addAttribute("loggedIn", userMetadata != null && userMetadata.getSub() != null);
-		return ViewRegistry.INDEX;
+		model.addAttribute("cachedForm", formRepository.findAll().getFirst().toCachedFormDto());
+		return "example";
 	}
 
 	@PostMapping("/f/{formId}")

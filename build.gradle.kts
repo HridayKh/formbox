@@ -40,11 +40,9 @@ extra["opentelemetry.version"] = "1.63.0"
 dependencies {
 	// Standard Spring Boot dependencies
 	implementation("org.springframework.boot:spring-boot-starter-webmvc")
-	implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.postgresql:postgresql")
-
-	// logging
+	implementation("gg.jte:jte-spring-boot-starter-4:3.2.4")
 
 	// logging
 //	implementation(platform("io.sentry:sentry-bom:8.48.0"))
@@ -73,7 +71,7 @@ dependencies {
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlin:kotlin-stdlib:2.3.21")
 
-	// Resend and Polar
+	// Polar
 	implementation("com.jsandev.polar:polar-java-sdk:0.1.5")
 	implementation("com.jsandev.polar:polar-spring:0.1.5")
 }

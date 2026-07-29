@@ -32,7 +32,7 @@ public class SupabaseSessionFilter extends OncePerRequestFilter {
 	private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
 	private static final List<String> EXCLUDED_PATHS = List.of("/favicon.ico", "/assets/**", "/f/**", "/polar/**", "/error");
-	private static final List<String> OPTIONAL_PATHS = List.of("/", PathRegistry.Auth.BASE + "/**");
+	private static final List<String> OPTIONAL_PATHS = List.of("/", "/a", PathRegistry.Auth.BASE + "/**");
 
 	@Override
 	protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
