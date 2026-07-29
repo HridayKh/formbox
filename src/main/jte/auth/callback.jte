@@ -1,17 +1,9 @@
-<!--
-  =============================================================================
-  MODEL CONTRACT: Auth - Callback Verification Page (`auth/callback.html`)
-  -----------------------------------------------------------------------------
-  Required Model Attributes: None (Client JS parses token hash)
-  =============================================================================
--->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Verifying Session | Formbox</title>
-    <!-- PicoCSS v2 Pumpkin Theme -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.pumpkin.min.css"/>
     <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.10/dist/htmx.min.js"></script>
 </head>

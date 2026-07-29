@@ -44,8 +44,7 @@ public class IndexController {
 	@WithSpan
 	public String index(Model model, @RequestAttribute(required = false) JwtPayload userMetadata) {
 		model.addAttribute("loggedIn", userMetadata != null && userMetadata.getSub() != null);
-		model.addAttribute("cachedForm", formRepository.findAll().getFirst().toCachedFormDto());
-		return "example";
+		return "index";
 	}
 
 	@PostMapping("/f/{formId}")

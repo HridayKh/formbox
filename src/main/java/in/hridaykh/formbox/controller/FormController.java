@@ -55,7 +55,7 @@ public class FormController {
 		if (forms.size() >= entitlements.formsLimit()) {
 			String msg = "Your have Reached Your Forms Limit, Upgrade For More!";
 			response.setHeader("HX-Redirect", PathRegistry.DASHBOARD + "?msg=" + msg);
-			return ViewRegistry.Auth.Fragments.EMPTY;
+			return "empty";
 		}
 
 		String msgParam = "";
@@ -80,7 +80,7 @@ public class FormController {
 		formCacheService.evictTenantForms(tenantId);
 
 		response.setHeader("HX-Redirect", PathRegistry.Form.BASE + "/" + savedForm.getId() + msgParam);
-		return ViewRegistry.Auth.Fragments.EMPTY;
+		return "empty";
 	}
 
 	@GetMapping

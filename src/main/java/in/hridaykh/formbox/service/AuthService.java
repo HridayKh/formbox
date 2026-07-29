@@ -49,7 +49,6 @@ public class AuthService {
 		authServiceKt.signUp(supabaseClient, request);
 
 		log.info("Registration request completed cleanly for email: {}", request.getEmail());
-		response.setHeader("HX-Redirect", PathRegistry.Auth.Hx.LOGIN_CHECK_EMAIL);
 	}
 
 	@WithSpan
@@ -68,7 +67,6 @@ public class AuthService {
 		}
 
 		log.info("Login successful. Assigned secure cookie contexts for verified UID payload reference: {}", auth.getUserId());
-		response.setHeader("HX-Redirect", PathRegistry.DASHBOARD);
 	}
 
 	@WithSpan
