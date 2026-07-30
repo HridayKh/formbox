@@ -91,7 +91,7 @@ public class FormController {
 
 		if (tenantId == null) {
 			log.warn("Forms retrieval denied. Intercepted request thread missing user target metadata properties.");
-			return "redirect:" + PathRegistry.Auth.Redirects.TO_LOGIN_UNAUTHORIZED;
+			return  "redirect:" + PathRegistry.Auth.Hx.LOGIN_UNAUTHORIZED;
 		}
 
 		List<CachedForm> forms = formCacheService.getTenantForms(UUID.fromString(tenantId));

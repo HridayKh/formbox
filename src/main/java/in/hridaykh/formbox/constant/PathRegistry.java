@@ -18,10 +18,6 @@ public interface PathRegistry {
 		String SESSION_CALLBACK = "/session-callback";
 		String CALLBACK = "/callback";
 
-		interface Redirects {
-			String TO_LOGIN_UNAUTHORIZED = "redirect:" + Hx.LOGIN_UNAUTHORIZED;
-		}
-
 		interface Hx {
 			String LOGIN_UNAUTHORIZED = BASE + LOGIN + "?msg=unauthorized";
 			String LOGIN_CHECK_EMAIL = BASE + LOGIN + "?msg=check_email";

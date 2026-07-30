@@ -6,7 +6,8 @@ build/
 !**/src/test/**/build/
 .kotlin/
 gradle/
-research
+research/
+jte-classes/
 
 ### STS ###
 .apt_generated

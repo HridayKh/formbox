@@ -28,30 +28,6 @@ public class BillingController {
 	private final EntitlementsCacheService entitlementsCacheService;
 	private final TenantService tenantService;
 
-	/**
-	 * Upgrade entry point. For free-tier users, ensures a Polar customer record exists
-	 * before redirecting them to the portal where they can pick and subscribe to a plan.
-	 * For paid users, goes directly to the portal where Polar handles plan switching.
-	 */
-	@GetMapping("/upgrade")
-	@WithSpan
-	public String redirectToPortalForUpgrade(@RequestAttribute JwtPayload userMetadata, HttpServletRequest request, HttpServletResponse response) {
-		String userId = Objects.requireNonNull(userMetadata.getSub());
-		Entitlements entitlements = entitlementsCacheService.getEntitlements(UUID.fromString(userId));
-
-		// Provision Polar customer for free-tier users who have never had a subscription
-		if (entitlements.isFree()) {
-			try {
-				tenantService.ensurePolarCustomerExists(userId, userMetadata.getEmail());
-				log.debug("Ensured Polar customer exists for free-tier user {} before portal redirect", userId);
-			} catch (Exception e) {
-				log.error("Failed to ensure Polar customer before portal redirect for user: {}", userId, e);
-			}
-		}
-
-		return redirectToPortal(userId, request, response);
-	}
-
 	@GetMapping(PathRegistry.Billing.PORTAL)
 	@WithSpan
 	public String redirectToCustomerPortal(@RequestAttribute JwtPayload userMetadata, HttpServletRequest request, HttpServletResponse response) {
@@ -66,13 +42,19 @@ public class BillingController {
 			return "redirect:" + PathRegistry.Auth.Hx.LOGIN_UNAUTHORIZED;
 		}
 
+		Entitlements entitlements = entitlementsCacheService.getEntitlements(UUID.fromString(userId));
+		if (entitlements.isFree()) {
+			try {
+				tenantService.ensurePolarCustomerExists(userId, userMetadata.getEmail());
+				log.debug("Ensured Polar customer exists for free-tier user {} before portal redirect", userId);
+			} catch (Exception e) {
+				log.error("Failed to ensure Polar customer before portal redirect for user: {}", userId, e);
+			}
+		}
+
 		return redirectToPortal(userId, request, response);
 	}
 
-	/**
-	 * Shared helper: creates a Polar customer portal session and redirects the user to it.
-	 * On failure, redirects to the dashboard with an error message.
-	 */
 	private String redirectToPortal(String userId, HttpServletRequest request, HttpServletResponse response) {
 		try {
 			var session = polarHttpClient.post("/customer-sessions/", Map.of("external_customer_id", userId), PolarCustomerSessionResponse.class);

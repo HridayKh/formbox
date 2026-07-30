@@ -131,8 +131,12 @@
 
         <!-- Actions -->
         <div class="navbar-actions">
-            <a href="/auth/login" class="navbar-signin">Sign In</a>
-            <a href="/auth/signup" class="navbar-signin">Sign Up</a>
+            @if(loggedIn)
+                <a href="/dashboard" class="navbar-signin">Dashboard</a>
+            @else
+                <a href="/auth/login" class="navbar-signin">Sign In</a>
+                <a href="/auth/signup" class="navbar-signin">Sign Up</a>
+            @endif
             <a href="#waitlist" class="btn btn-primary btn-sm">Join Waitlist →</a>
         </div>
 
@@ -826,8 +830,10 @@
             <p>Join the waitlist and be the first to know when Formbox opens to the public. Early members lock in beta
                 pricing.</p>
             <form class="waitlist-form" id="waitlistForm" novalidate>
-                <input type="email" class="waitlist-input" id="waitlistEmail" name="email" placeholder="you@domain.com"
-                       required autocomplete="email"/>
+                <label>
+                    <input type="email" class="waitlist-input" id="waitlistEmail" name="email"
+                           placeholder="you@example.com" required autocomplete="email"/>
+                </label>
                 <button type="submit" class="btn btn-primary">Join Waitlist</button>
             </form>
             <p class="waitlist-note">No spam. Unsubscribe anytime. We'll only email you when the beta opens.</p>

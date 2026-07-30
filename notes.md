@@ -56,3 +56,40 @@
 8. Telegram Webhooks
 9. Form Error Handling: Let users decide error behavior per form (e.g., return `202 Accepted` even if validation fails for sub-20ms responses, or throw proper errors).
 10. deleted forms page
+
+
+## Frontend Pages
+
+### 1. Navbar
+
+- Breadcrumbs
+- Submissions left
+- Mange Subscription/Upgrade
+- Logged-in Email
+- Logout
+
+### 2. Account Home
+
+- List of folders + any unfoldered forms, each with a delivery-health badge (green/yellow/red)
+- No global search in v0 — just navigation into folders/forms
+- "Create folder" / "Create form"
+
+**3. Folder View**
+- List of forms in the folder
+- Folder-level client credential issuance (scoped to whole folder, auto-covers new forms added later)
+- No folder-wide submission rollup — search/export stays per-form, so this view is really just a navigation + access-management layer, not a data view
+
+**4. Form View** (tabbed)
+- **Submissions**: searchable table, CSV export, click-through to submission detail
+- **Delivery/Health**: per-recipient delivery status (owner notification + each CC/BCC tracked independently) — this is the differentiator, keep it visually prominent, not buried
+- **Settings**: endpoint/snippet, allowed origins, recipients, redirect config, spam protection toggles, retention window
+- **Access**: client credentials issued specifically to this form (plus a read-only note showing folder-level creds that also apply)
+
+**5. Submission Detail** — own view/modal, handles file attachments and per-email delivery status without cramming into a table row.
+
+**6. Account Settings** — plan tier, retention window, billing stub.
+
+**7. Client Dashboard**
+- Since clients get full delivery status now, this view is closer to a scoped mirror of the owner's Form View rather than a stripped-down version: submissions tab + delivery/health tab, both read-only, scoped to their form(s)/folder
+- No settings, no access management, no ability to change recipients/spam config — just visibility
+- Worth deciding whether they see this as one screen per form or a folder-scoped list they click into — given per-form-only search, probably: client lands on a list of their form(s) → clicks in → same tabbed submissions/health view as owner, just read-only
