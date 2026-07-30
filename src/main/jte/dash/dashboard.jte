@@ -24,12 +24,6 @@
             padding: 0.25rem 0.75rem;
             font-size: 0.85rem;
         }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1rem;
-        }
     </style>
 </head>
 <body>
@@ -78,7 +72,7 @@
                     </form>
                     <span></span>
                 </div>
-                <div class="form-grid">
+                <div class="grid">
                     @for(CachedForm form : folderForm.forms())
                         <div class="form-card">
                             <a href="/forms/${folder.getId().toString()}/${form.id().toString()}">${form.name()}</a>
@@ -133,7 +127,7 @@
                             @endif
                             <footer>
                                 <fieldset role="group">
-                                    <input type="submit" value="Rename"/>
+                                    <input type="submit" value="Create"/>
                                     <button onclick="closeM('create-${folder.getId().toString()}')"
                                             class="small secondary outline">Cancel
                                     </button>

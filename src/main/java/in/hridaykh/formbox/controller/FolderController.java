@@ -62,6 +62,12 @@ public class FolderController {
 		if (folderOpt.isEmpty())
 			return "redirect:/dashboard?msg=Folder not found!";
 		Folder folder = folderOpt.get();
+
+		if (!folder.getTenant().getId().toString().equals(userMetadata.getSub())) {
+			log.warn("Unauthorized rename attempt of folder {} by user {}", folderId, userMetadata.getSub());
+			return "redirect:/dashboard?msg=Invalid folder";
+		}
+
 		folder.setName(newName);
 
 		Folder savedFolder = folderRepository.save(folder);
@@ -84,6 +90,10 @@ public class FolderController {
 		if (folderOpt.isEmpty())
 			return "redirect:/dashboard?msg=Folder not found!";
 
+		if (!folderOpt.get().getTenant().getId().toString().equals(userMetadata.getSub())) {
+			log.warn("Unauthorized delete attempt of folder {} by user {}", folderId, userMetadata.getSub());
+			return "redirect:/dashboard?msg=Invalid folder";
+		}
 		folderRepository.deleteById(folderId);
 
 		log.info("Successfully deleted Folder Entity. ID: {} for tenant ID: {}", folderId, tenantId);

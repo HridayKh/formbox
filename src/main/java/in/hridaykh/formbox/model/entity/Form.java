@@ -86,7 +86,8 @@ public class Form {
 			this.allowHtmx,
 			this.allowJson,
 			List.copyOf(this.fieldValidations),
-			this.folder != null ? this.folder.getId() : null
+			this.folder != null ? this.folder.getId() : null,
+			this.folder != null ? this.folder.getName() : null
 		);
 	}
 }

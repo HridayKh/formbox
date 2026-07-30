@@ -1,0 +1,97 @@
+@import in.hridaykh.formbox.billing.model.Entitlements
+@import in.hridaykh.formbox.model.dto.CachedForm
+@import in.hridaykh.formbox.model.dto.SubmissionItem
+@import in.hridaykh.formbox.model.entity.Folder
+@import java.util.List
+
+@param boolean showManageSubscription
+@param Long balanceLeft
+@param String email
+@param String msg
+@param List<Folder> folders
+@param CachedForm form
+@param Entitlements entitlements
+@param List<SubmissionItem> validSubmissions
+@param List<SubmissionItem> spamSubmissions
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Form Endpoints Dashboard | Formbox</title>
+    <meta name="description" content="Formbox - Form backend for static sites powered by Cloudflare edge."/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.pumpkin.min.css"/>
+    <style>
+        .small {
+            margin-bottom: 0;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+
+<header class="container">
+    @template.dash.navbar(pageName=form.folderName() + " → " + form.name(), balanceLeft=balanceLeft, showManageSubscription=showManageSubscription, email=email)
+    <a href="/dashboard">Go To Dashboard</a>
+    <h1>Managing Form '${form.name()}'</h1>
+    @if(msg != null && !msg.isBlank())
+        <div class="container">
+            <mark>${msg}</mark>
+        </div>
+    @endif
+</header>
+
+<%--
+1. [x] Move folders
+2. [ ] Form settings (delete is here btw)
+3. [ ] Intergrations and Routing
+4. [ ] View submissions (Seperate Template to Render Submissions so Submission Info THere)
+5. [ ] Export Submissions to csv
+6. [ ] Client Creds (Single pregenerated cred that dont need db, coz they signed using form id)
+7. [ ] Copy button for endpoint (the new presigned kind)
+8. [ ] Links to templates, maybe even a template generator
+
+notes:
+- Change isSpam to spamReason
+- file attachment stored as fieldName and fieldName_url
+
+what to show per submission:
+1. Timestamp
+2. Email delivery status
+3. Submission preview (truncated concatenation of field values)
+4. spam reason
+5. dropdown for full fields
+--%>
+
+<main class="container">
+    <section id="move-folders">
+        <details>
+            <summary role="button" class="outline">Move this form, current folder: '${form.folderName()}'</summary>
+            <div class="grid">
+                @for(Folder folder : folders)
+                    !{if(folder.getId().equals(form.folderId())) continue;}
+                    <form action="/forms/${folder.getId().toString()}/${form.id().toString()}/move" method="POST">
+                        <button type="submit"
+                                class="small outline"
+                                onclick="return confirm('Are you sure you want to move this form to ${folder.getName()}?');">
+                            Move form to ${folder.getName()}
+                        </button>
+                    </form>
+                @endfor
+            </div>
+        </details>
+    </section>
+</main>
+
+<footer class="container">
+    <small>&copy; 2026 Formbox. Edge-powered form management backend.</small>
+</footer>
+
+<script>
+    window.history.replaceState(null, '', window.location.origin + window.location.pathname);
+</script>
+
+</body>
+</html>

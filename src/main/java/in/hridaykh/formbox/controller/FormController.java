@@ -1,17 +1,20 @@
 package in.hridaykh.formbox.controller;
 
 import in.hridaykh.formbox.billing.model.Entitlements;
+import in.hridaykh.formbox.billing.service.PolarCacheService;
 import in.hridaykh.formbox.constant.PathRegistry;
 import in.hridaykh.formbox.constant.ViewRegistry;
 import in.hridaykh.formbox.model.dto.CachedForm;
 import in.hridaykh.formbox.model.dto.FormSettingsRequest;
 import in.hridaykh.formbox.model.dto.FormSubmissionsResponse;
 import in.hridaykh.formbox.model.dto.TierValidationResult;
+import in.hridaykh.formbox.model.entity.Folder;
 import in.hridaykh.formbox.model.entity.Form;
 import in.hridaykh.formbox.repository.FolderRepository;
 import in.hridaykh.formbox.repository.FormRepository;
 import in.hridaykh.formbox.repository.TenantRepository;
 import in.hridaykh.formbox.billing.service.EntitlementsCacheService;
+import in.hridaykh.formbox.service.cache.FolderCacheService;
 import in.hridaykh.formbox.service.cache.FormCacheService;
 import in.hridaykh.formbox.service.cache.SubmissionCacheService;
 import in.hridaykh.formbox.service.form.FormSettingsService;
@@ -20,14 +23,11 @@ import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 
 @Slf4j
 @Controller
@@ -42,6 +42,8 @@ public class FormController {
 	private final FormSettingsService formSettingsService;
 	private final EntitlementsCacheService entitlementsCacheService;
 	private final FolderRepository folderRepository;
+	private final PolarCacheService polarCacheService;
+	private final FolderCacheService folderCacheService;
 
 	@PostMapping("/{folderId}")
 	@WithSpan
@@ -53,7 +55,7 @@ public class FormController {
 		List<CachedForm> forms = formCacheService.getTenantForms(tenantId);
 
 		Entitlements entitlements = entitlementsCacheService.getEntitlements(tenantId);
-		String msg = "";
+		String msg = "Form created successfully!";
 
 		if (forms.size() >= entitlements.formsLimit()) {
 			msg = "Your have Reached Your Forms Limit, Upgrade For More!";
@@ -81,41 +83,21 @@ public class FormController {
 		formCacheService.updateFormCache(savedForm);
 		formCacheService.evictTenantForms(tenantId);
 
-		return "redirect:/forms/" + folderId + "/" + savedForm.getId() + msg;
+		return "redirect:/forms/" + folderId + "/" + savedForm.getId() + "?msg=" + msg;
 	}
 
-	@GetMapping("/{folderId}")
+	@GetMapping("/{ignoredFolderId}/{formId}")
 	@WithSpan
-	public String listForms(@RequestAttribute JwtPayload userMetadata, Model model, @PathVariable String folderId) {
-		String tenantId = userMetadata.getSub();
-		log.trace("Processing request to render forms row table layout map context for user reference: {}", tenantId);
-
-		if (tenantId == null) {
-			log.warn("Forms retrieval denied. Intercepted request thread missing user target metadata properties.");
-			return "redirect:" + PathRegistry.Auth.Hx.LOGIN_UNAUTHORIZED;
-		}
-
-		List<CachedForm> forms = formCacheService.getTenantForms(UUID.fromString(tenantId));
-		log.debug("Loaded {} forms from cache layers for tenant index ID: {}", forms.size(), tenantId);
-
-		model.addAttribute("forms", forms);
-		return ViewRegistry.Fragments.FORM_ROWS;
-	}
-
-	@GetMapping("/{folderId}/{formId}")
-	@WithSpan
-	public String manageForm(@RequestAttribute JwtPayload userMetadata, @PathVariable UUID formId, @RequestParam(value = "msg", required = false) String msg, Model model, @PathVariable String folderId) {
+	public String manageFormPage(@RequestAttribute JwtPayload userMetadata, @RequestParam(required = false) String msg, @PathVariable UUID formId, Model model, @PathVariable String ignoredFolderId) {
 		log.debug("Loading primary console management data array structure for form ID: {} triggered by user: {}", formId, userMetadata.getSub());
 		CachedForm form = formCacheService.getCachedForm(formId);
 
-		if (!form.tenantId().toString().equals(userMetadata.getSub())) {
-			log.warn("Security authorization intercept triggered. User: {} failed ownership check rule bounds for form ID: {} belonging to tenant: {}", userMetadata.getSub(), formId, form.tenantId());
-			throw new RuntimeException("Unauthorized access to form system.");
-		}
+		if (form == null)
+			return "redirect:/dashboard?msg=Form not found!";
 
-		if ("upgrade_required_for_redirect".equals(msg)) {
-			log.trace("Redirect upgrade warning detected in query parameters");
-			model.addAttribute("warningMessage", "Form created successfully! However, custom redirects are only available on paid tiers.");
+		if (!form.tenantId().toString().equals(userMetadata.getSub())) {
+			log.warn("Unauthorized form manage attempt of form {} by user {}", formId, userMetadata.getSub());
+			return "redirect:/dashboard?msg=Invalid form";
 		}
 
 		FormSubmissionsResponse submissions = submissionCacheService.getFormSubmissionsGrouped(formId);
@@ -123,22 +105,60 @@ public class FormController {
 
 		log.trace("Loaded dashboard variables for form {}: {} submissions, {} spam", formId, submissions.submissions().size(), submissions.spam().size());
 
+		model.addAttribute("msg", msg);
+		model.addAttribute("balanceLeft", polarCacheService.getCachedSubmissionBalance(form.tenantId()));
+		model.addAttribute("showManageSubscription", !entitlements.isFree());
+		model.addAttribute("email", userMetadata.getEmail());
+
+		model.addAttribute("folders", folderCacheService.getTenantFolders(form.tenantId()));
 		model.addAttribute("form", form);
 		model.addAttribute("entitlements", entitlements);
-		model.addAttribute("redirectUrlNotAllowed", !entitlements.redirectUrlsAllowed());
-		model.addAttribute("fieldValidationsNotAllowed", !entitlements.fieldValidationsAllowed());
-		model.addAttribute("turnstileNotAllowed", !entitlements.turnstileAllowed());
-		model.addAttribute("jsonFormsNotAllowed", !entitlements.jsonFormsAllowed());
-		model.addAttribute("fileUploadsNotAllowed", !entitlements.fileUploadsAllowed());
-		model.addAttribute("submissions", submissions.submissions());
+		model.addAttribute("validSubmissions", submissions.submissions());
 		model.addAttribute("spamSubmissions", submissions.spam());
 
-		return "pages/manage-form";
+		return "dash/manage-form";
 	}
 
-	@PutMapping("/{folderId}/{formId}")
+	@PostMapping("/{folderId}/{formId}/move")
 	@WithSpan
-	public String updateForm(@RequestAttribute JwtPayload userMetadata, @PathVariable UUID formId, @RequestParam(value = "fieldValidationsRaw", required = false) String fieldValidationsRaw, @ModelAttribute FormSettingsRequest request, Model model, @PathVariable String folderId) {
+	@Transactional
+	public String moveForm(@RequestAttribute JwtPayload userMetadata, @PathVariable UUID folderId, @PathVariable UUID formId) {
+		log.debug("Moving folder: {} for user {}", folderId, userMetadata.getSub());
+
+		UUID tenantId = UUID.fromString(Objects.requireNonNull(userMetadata.getSub()));
+
+		Optional<Folder> folderOpt = folderRepository.findById(folderId);
+		if (folderOpt.isEmpty())
+			return "redirect:/dashboard?msg=Folder not found!";
+		Folder folder = folderOpt.get();
+		if (!folder.getTenant().getId().toString().equals(userMetadata.getSub())) {
+			log.warn("Unauthorized form move attempt of folder {} by user {}", folderId, userMetadata.getSub());
+			return "redirect:/dashboard?msg=Invalid folder";
+		}
+
+		Optional<Form> form = formRepository.findById(formId);
+		if (form.isEmpty())
+			return "redirect:/dashboard?msg=Form not found!";
+		if (!form.get().getTenant().getId().toString().equals(userMetadata.getSub())) {
+			log.warn("Unauthorized form move attempt of form {} by user {}", formId, userMetadata.getSub());
+			return "redirect:/dashboard?msg=Invalid form";
+		}
+
+		Form f = form.get();
+		f.setFolder(folder);
+		Form savedF = formRepository.save(f);
+		log.info("Successfully moved form. ID: {} for tenant ID: {}", formId, tenantId);
+
+		formCacheService.updateFormCache(savedF);
+		formCacheService.evictTenantForms(tenantId);
+
+		String msg = "Successfully moved the form " + f.getName() + " to folder " + folder.getName();
+		return "redirect:/forms/" + folderId + "/" + formId + "?msg=" + msg;
+	}
+
+	@PutMapping("/{ignoredFolderId}/{formId}")
+	@WithSpan // TODO: verify the tenant owns the form
+	public String updateForm(@RequestAttribute JwtPayload userMetadata, @PathVariable UUID formId, @RequestParam(value = "fieldValidationsRaw", required = false) String fieldValidationsRaw, @ModelAttribute FormSettingsRequest request, Model model, @PathVariable String ignoredFolderId) {
 
 		log.debug("Initiating settings update for form ID: {}", formId);
 
@@ -152,7 +172,7 @@ public class FormController {
 		// Execute core business logic
 		TierValidationResult result = formSettingsService.updateFormSettings(formId, userMetadata.getSub(), fullRequest);
 
-		Entitlements entitlements = entitlementsCacheService.getEntitlements(UUID.fromString(userMetadata.getSub()));
+		Entitlements entitlements = entitlementsCacheService.getEntitlements(UUID.fromString(Objects.requireNonNull(userMetadata.getSub())));
 		model.addAttribute("entitlements", entitlements);
 		model.addAttribute("redirectUrlNotAllowed", !entitlements.redirectUrlsAllowed());
 		model.addAttribute("fieldValidationsNotAllowed", !entitlements.fieldValidationsAllowed());
@@ -171,10 +191,10 @@ public class FormController {
 		return ViewRegistry.Fragments.SETTINGS;
 	}
 
-	@DeleteMapping("/{folderId}/{formId}")
+	@DeleteMapping("/{ignoredFolderId}/{formId}")
 	@ResponseBody
 	@WithSpan
-	public void deleteForm(@RequestAttribute JwtPayload userMetadata, @PathVariable UUID formId, @PathVariable String folderId) {
+	public void deleteForm(@RequestAttribute JwtPayload userMetadata, @PathVariable UUID formId, @PathVariable String ignoredFolderId) {
 		log.debug("Deleting form with ID: {}", formId);
 		CachedForm form = formCacheService.getCachedForm(formId);
 

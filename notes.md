@@ -60,25 +60,6 @@
 
 ## Frontend Pages
 
-### 1. Navbar
-
-- Breadcrumbs
-- Submissions left
-- Mange Subscription/Upgrade
-- Logged-in Email
-- Logout
-
-### 2. Account Home
-
-- List of folders + any unfoldered forms, each with a delivery-health badge (green/yellow/red)
-- No global search in v0 — just navigation into folders/forms
-- "Create folder" / "Create form"
-
-**3. Folder View**
-- List of forms in the folder
-- Folder-level client credential issuance (scoped to whole folder, auto-covers new forms added later)
-- No folder-wide submission rollup — search/export stays per-form, so this view is really just a navigation + access-management layer, not a data view
-
 **4. Form View** (tabbed)
 - **Submissions**: searchable table, CSV export, click-through to submission detail
 - **Delivery/Health**: per-recipient delivery status (owner notification + each CC/BCC tracked independently) — this is the differentiator, keep it visually prominent, not buried

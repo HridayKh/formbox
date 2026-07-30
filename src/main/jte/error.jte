@@ -10,16 +10,9 @@
     <title>Error</title>
 </head>
 <body>
-<div>
-    <div>
-        <div></div>
-        <h2>${errorTitle}</h2>
-        <p>${errorMessage}</p>
-        <p>${errorStatus}</p>
-        <div>
-            <a href="/static">Go to Main Page</a>
-        </div>
-    </div>
-</div>
+<h1>${errorTitle}</h1>
+<p>${errorMessage}</p>
+<p>${errorStatus}</p>
+<a href="/">Go to Main Page</a>
 </body>
 </html>
