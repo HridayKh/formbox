@@ -3,8 +3,10 @@ package in.hridaykh.formbox.service.cache;
 import in.hridaykh.formbox.constant.CacheNames;
 import in.hridaykh.formbox.exception.FormNotFoundException;
 import in.hridaykh.formbox.model.dto.CachedForm;
+import in.hridaykh.formbox.model.entity.Folder;
 import in.hridaykh.formbox.model.entity.Form;
 import in.hridaykh.formbox.model.entity.Tenant;
+import in.hridaykh.formbox.repository.FolderRepository;
 import in.hridaykh.formbox.repository.FormRepository;
 import in.hridaykh.formbox.repository.TenantRepository;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
@@ -32,6 +34,7 @@ public class FormCacheService {
 	private final StringRedisTemplate redisTemplate;
 	private final ObjectMapper objectMapper;
 	private final TenantRepository tenantRepository;
+	private final FolderRepository folderRepository;
 
 	@Transactional(readOnly = true)
 	@Cacheable(value = CacheNames.FORM_METADATA, key = "#formId")
@@ -143,4 +146,5 @@ public class FormCacheService {
 			log.error("Failed to purge tenant forms cache collection tracker from Redis cluster for tenant: {}", tenantId, e);
 		}
 	}
+
 }

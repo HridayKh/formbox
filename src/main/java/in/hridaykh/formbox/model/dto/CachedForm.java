@@ -18,7 +18,8 @@ public record CachedForm(
 	Boolean allowFiles,
 	Boolean allowHtmx,
 	Boolean allowJson,
-	List<String> fieldValidations
+	List<String> fieldValidations,
+	UUID folderId
 ) implements Serializable {
 	public CachedForm {
 		fieldValidations = List.copyOf(fieldValidations);

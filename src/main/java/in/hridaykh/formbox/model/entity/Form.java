@@ -30,6 +30,10 @@ public class Form {
 	@JoinColumn(name = "tenant_id", nullable = false)
 	private Tenant tenant;
 
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "folder_id", nullable = false)
+	private Folder folder;
+
 	@Column(name = "name", nullable = false)
 	private String name;
 
@@ -81,7 +85,8 @@ public class Form {
 			this.allowFiles,
 			this.allowHtmx,
 			this.allowJson,
-			List.copyOf(this.fieldValidations)
+			List.copyOf(this.fieldValidations),
+			this.folder != null ? this.folder.getId() : null
 		);
 	}
 }

@@ -8,6 +8,7 @@ import in.hridaykh.formbox.model.dto.FormSettingsRequest;
 import in.hridaykh.formbox.model.dto.FormSubmissionsResponse;
 import in.hridaykh.formbox.model.dto.TierValidationResult;
 import in.hridaykh.formbox.model.entity.Form;
+import in.hridaykh.formbox.repository.FolderRepository;
 import in.hridaykh.formbox.repository.FormRepository;
 import in.hridaykh.formbox.repository.TenantRepository;
 import in.hridaykh.formbox.billing.service.EntitlementsCacheService;
@@ -21,7 +22,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import jakarta.servlet.http.HttpServletResponse;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,7 +31,7 @@ import java.util.UUID;
 
 @Slf4j
 @Controller
-@RequestMapping(PathRegistry.Form.BASE)
+@RequestMapping("/forms")
 @RequiredArgsConstructor
 public class FormController {
 
@@ -41,37 +41,39 @@ public class FormController {
 	private final FormCacheService formCacheService;
 	private final FormSettingsService formSettingsService;
 	private final EntitlementsCacheService entitlementsCacheService;
+	private final FolderRepository folderRepository;
 
-	@PostMapping
+	@PostMapping("/{folderId}")
 	@WithSpan
-	public String createForm(@RequestAttribute JwtPayload userMetadata, @RequestParam("name") String name, @RequestParam(value = "redirectUrl", required = false) String redirectUrl, HttpServletResponse response) {
-		log.debug("Processing request to create a new form. Name: [{}], Requested Redirect URL: [{}]", name, redirectUrl);
+	public String createForm(@RequestAttribute JwtPayload userMetadata, @RequestParam String formName,
+	                         @RequestParam(required = false) String redirectUrl, @PathVariable UUID folderId) {
+		log.debug("Processing request to create a new form. Name: [{}], Requested Redirect URL: [{}]", formName, redirectUrl);
 
 		UUID tenantId = UUID.fromString(Objects.requireNonNull(userMetadata.getSub()));
 		List<CachedForm> forms = formCacheService.getTenantForms(tenantId);
 
 		Entitlements entitlements = entitlementsCacheService.getEntitlements(tenantId);
+		String msg = "";
 
 		if (forms.size() >= entitlements.formsLimit()) {
-			String msg = "Your have Reached Your Forms Limit, Upgrade For More!";
-			response.setHeader("HX-Redirect", PathRegistry.DASHBOARD + "?msg=" + msg);
-			return "empty";
+			msg = "Your have Reached Your Forms Limit, Upgrade For More!";
+			return PathRegistry.DASHBOARD + "?msg=" + msg;
 		}
 
-		String msgParam = "";
 		if (!entitlements.redirectUrlsAllowed() && redirectUrl != null && !redirectUrl.isBlank()) {
 			log.warn("Tier constraint violation intercepted. Free tier tenant: {} attempted custom redirect validation rules.", tenantId);
 			redirectUrl = null;
-			msgParam = "?msg=upgrade_required_for_redirect";
+			msg = "Please upgrade for redirect URL!";
 		}
 
 		Form newForm = new Form();
 		newForm.setTenant(tenantRepository.getReferenceById(tenantId));
-		newForm.setName(name);
+		newForm.setName(formName);
 		newForm.setRedirectUrl(redirectUrl);
 		newForm.setAllowJson(entitlements.jsonFormsAllowed());
 		newForm.setAllowFiles(entitlements.fileUploadsAllowed());
 		newForm.setRateLimitRpm(Math.min(20, entitlements.maxRateLimitRpm()));
+		newForm.setFolder(folderRepository.getReferenceById(folderId));
 
 		Form savedForm = formRepository.save(newForm);
 		log.info("Successfully persisted new Form Entity. ID: {} for tenant ID: {}", savedForm.getId(), tenantId);
@@ -79,19 +81,18 @@ public class FormController {
 		formCacheService.updateFormCache(savedForm);
 		formCacheService.evictTenantForms(tenantId);
 
-		response.setHeader("HX-Redirect", PathRegistry.Form.BASE + "/" + savedForm.getId() + msgParam);
-		return "empty";
+		return "redirect:/forms/" + folderId + "/" + savedForm.getId() + msg;
 	}
 
-	@GetMapping
+	@GetMapping("/{folderId}")
 	@WithSpan
-	public String listForms(@RequestAttribute JwtPayload userMetadata, Model model) {
+	public String listForms(@RequestAttribute JwtPayload userMetadata, Model model, @PathVariable String folderId) {
 		String tenantId = userMetadata.getSub();
 		log.trace("Processing request to render forms row table layout map context for user reference: {}", tenantId);
 
 		if (tenantId == null) {
 			log.warn("Forms retrieval denied. Intercepted request thread missing user target metadata properties.");
-			return  "redirect:" + PathRegistry.Auth.Hx.LOGIN_UNAUTHORIZED;
+			return "redirect:" + PathRegistry.Auth.Hx.LOGIN_UNAUTHORIZED;
 		}
 
 		List<CachedForm> forms = formCacheService.getTenantForms(UUID.fromString(tenantId));
@@ -101,9 +102,9 @@ public class FormController {
 		return ViewRegistry.Fragments.FORM_ROWS;
 	}
 
-	@GetMapping("/{formId}")
+	@GetMapping("/{folderId}/{formId}")
 	@WithSpan
-	public String manageForm(@RequestAttribute JwtPayload userMetadata, @PathVariable UUID formId, @RequestParam(value = "msg", required = false) String msg, Model model) {
+	public String manageForm(@RequestAttribute JwtPayload userMetadata, @PathVariable UUID formId, @RequestParam(value = "msg", required = false) String msg, Model model, @PathVariable String folderId) {
 		log.debug("Loading primary console management data array structure for form ID: {} triggered by user: {}", formId, userMetadata.getSub());
 		CachedForm form = formCacheService.getCachedForm(formId);
 
@@ -135,36 +136,18 @@ public class FormController {
 		return "pages/manage-form";
 	}
 
-	@PutMapping("/{id}")
+	@PutMapping("/{folderId}/{formId}")
 	@WithSpan
-	public String updateForm(@RequestAttribute JwtPayload userMetadata, 
-	                         @PathVariable("id") UUID formId, 
-	                         @RequestParam(value = "fieldValidationsRaw", required = false) String fieldValidationsRaw, 
-	                         @ModelAttribute FormSettingsRequest request, 
-	                         Model model) {
+	public String updateForm(@RequestAttribute JwtPayload userMetadata, @PathVariable UUID formId, @RequestParam(value = "fieldValidationsRaw", required = false) String fieldValidationsRaw, @ModelAttribute FormSettingsRequest request, Model model, @PathVariable String folderId) {
 
 		log.debug("Initiating settings update for form ID: {}", formId);
 
 		List<String> validations = new ArrayList<>();
 		if (fieldValidationsRaw != null) {
-			validations = Arrays.stream(fieldValidationsRaw.split("\\r?\\n"))
-				.map(String::strip)
-				.filter(s -> !s.isEmpty())
-				.toList();
+			validations = Arrays.stream(fieldValidationsRaw.split("\\r?\\n")).map(String::strip).filter(s -> !s.isEmpty()).toList();
 		}
 
-		FormSettingsRequest fullRequest = new FormSettingsRequest(
-			request.name(),
-			request.redirectUrl(),
-			request.isActive(),
-			request.turnstileSecretKey(),
-			request.honeypotName(),
-			request.rateLimitRpm(),
-			request.allowFiles(),
-			request.allowHtmx(),
-			request.allowJson(),
-			validations
-		);
+		FormSettingsRequest fullRequest = new FormSettingsRequest(request.name(), request.redirectUrl(), request.isActive(), request.turnstileSecretKey(), request.honeypotName(), request.rateLimitRpm(), request.allowFiles(), request.allowHtmx(), request.allowJson(), validations);
 
 		// Execute core business logic
 		TierValidationResult result = formSettingsService.updateFormSettings(formId, userMetadata.getSub(), fullRequest);
@@ -188,10 +171,10 @@ public class FormController {
 		return ViewRegistry.Fragments.SETTINGS;
 	}
 
-	@DeleteMapping("/{id}")
+	@DeleteMapping("/{folderId}/{formId}")
 	@ResponseBody
 	@WithSpan
-	public void deleteForm(@RequestAttribute JwtPayload userMetadata, @PathVariable("id") UUID formId) {
+	public void deleteForm(@RequestAttribute JwtPayload userMetadata, @PathVariable UUID formId, @PathVariable String folderId) {
 		log.debug("Deleting form with ID: {}", formId);
 		CachedForm form = formCacheService.getCachedForm(formId);
 

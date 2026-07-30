@@ -7,4 +7,6 @@ public interface CacheNames {
 	String TENANT_FORMS = "tenantForms";
 	String IP_RATE_LIMIT = "iprl";
 	String FORM_RATE_LIMIT_RPM = "formRateLimitRpm";
+	String TENANT_FOLDERS = "tenantFolders";
+	String FOLDER_FORMS = "folderForms";
 }
