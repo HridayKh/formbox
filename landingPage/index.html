@@ -1,14 +1,13 @@
-@param boolean loggedIn
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Formbox — Form Backend for Static Sites | Spam Protection, Delivery Monitoring, Webhooks</title>
+    <title>Formbox | Form Backend for Static Sites | Spam Protection, Delivery Monitoring, Webhooks</title>
     <meta name="description"
           content="Formbox is an instant form backend for websites with no server. Point your HTML form at us and get spam protection, email delivery monitoring, webhooks, and a full submission dashboard."/>
-    <link rel="stylesheet" href="/assets/styles.css"/>
+    <link rel="stylesheet" href="styles.css"/>
 </head>
 
 <body>
@@ -34,7 +33,7 @@
                 <div class="nav-dropdown dropdown-lg">
                     <div class="dropdown-group">
                         <div class="dropdown-group-title">Features</div>
-                        <a href="#" class="dropdown-link"><span class="link-icon">🛡</span> Spam Protection</a>
+                        <a href="pages/product/spam.html" class="dropdown-link"><span class="link-icon">🛡</span> Spam Protection</a>
                         <a href="#" class="dropdown-link"><span class="link-icon">📬</span> Delivery Monitoring</a>
                         <a href="#" class="dropdown-link"><span class="link-icon">📎</span> File Uploads</a>
                         <a href="#" class="dropdown-link"><span class="link-icon">🔔</span> Webhooks &amp; Notifications</a>
@@ -131,14 +130,6 @@
 
         <!-- Actions -->
         <div class="navbar-actions">
-            <%--
-            @if(loggedIn)
-                <a href="/dashboard" class="navbar-signin">Dashboard</a>
-            @else
-                <a href="/auth/login" class="navbar-signin">Sign In</a>
-                <a href="/auth/signup" class="navbar-signin">Sign Up</a>
-            @endif
-            --%>
             <a href="#waitlist" class="btn btn-primary btn-sm">Join Waitlist →</a>
         </div>
 
@@ -153,7 +144,7 @@
 <div class="mobile-nav" id="mobileNav">
     <div class="mobile-nav-group">
         <div class="mobile-nav-group-title">Product</div>
-        <a href="#" class="mobile-nav-link">Spam Protection</a>
+        <a href="pages/product/spam.html" class="mobile-nav-link">Spam Protection</a>
         <a href="#" class="mobile-nav-link">Delivery Monitoring</a>
         <a href="#" class="mobile-nav-link">File Uploads</a>
         <a href="#" class="mobile-nav-link">Webhooks &amp; Notifications</a>
@@ -190,14 +181,6 @@
     </div>
     <div class="mobile-nav-group">
         <a href="#pricing" class="mobile-nav-link" style="font-weight:600;color:var(--text);">Pricing</a>
-        <%--
-        @if(loggedIn)
-            <a href="/dashboard" class="mobile-nav-link" style="font-weight:600;color:var(--text);">Dashboard</a>
-        @else
-            <a href="/auth/login" class="mobile-nav-link" style="font-weight:600;color:var(--text);">Sign In</a>
-            <a href="/auth/signup" class="mobile-nav-link" style="font-weight:600;color:var(--text);">Sign Up</a>
-        @endif
-        --%>
     </div>
     <div style="padding-top:16px;">
         <a href="#waitlist" class="btn btn-primary" style="width:100%;justify-content:center;">Join Waitlist →</a>
@@ -559,14 +542,14 @@
                 <p>Set the <code>action</code> attribute on any HTML form to your Formbox endpoint URL.</p>
                 <div class="step-preview">
                     <span class="code-tag">&lt;form</span> <span class="code-accent">action</span>=<span
-                            class="code-string">"https://formbox.dev/f/abc123"</span><br>
+                        class="code-string">"https://formbox.dev/f/abc123"</span><br>
                     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-accent">method</span>=<span
-                            class="code-string">"POST"</span><span class="code-tag">&gt;</span><br>
+                        class="code-string">"POST"</span><span class="code-tag">&gt;</span><br>
                     &nbsp;&nbsp;<span class="code-tag">&lt;input</span> <span class="code-accent">name</span>=<span
-                            class="code-string">"email"</span> <span class="code-tag">/&gt;</span><br>
+                        class="code-string">"email"</span> <span class="code-tag">/&gt;</span><br>
                     &nbsp;&nbsp;<span class="code-tag">&lt;button</span> <span class="code-accent">type</span>=<span
-                            class="code-string">"submit"</span><span class="code-tag">&gt;</span>Send<span
-                            class="code-tag">&lt;/button&gt;</span><br>
+                        class="code-string">"submit"</span><span class="code-tag">&gt;</span>Send<span
+                        class="code-tag">&lt;/button&gt;</span><br>
                     <span class="code-tag">&lt;/form&gt;</span>
                 </div>
             </div>
@@ -584,7 +567,7 @@
                         <span>Turnstile verified</span><span
                                 style="margin-left:auto;color:var(--text-muted);">passed</span></div>
                     <div class="preview-row"><span style="color:var(--success);">✓</span> <span>Rate limit</span><span
-                                style="margin-left:auto;color:var(--text-muted);">3/15 rpm</span></div>
+                            style="margin-left:auto;color:var(--text-muted);">3/15 rpm</span></div>
                     <div class="preview-row"><span style="color:var(--success);">✓</span>
                         <span>Origin allowed</span><span
                                 style="margin-left:auto;color:var(--text-muted);">mysite.com</span></div>
@@ -598,13 +581,13 @@
                 <p>Receive notifications via email, Discord, Slack, Telegram, or any custom webhook instantly.</p>
                 <div class="step-preview">
                     <div class="preview-row"><span>📧</span> <span>Email notification</span><span
-                                style="margin-left:auto;color:var(--success);">delivered</span></div>
+                            style="margin-left:auto;color:var(--success);">delivered</span></div>
                     <div class="preview-row"><span>💬</span> <span>Discord webhook</span><span
-                                style="margin-left:auto;color:var(--success);">200 OK</span></div>
+                            style="margin-left:auto;color:var(--success);">200 OK</span></div>
                     <div class="preview-row"><span>📢</span> <span>Slack webhook</span><span
-                                style="margin-left:auto;color:var(--success);">200 OK</span></div>
+                            style="margin-left:auto;color:var(--success);">200 OK</span></div>
                     <div class="preview-row"><span>🔗</span> <span>Custom → HubSpot</span><span
-                                style="margin-left:auto;color:var(--success);">201</span></div>
+                            style="margin-left:auto;color:var(--success);">201</span></div>
                 </div>
             </div>
 
@@ -872,7 +855,7 @@
             <div>
                 <div class="footer-col-title">Product</div>
                 <ul class="footer-links">
-                    <li><a href="#">Spam Protection</a></li>
+                    <li><a href="pages/product/spam.html">Spam Protection</a></li>
                     <li><a href="#">Delivery Monitoring</a></li>
                     <li><a href="#">File Uploads</a></li>
                     <li><a href="#">Webhooks &amp; Notifs</a></li>
@@ -982,7 +965,7 @@
     </div>
 </footer>
 
-<script src="/assets/script.js"></script>
+<script src="script.js"></script>
 </body>
 
 </html>
