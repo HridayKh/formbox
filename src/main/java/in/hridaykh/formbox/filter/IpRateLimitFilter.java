@@ -17,6 +17,7 @@ import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -34,12 +35,23 @@ public class IpRateLimitFilter extends OncePerRequestFilter {
 	private final StringRedisTemplate stringRedisTemplate;
 	private final RedisScript<Long> rateLimiterScript;
 	private final Environment environment;
+	private static final AntPathMatcher pathMatcher = new AntPathMatcher();
 
 	@Override
 	protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
-		if (Arrays.asList(environment.getActiveProfiles()).contains("dev")) {
+		List<String> activeProfiles = Arrays.asList(environment.getActiveProfiles());
+		if (activeProfiles.contains("dev")) {
 			filterChain.doFilter(request, response);
 			return;
+		} else {
+			String requestUri = request.getRequestURI();
+			String contextPath = request.getContextPath();
+			String relativePath = requestUri.substring(contextPath.length());
+
+			if (!pathMatcher.match("/", relativePath)) {
+				response.sendRedirect(contextPath + "/");
+				return;
+			}
 		}
 
 		long start = System.currentTimeMillis();

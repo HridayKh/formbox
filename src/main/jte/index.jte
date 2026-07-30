@@ -131,12 +131,14 @@
 
         <!-- Actions -->
         <div class="navbar-actions">
+            <%--
             @if(loggedIn)
                 <a href="/dashboard" class="navbar-signin">Dashboard</a>
             @else
                 <a href="/auth/login" class="navbar-signin">Sign In</a>
                 <a href="/auth/signup" class="navbar-signin">Sign Up</a>
             @endif
+            --%>
             <a href="#waitlist" class="btn btn-primary btn-sm">Join Waitlist →</a>
         </div>
 
@@ -188,8 +190,14 @@
     </div>
     <div class="mobile-nav-group">
         <a href="#pricing" class="mobile-nav-link" style="font-weight:600;color:var(--text);">Pricing</a>
-        <a href="/auth/login" class="mobile-nav-link" style="font-weight:600;color:var(--text);">Sign In</a>
-        <a href="/auth/signup" class="mobile-nav-link" style="font-weight:600;color:var(--text);">Sign Up</a>
+        <%--
+        @if(loggedIn)
+            <a href="/dashboard" class="mobile-nav-link" style="font-weight:600;color:var(--text);">Dashboard</a>
+        @else
+            <a href="/auth/login" class="mobile-nav-link" style="font-weight:600;color:var(--text);">Sign In</a>
+            <a href="/auth/signup" class="mobile-nav-link" style="font-weight:600;color:var(--text);">Sign Up</a>
+        @endif
+        --%>
     </div>
     <div style="padding-top:16px;">
         <a href="#waitlist" class="btn btn-primary" style="width:100%;justify-content:center;">Join Waitlist →</a>
