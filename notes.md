@@ -1,76 +1,47 @@
-# Notes
+# cache
 
-## Ui Inspiration
+- negative caching for formMetadata
+- generic redis caching system!!!!!
+- change redis ttl to 7 days from last access instead of 7 days from creation
+- proxy all repo calls over a cache
+- add low ttl for in mem cache
 
-1. formlink.io
-2. staticforms.dev
-3. splitforms.com
-4. usebasin.com
-5. slapform.com
+# dashboard
 
-## Experiments
+- push manage subs, email, logout, under a profile button
+- only show submissions and upgrade button
+- show messages, banners, etc. in place of upgrade button and open a modal when clicked
 
-1. how long does the pipeline take without turnstile and the 2 redis lookups (on prod, near redis)
-2. experiment with cf workers and cf cache to get sub 20ms 
-3. try to get the same with just workers 
-4. try to mini.ise latency without cf 
-5. move the turnstile check and schema validation after the response if the user says so (force the user to choose on form creation, no defaults)
-6. Turnstile verification on my own /f/ or /verify/ domain????
-7. `ALTCHA` as an alternative option for spam protection
+# modularity
 
-## Todo
+- move to modulith
+- change root package from `in.hridaykh.formbox` to `formbox` and put modules under `formbox.*`
+- Relaxed Module Boundaries while exploring and building, strict once stable and non changing
+- small modules just being fully flat `formbox.module.internal.*` is fine, even `formbox.module.*` is okay for internal stuff
 
-### customer state webhook sent on every ingest event
+# submissions
 
-### Core Form Features & Integrations
+- mark spam as false positives
+- spam reason!=none and is spam ==true, ie, false positive marked
+- analyze this data maybe to improve spam?
+- origin locks
+- show banner if submissions dropped and drop reasons
+- store submissions dropped due to out of submissions too but with a flag
+- store 3rd party webhooks in a log and show them as a read only in the dash and let them replay them
 
-* **[Medium Priority]**: Add asynchronous Discord notifications via webhook URL (with an errors table to report dashboard failures).
-* **[Low Priority]**: Magic `mailto:` links.
-* **[Low Priority]**: Email Digests
-* **[Low Priority]**: Webhook routing
+# jte
 
-### Backend, Infrastructure & Operations
+- move to jte
+- teach vaidik jte
+- treat controllers as react apps and services as the backend called by react apps and DTOs as the JSON contract
+- don’t worry about making 2 line services and 20 line controllers as long as the service is the backend and controller is the frontend only
 
-* **[High Priority]**: Implement OpenTelemetry (Otel) across all methods and capture deeper metadata (IP, User ID, Session data).
-* **[Medium Priority]**: Audit and re-decide log levels; implement structured logging usage everywhere.
-* **[Low Priority]**: Offload submissions older than the last 100 per form to Cloudflare R2.
-* **[Low Priority]**: Build CSV export functionality for submissions.
+# workers and ui/ux
 
-### Admin & Documentation (Pre-Launch)
-
-* **[High Priority]**: Auth improvements: Password reset, forgot password, and OAuth for quick signup.
-* **[Medium Priority]**: Make the new ui look good
-* **[Medium Launch]**: Write the Knowledge Base / Help documentation.
-* **[Low Priority]**: Draft and publish Legal Docs (Privacy Policy, ToS).
-* **[Near Launch]**: Build SQL queries as an admin panel
-
-### Roadmap
-
-1. Retry setting up the Sentry agent.
-2. should also handle benifit_grant.updated
-3. Change `isSpam` boolean to a `spamReason` enum (e.g., `notSpam`, `turnstileFailed`)
-4. Build the internal Admin Panel web based
-5. Build an `/onboarding` page post-signup that auto-generates a mock form with fields to get users started instantly
-6. Build 3rd-party library wrappers (React components, etc.)
-7. Slack webhooks
-8. Telegram Webhooks
-9. Form Error Handling: Let users decide error behavior per form (e.g., return `202 Accepted` even if validation fails for sub-20ms responses, or throw proper errors).
-10. deleted forms page
-
-
-## Frontend Pages
-
-**4. Form View** (tabbed)
-- **Submissions**: searchable table, CSV export, click-through to submission detail
-- **Delivery/Health**: per-recipient delivery status (owner notification + each CC/BCC tracked independently) — this is the differentiator, keep it visually prominent, not buried
-- **Settings**: endpoint/snippet, allowed origins, recipients, redirect config, spam protection toggles, retention window
-- **Access**: client credentials issued specifically to this form (plus a read-only note showing folder-level creds that also apply)
-
-**5. Submission Detail** — own view/modal, handles file attachments and per-email delivery status without cramming into a table row.
-
-**6. Account Settings** — plan tier, retention window, billing stub.
-
-**7. Client Dashboard**
-- Since clients get full delivery status now, this view is closer to a scoped mirror of the owner's Form View rather than a stripped-down version: submissions tab + delivery/health tab, both read-only, scoped to their form(s)/folder
-- No settings, no access management, no ability to change recipients/spam config — just visibility
-- Worth deciding whether they see this as one screen per form or a folder-scoped list they click into — given per-form-only search, probably: client lands on a list of their form(s) → clicks in → same tabbed submissions/health view as owner, just read-only
+- change rate limits to a single global value of 20rpm
+- use cf worker's inbuilt rate limit systen
+- pages/roadmap
+- highlight upcoming features properly on index landing page
+- make sure the main differentiators are visible first, such as in-built dash for your clients, etc.
+- make token refreshing async
+- magic links

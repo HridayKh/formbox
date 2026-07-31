@@ -1,7 +1,7 @@
-@import in.hridaykh.formbox.billing.model.Entitlements
-@import in.hridaykh.formbox.model.dto.CachedForm
-@import in.hridaykh.formbox.model.dto.SubmissionItem
-@import in.hridaykh.formbox.model.entity.Folder
+@import model.billing.formbox.Entitlements
+@import dto.model.formbox.CachedForm
+@import dto.model.formbox.SubmissionItem
+@import entity.model.formbox.Folder
 @import java.util.List
 
 @param boolean showManageSubscription

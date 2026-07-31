@@ -1,16 +1,13 @@
 {
-  "name": "frosty-limit-693b",
+  "name": "formbox-test",
   "version": "0.0.0",
   "private": true,
   "scripts": {
     "deploy": "wrangler deploy",
     "dev": "wrangler dev",
-    "start": "wrangler dev",
-    "test": "vitest"
+    "start": "wrangler dev"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.12.4",
-    "vitest": "~3.2.0",
     "wrangler": "^4.115.0"
   }
 }

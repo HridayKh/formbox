@@ -1,6 +1,6 @@
-@import in.hridaykh.formbox.model.dto.CachedForm
-@import in.hridaykh.formbox.model.dto.FolderFormDTO
-@import in.hridaykh.formbox.model.entity.Folder
+@import dto.model.formbox.CachedForm
+@import dto.model.formbox.FolderFormDTO
+@import entity.model.formbox.Folder
 @import java.util.List
 
 @param boolean showManageSubscription
