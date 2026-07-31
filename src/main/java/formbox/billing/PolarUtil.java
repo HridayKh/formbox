@@ -4,6 +4,7 @@ import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import sh.polar.sdk.Polar;
 import sh.polar.sdk.models.customer.PolarCustomerResponse;
 
 import java.util.HashMap;
@@ -13,6 +14,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Slf4j
 public class PolarUtil {
+
+	private final Polar polar;
 
 	@WithSpan
 	public void ensurePolarCustomerExists(String userId, String email) {

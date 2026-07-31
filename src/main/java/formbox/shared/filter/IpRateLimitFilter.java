@@ -1,5 +1,6 @@
-package formbox.shared;
+package formbox.shared.filter;
 
+import formbox.shared.util.CloudflareIpValidator;
 import formbox.shared.constant.CacheNames;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

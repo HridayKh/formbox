@@ -8,7 +8,7 @@ import formbox.billing.model.Entitlements;
 import formbox.billing.model.GrantedBenefits;
 import formbox.billing.FreeTierDefaults;
 import formbox.shared.Tenant;
-import formbox.auth.TenantRepository;
+import formbox.shared.TenantRepository;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

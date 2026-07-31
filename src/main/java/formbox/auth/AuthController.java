@@ -1,7 +1,5 @@
 package formbox.auth;
 
-import formbox.LoginRequest;
-import formbox.SignUpRequest;
 import formbox.shared.constant.PathRegistry;
 import formbox.shared.exception.TurnstileException;
 import formbox.shared.exception.auth.InvalidCredentialsException;
@@ -21,7 +19,7 @@ import jakarta.servlet.http.HttpServletResponse;
 @RequestMapping(PathRegistry.Auth.BASE)
 @Slf4j
 @RequiredArgsConstructor
-public class AuthController {
+class AuthController {
 
 	private final AuthService authService;
 

@@ -1,5 +1,6 @@
 package formbox.auth;
 
+import formbox.shared.TenantRepository;
 import formbox.billing.model.Entitlements;
 import formbox.shared.Tenant;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
@@ -14,13 +15,14 @@ import java.util.*;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class AuthTenantUtil {
+class AuthUtil {
 
 	private final TenantRepository tenantRepository;
 
 	@Transactional
 	@WithSpan
 	public void getOrCreateTenantWithFreeSubscription(JwtPayload userMetadata) {
+
 		UUID userId = UUID.fromString(Objects.requireNonNull(userMetadata.getSub()));
 		log.debug("Initiating onboarding after auth callback for: {}", userId);
 		tenantRepository.findById(userId).orElseGet(() -> {

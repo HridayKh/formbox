@@ -1,6 +1,5 @@
 package formbox.auth;
 
-import formbox.AuthServiceKt;
 import formbox.shared.constant.PathRegistry;
 import io.github.jan.supabase.SupabaseClient;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
@@ -8,6 +7,7 @@ import io.github.jan.supabase.auth.user.UserSession;
 import jakarta.servlet.*;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +24,7 @@ import java.util.List;
 @Slf4j
 @RequiredArgsConstructor
 @Component
-public class SupabaseSessionFilter extends OncePerRequestFilter {
+class AuthFilter extends OncePerRequestFilter {
 
 	private final AuthService authService;
 	private final AuthServiceKt authServiceKt;
@@ -121,5 +121,29 @@ public class SupabaseSessionFilter extends OncePerRequestFilter {
 	private String getCookieValue(HttpServletRequest request, String name) {
 		if (request.getCookies() == null) return null;
 		return Arrays.stream(request.getCookies()).filter(cookie -> name.equals(cookie.getName())).map(Cookie::getValue).findFirst().orElse(null);
+	}
+
+	static class RequestWrapper extends HttpServletRequestWrapper {
+		private final String accessToken;
+		private final String refreshToken;
+
+		public RequestWrapper(HttpServletRequest request, String accessToken, String refreshToken) {
+			super(request);
+			this.accessToken = accessToken;
+			this.refreshToken = refreshToken;
+		}
+
+		@Override
+		public Cookie[] getCookies() {
+			Cookie[] originalCookies = super.getCookies();
+			for (Cookie cookie : originalCookies) {
+				if ("sb_token".equals(cookie.getName())) {
+					cookie.setValue(accessToken);
+				} else if ("sb_refresh".equals(cookie.getName())) {
+					cookie.setValue(refreshToken);
+				}
+			}
+			return originalCookies;
+		}
 	}
 }

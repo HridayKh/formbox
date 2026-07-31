@@ -36,10 +36,6 @@ public class Tenant {
 		this.updatedAt = OffsetDateTime.now();
 	}
 
-	/**
-	 * Returns entitlements with free tier fallback.
-	 * Safe to call even when entitlements is null (pre-webhook tenants).
-	 */
 	public Entitlements getEntitlementsOrDefaults() {
 		return entitlements != null ? entitlements : Entitlements.freeDefaults();
 	}

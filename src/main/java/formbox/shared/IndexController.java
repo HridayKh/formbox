@@ -9,6 +9,7 @@ import formbox.core.form.FormFileService;
 import formbox.core.form.FormSubmissionService;
 import formbox.core.cache.FormCacheService;
 import formbox.billing.service.PolarCacheService;
+import formbox.shared.util.TurnstileVerifier;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import jakarta.servlet.http.HttpServletRequest;

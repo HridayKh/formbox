@@ -1,4 +1,4 @@
-package formbox.shared;
+package formbox.shared.util;
 
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.extern.slf4j.Slf4j;

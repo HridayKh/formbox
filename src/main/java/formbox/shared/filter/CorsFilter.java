@@ -1,4 +1,4 @@
-package formbox.auth;
+package formbox.shared.filter;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -18,7 +18,7 @@ import java.io.IOException;
 @RequiredArgsConstructor
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @Component
-public class CorsFilter extends OncePerRequestFilter {
+class CorsFilter extends OncePerRequestFilter {
 
 	@Override
 	protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {

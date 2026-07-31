@@ -1,6 +1,5 @@
-package formbox
+package formbox.auth
 
-import formbox.auth.SupabaseProperties
 import formbox.shared.exception.auth.AuthException
 import formbox.shared.exception.auth.InvalidCredentialsException
 import formbox.shared.exception.auth.SessionExpiredException
@@ -28,7 +27,7 @@ data class LoginRequest(val email: String, val password: String)
 data class AuthResponse(val userId: String, val accessToken: String, val refreshToken: String)
 
 @Service
-class AuthServiceKt(private val supabaseProps: SupabaseProperties) {
+internal class AuthServiceKt(private val supabaseProps: SupabaseProperties) {
 
 	private val log = LoggerFactory.getLogger(AuthServiceKt::class.java)
 
@@ -91,7 +90,12 @@ class AuthServiceKt(private val supabaseProps: SupabaseProperties) {
 				email
 			)
 		} catch (e: AuthRestException) {
-			log.warn("Supabase endpoint error during token dispatch to {}: {}", email, e.errorDescription, e)
+			log.warn(
+				"Supabase endpoint error during token dispatch to {}: {}",
+				email,
+				e.errorDescription,
+				e
+			)
 			throw AuthException("Verification server error: ${e.errorDescription}")
 		} catch (e: Exception) {
 			log.error("Failed handling automated token renewal flow for target destination: {}", email, e)

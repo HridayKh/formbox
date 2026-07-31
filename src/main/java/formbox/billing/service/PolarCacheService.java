@@ -3,7 +3,7 @@ package formbox.billing.service;
 import formbox.billing.model.Entitlements;
 import formbox.shared.constant.CacheNames;
 import formbox.shared.Tenant;
-import formbox.auth.TenantRepository;
+import formbox.shared.TenantRepository;
 import formbox.core.repository.SubmissionRepository;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;

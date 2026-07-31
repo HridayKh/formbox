@@ -1,7 +1,7 @@
-@import model.billing.formbox.Entitlements
-@import dto.model.formbox.CachedForm
-@import dto.model.formbox.SubmissionItem
-@import entity.model.formbox.Folder
+@import formbox.billing.model.Entitlements
+@import formbox.core.dto.CachedForm
+@import formbox.core.dto.SubmissionItem
+@import formbox.core.entity.Folder
 @import java.util.List
 
 @param boolean showManageSubscription

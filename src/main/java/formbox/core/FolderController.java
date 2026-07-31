@@ -2,7 +2,7 @@ package formbox.core;
 
 import formbox.core.entity.Folder;
 import formbox.core.repository.FolderRepository;
-import formbox.auth.TenantRepository;
+import formbox.shared.TenantRepository;
 import formbox.core.cache.FolderCacheService;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
 import io.opentelemetry.instrumentation.annotations.WithSpan;

@@ -1,13 +1,9 @@
 package formbox.auth;
 
-import formbox.AuthServiceKt;
-import formbox.AuthResponse;
-import formbox.LoginRequest;
-import formbox.SignUpRequest;
 import formbox.shared.TurnstileProperties;
 import formbox.shared.constant.PathRegistry;
 import formbox.shared.exception.TurnstileException;
-import formbox.shared.TurnstileVerifier;
+import formbox.shared.util.TurnstileVerifier;
 import io.github.jan.supabase.SupabaseClient;
 import io.github.jan.supabase.auth.exception.AuthWeakPasswordException;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
@@ -25,10 +21,10 @@ import java.util.Map;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class AuthService {
+class AuthService {
 
 	private final AuthServiceKt authServiceKt;
-	private final AuthTenantUtil authTenantUtil;
+	private final AuthUtil authUtil;
 	private final ObjectMapper objectMapper;
 	private final TurnstileProperties turnstileProperties;
 
@@ -63,7 +59,7 @@ public class AuthService {
 
 		var userMetadata = authServiceKt.getUserMetadata(supabaseClient, auth.getAccessToken());
 		if (userMetadata != null) {
-			authTenantUtil.getOrCreateTenantWithFreeSubscription(userMetadata);
+			authUtil.getOrCreateTenantWithFreeSubscription(userMetadata);
 		}
 
 		log.info("Login successful. Assigned secure cookie contexts for verified UID payload reference: {}", auth.getUserId());
@@ -107,7 +103,7 @@ public class AuthService {
 
 		var userMetadata = authServiceKt.getUserMetadata(supabaseClient, accessToken);
 		assert userMetadata != null;
-		authTenantUtil.getOrCreateTenantWithFreeSubscription(userMetadata);
+		authUtil.getOrCreateTenantWithFreeSubscription(userMetadata);
 
 		log.info("OAuth session completely established and secure cookies injected successfully.");
 		response.setHeader("HX-Redirect", PathRegistry.DASHBOARD);

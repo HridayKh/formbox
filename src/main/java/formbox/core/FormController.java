@@ -11,7 +11,7 @@ import formbox.core.entity.Folder;
 import formbox.core.entity.Form;
 import formbox.core.repository.FolderRepository;
 import formbox.core.repository.FormRepository;
-import formbox.auth.TenantRepository;
+import formbox.shared.TenantRepository;
 import formbox.billing.service.EntitlementsCacheService;
 import formbox.core.cache.FolderCacheService;
 import formbox.core.cache.FormCacheService;

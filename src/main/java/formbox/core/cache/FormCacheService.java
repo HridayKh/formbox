@@ -7,7 +7,7 @@ import formbox.core.entity.Form;
 import formbox.shared.Tenant;
 import formbox.core.repository.FolderRepository;
 import formbox.core.repository.FormRepository;
-import formbox.auth.TenantRepository;
+import formbox.shared.TenantRepository;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
