@@ -36,7 +36,9 @@ sentry {
 	projectName = "formbox"
 	authToken = System.getenv("SENTRY_AUTH_TOKEN")
 }
+
 extra["opentelemetry.version"] = "1.63.0"
+val springModulithVersion by extra("2.1.0")
 dependencies {
 	// Standard Spring Boot dependencies
 	implementation("org.springframework.boot:spring-boot-starter-webmvc")
@@ -44,8 +46,13 @@ dependencies {
 	implementation("org.postgresql:postgresql")
 	implementation("gg.jte:jte-spring-boot-starter-4:3.2.4")
 
+	// modulith
+	runtimeOnly("org.springframework.modulith:spring-modulith-actuator")
+	runtimeOnly("org.springframework.modulith:spring-modulith-observability")
+	implementation("org.springframework.modulith:spring-modulith-starter-core")
+	testImplementation("org.springframework.modulith:spring-modulith-starter-test")
+
 	// logging
-//	implementation(platform("io.sentry:sentry-bom:8.48.0"))
 	implementation("io.sentry:sentry-spring-boot-4:8.48.0")
 	implementation("io.sentry:sentry-async-profiler:8.48.0")
 	implementation("io.sentry:sentry-logback:8.48.0")
@@ -78,6 +85,11 @@ dependencies {
 
 group = "in.hridaykh"
 version = "0.0.1-SNAPSHOT"
+dependencyManagement {
+	imports {
+		mavenBom("org.springframework.modulith:spring-modulith-bom:$springModulithVersion")
+	}
+}
 
 tasks.withType<Test> {
 	useJUnitPlatform()

@@ -1,6 +1,6 @@
 package formbox.core.entity;
 
-import formbox.shared.Tenant;
+import formbox.auth.tenant.Tenant;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.ColumnDefault;

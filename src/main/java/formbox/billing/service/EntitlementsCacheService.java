@@ -1,8 +1,8 @@
 package formbox.billing.service;
 
 import formbox.billing.model.Entitlements;
-import formbox.shared.Tenant;
-import formbox.shared.TenantRepository;
+import formbox.auth.tenant.Tenant;
+import formbox.auth.tenant.TenantRepository;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

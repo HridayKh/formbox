@@ -1,10 +1,10 @@
 package formbox.billing.service;
 
 import formbox.billing.model.Entitlements;
-import formbox.shared.constant.CacheNames;
-import formbox.shared.Tenant;
-import formbox.shared.TenantRepository;
-import formbox.core.repository.SubmissionRepository;
+import formbox.core.OldBillingProxy;
+import formbox.shared.CacheNames;
+import formbox.auth.tenant.Tenant;
+import formbox.auth.tenant.TenantRepository;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,8 +33,8 @@ public class PolarCacheService {
 	private final StringRedisTemplate redisTemplate;
 	private final PolarMeterService polarMeterService;
 	private final TenantRepository tenantRepository;
-	private final SubmissionRepository submissionRepository;
 	private final EntitlementsCacheService entitlementsCacheService;
+	private final OldBillingProxy oldBillingProxy;
 
 	@WithSpan
 	@Cacheable(value = CacheNames.METER_BALANCE, key = "#tenantId.toString()")
@@ -144,7 +144,7 @@ public class PolarCacheService {
 					? entitlements.refreshAt().minus(30, ChronoUnit.DAYS)
 					: Instant.now().minus(30, ChronoUnit.DAYS);
 				OffsetDateTime since = OffsetDateTime.ofInstant(cycleStart, ZoneOffset.UTC);
-				long consumed = submissionRepository.countByTenantIdAndCreatedAtAfter(tenantId, since);
+				long consumed = oldBillingProxy.submissionRepository_countByTenantIdAndCreatedAtAfter(tenantId, since);
 				liveBalance = Math.max(0, entitlements.submissionsLimit() - consumed);
 				log.debug("Free-tier tenant local submissions balance evaluated. Limit: {}, Consumed: {}, Remaining: {}",
 					entitlements.submissionsLimit(), consumed, liveBalance);

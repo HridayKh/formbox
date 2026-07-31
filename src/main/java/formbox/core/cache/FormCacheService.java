@@ -1,13 +1,13 @@
 package formbox.core.cache;
 
-import formbox.shared.constant.CacheNames;
-import formbox.shared.exception.FormNotFoundException;
+import formbox.shared.CacheNames;
+import formbox.core.FormNotFoundException;
 import formbox.core.dto.CachedForm;
 import formbox.core.entity.Form;
-import formbox.shared.Tenant;
+import formbox.auth.tenant.Tenant;
 import formbox.core.repository.FolderRepository;
 import formbox.core.repository.FormRepository;
-import formbox.shared.TenantRepository;
+import formbox.auth.tenant.TenantRepository;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

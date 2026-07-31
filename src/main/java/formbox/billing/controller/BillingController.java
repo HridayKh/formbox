@@ -1,7 +1,7 @@
 package formbox.billing.controller;
 
 import formbox.billing.PolarUtil;
-import formbox.shared.constant.PathRegistry;
+import formbox.shared.PathRegistry;
 import formbox.billing.model.Entitlements;
 import formbox.billing.service.EntitlementsCacheService;
 import io.github.jan.supabase.auth.jwt.JwtPayload;

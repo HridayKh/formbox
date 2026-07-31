@@ -1,6 +1,6 @@
 package formbox.core.cache;
 
-import formbox.shared.constant.CacheNames;
+import formbox.shared.CacheNames;
 import formbox.core.dto.FormSubmissionsResponse;
 import formbox.core.dto.SubmissionItem;
 import formbox.core.repository.SubmissionRepository;

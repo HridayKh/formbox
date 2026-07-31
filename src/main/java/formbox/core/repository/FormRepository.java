@@ -1,7 +1,7 @@
 package formbox.core.repository;
 
 import formbox.core.entity.Form;
-import formbox.shared.Tenant;
+import formbox.auth.tenant.Tenant;
 import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
