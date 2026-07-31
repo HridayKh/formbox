@@ -1,9 +1,9 @@
 package formbox.billing.controller;
 
-import formbox.constant.PathRegistry;
+import formbox.billing.PolarUtil;
+import formbox.shared.constant.PathRegistry;
 import formbox.billing.model.Entitlements;
 import formbox.billing.service.EntitlementsCacheService;
-import formbox.service.TenantService;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +26,7 @@ public class BillingController {
 
 	private final PolarHttpClient polarHttpClient;
 	private final EntitlementsCacheService entitlementsCacheService;
-	private final TenantService tenantService;
+	private final PolarUtil polarUtil;
 
 	@GetMapping(PathRegistry.Billing.PORTAL)
 	@WithSpan
@@ -45,7 +45,7 @@ public class BillingController {
 		Entitlements entitlements = entitlementsCacheService.getEntitlements(UUID.fromString(userId));
 		if (entitlements.isFree()) {
 			try {
-				tenantService.ensurePolarCustomerExists(userId, userMetadata.getEmail());
+				polarUtil.ensurePolarCustomerExists(userId, userMetadata.getEmail());
 				log.debug("Ensured Polar customer exists for free-tier user {} before portal redirect", userId);
 			} catch (Exception e) {
 				log.error("Failed to ensure Polar customer before portal redirect for user: {}", userId, e);

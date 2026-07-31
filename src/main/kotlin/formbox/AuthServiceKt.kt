@@ -1,9 +1,9 @@
 package formbox
 
-import formbox.config.SupabaseProperties
-import formbox.exception.auth.AuthException
-import formbox.exception.auth.InvalidCredentialsException
-import formbox.exception.auth.SessionExpiredException
+import formbox.auth.SupabaseProperties
+import formbox.shared.exception.auth.AuthException
+import formbox.shared.exception.auth.InvalidCredentialsException
+import formbox.shared.exception.auth.SessionExpiredException
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.OtpType

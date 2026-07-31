@@ -1,7 +1,7 @@
 package formbox.billing.controller;
 
 import formbox.billing.service.WebhookService;
-import formbox.constant.PathRegistry;
+import formbox.shared.constant.PathRegistry;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;

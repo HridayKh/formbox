@@ -1,10 +1,10 @@
 package formbox.billing.service;
 
 import formbox.billing.model.Entitlements;
-import formbox.constant.CacheNames;
-import formbox.model.entity.Tenant;
-import formbox.repository.TenantRepository;
-import formbox.repository.SubmissionRepository;
+import formbox.shared.constant.CacheNames;
+import formbox.shared.Tenant;
+import formbox.auth.TenantRepository;
+import formbox.core.repository.SubmissionRepository;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
