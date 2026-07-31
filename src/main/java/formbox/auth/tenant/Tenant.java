@@ -1,6 +1,6 @@
 package formbox.auth.tenant;
 
-import formbox.billing.model.Entitlements;
+import formbox.shared.Entitlements;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.ToString;
@@ -15,7 +15,7 @@ import java.util.UUID;
 @Table(name = "tenants")
 @Data
 @ToString
-public class Tenant {
+class Tenant {
 
 	@Id
 	@Column(name = "id", nullable = false)

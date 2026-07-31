@@ -1,6 +1,6 @@
 package formbox.auth.internal
 
-import formbox.auth.GenericAuthException
+import formbox.shared.GenericAuthException
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.OtpType

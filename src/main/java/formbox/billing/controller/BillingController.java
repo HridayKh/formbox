@@ -1,9 +1,9 @@
 package formbox.billing.controller;
 
-import formbox.billing.PolarUtil;
+import formbox.billing.internal.PolarUtil;
 import formbox.shared.PathRegistry;
-import formbox.billing.model.Entitlements;
-import formbox.billing.service.EntitlementsCacheService;
+import formbox.shared.Entitlements;
+import formbox.billing.EntitlementsApi;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +25,7 @@ import java.util.*;
 public class BillingController {
 
 	private final PolarHttpClient polarHttpClient;
-	private final EntitlementsCacheService entitlementsCacheService;
+	private final EntitlementsApi entitlementsApi;
 	private final PolarUtil polarUtil;
 
 	@GetMapping(PathRegistry.Billing.PORTAL)
@@ -42,7 +42,7 @@ public class BillingController {
 			return "redirect:" + PathRegistry.Auth.Hx.LOGIN_UNAUTHORIZED;
 		}
 
-		Entitlements entitlements = entitlementsCacheService.getEntitlements(UUID.fromString(userId));
+		Entitlements entitlements = entitlementsApi.getEntitlements(UUID.fromString(userId));
 		if (entitlements.isFree()) {
 			try {
 				polarUtil.ensurePolarCustomerExists(userId, userMetadata.getEmail());

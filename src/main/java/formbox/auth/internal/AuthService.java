@@ -1,5 +1,6 @@
 package formbox.auth.internal;
 
+import formbox.auth.TenantApi;
 import formbox.shared.PathRegistry;
 import formbox.shared.TurnstileVerifierUtil;
 import io.github.jan.supabase.SupabaseClient;
@@ -15,6 +16,8 @@ import tools.jackson.databind.ObjectMapper;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -22,9 +25,9 @@ import java.util.Map;
 class AuthService {
 
 	private final AuthServiceKt authServiceKt;
-	private final AuthUtil authUtil;
 	private final ObjectMapper objectMapper;
 	private final AuthConfig authConfig;
+	private final TenantApi tenantApi;
 
 	public void processLoginPage(String msg, HttpServletResponse response) {
 		log.trace("Processing login page evaluation. Provided message trigger parameter: [{}]", msg);
@@ -54,11 +57,6 @@ class AuthService {
 
 		setAuthCookie(response, "sb_token", auth.getAccessToken(), 3600);
 		setAuthCookie(response, "sb_refresh", auth.getRefreshToken(), 604800);
-
-		var userMetadata = authServiceKt.getUserMetadata(supabaseClient, auth.getAccessToken());
-		if (userMetadata != null) {
-			authUtil.getOrCreateTenantWithFreeSubscription(userMetadata);
-		}
 
 		log.info("Login successful. Assigned secure cookie contexts for verified UID payload reference: {}", auth.getUserId());
 	}
@@ -101,7 +99,10 @@ class AuthService {
 
 		var userMetadata = authServiceKt.getUserMetadata(supabaseClient, accessToken);
 		assert userMetadata != null;
-		authUtil.getOrCreateTenantWithFreeSubscription(userMetadata);
+
+		UUID userId = UUID.fromString(Objects.requireNonNull(userMetadata.getSub()));
+
+		tenantApi.createTenant(userId, userMetadata.getEmail());
 
 		log.info("OAuth session completely established and secure cookies injected successfully.");
 		response.setHeader("HX-Redirect", PathRegistry.DASHBOARD);

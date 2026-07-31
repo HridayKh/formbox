@@ -2,9 +2,7 @@ package formbox.core.cache;
 
 import formbox.shared.CacheNames;
 import formbox.core.entity.Folder;
-import formbox.auth.tenant.Tenant;
 import formbox.core.repository.FolderRepository;
-import formbox.auth.tenant.TenantRepository;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +24,6 @@ public class FolderCacheService {
 
 	private final StringRedisTemplate redisTemplate;
 	private final ObjectMapper objectMapper;
-	private final TenantRepository tenantRepository;
 	private final FolderRepository folderRepository;
 
 	@Cacheable(value = CacheNames.TENANT_FOLDERS, key = "#tenantId.toString()")
@@ -46,8 +43,7 @@ public class FolderCacheService {
 		}
 
 		log.debug("Redis L2 cache MISS for tenant folders on tenant ID: {}. Loading relations from database...", tenantId);
-		Tenant tenant = tenantRepository.getReferenceById(tenantId);
-		List<Folder> dbFolders = folderRepository.findAllByTenantId(tenant.getId());
+		List<Folder> dbFolders = folderRepository.findAllByTenantId(tenantId);
 		log.trace("Database query completed. Found {} active folders for tenant ID: {}", dbFolders.size(), tenantId);
 
 		try {

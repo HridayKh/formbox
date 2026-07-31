@@ -1,14 +1,14 @@
 package formbox.billing.service;
 
-import formbox.billing.PolarIdProperties;
+import formbox.auth.TenantApi;
+import formbox.billing.EntitlementsApi;
+import formbox.billing.internal.PolarIdProperties;
 import formbox.billing.model.ActiveMeters;
 import formbox.billing.model.ActiveSubscriptions;
 import formbox.billing.model.CustomerStateChanged;
-import formbox.billing.model.Entitlements;
+import formbox.shared.Entitlements;
 import formbox.billing.model.GrantedBenefits;
-import formbox.billing.FreeTierDefaults;
-import formbox.auth.tenant.Tenant;
-import formbox.auth.tenant.TenantRepository;
+import formbox.shared.FreeTierDefaults;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,11 +25,11 @@ import java.util.*;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class WebhookService {
+public class PolarWebhookService {
 	private final ObjectMapper objectMapper;
-	private final TenantRepository tenantRepository;
 	private final PolarIdProperties polarIdProperties;
-	private final EntitlementsCacheService entitlementsCacheService;
+	private final EntitlementsApi entitlementsApi;
+	private final TenantApi tenantApi;
 
 	@WithSpan
 	public void processHook(String rawBody) {
@@ -46,16 +46,11 @@ public class WebhookService {
 		var state = objectMapper.convertValue(dataNode, new TypeReference<CustomerStateChanged>() {
 		});
 		UUID tenantId = UUID.fromString(state.externalId());
-		var tenantOptional = tenantRepository.findById(tenantId);
-		if (tenantOptional.isEmpty()) {
-			log.warn("Tenant {} not found for webhook: {}", tenantId, rawBody);
-			throw new IllegalArgumentException();
-		}
-		Tenant tenant = tenantOptional.get();
+
 		Entitlements entitlements = createEntitlements(state);
-		tenant.setEntitlements(entitlements);
-		tenantRepository.save(tenant);
-		entitlementsCacheService.updateEntitlementsCache(tenantId, entitlements);
+		tenantApi.updateTenantEntitlements(tenantId, entitlements);
+
+		entitlementsApi.updateEntitlementsCache(tenantId, entitlements);
 		log.info("Entitlements updated for tenant {} (tier: {})", tenantId, entitlements.tierName());
 	}
 
@@ -158,7 +153,7 @@ public class WebhookService {
 		eb.emailDigestsAllowed(enabledFeatures.contains("email_digests_allowed"));
 		eb.altchaAllowed(enabledFeatures.contains("altcha_allowed"));
 
-		// --- 7. Numeric limits (take highest across all benefits) ---
+		// --- 7. Numeric limits (take the highest across all benefits) ---
 		eb.maxRateLimitRpm((int) (long) numericLimits.getOrDefault(
 			"max_rate_limit_rpm", (long) FreeTierDefaults.MAX_RATE_LIMIT_RPM));
 		eb.maxFileSizeBytes(numericLimits.getOrDefault(

@@ -1,8 +1,7 @@
-package formbox.billing;
+package formbox.billing.internal;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import sh.polar.sdk.http.PolarHttpClient;
@@ -11,7 +10,7 @@ import sh.polar.spring.PolarProperties;
 @Configuration
 @RequiredArgsConstructor
 @Slf4j
-public class BillingModuleConfiguration {
+public class BillingBeans {
 
 	private final PolarProperties polarProperties;
 

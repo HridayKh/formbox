@@ -1,6 +1,5 @@
 package formbox.core.entity;
 
-import formbox.auth.tenant.Tenant;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.ColumnDefault;
@@ -18,9 +17,8 @@ public class Folder {
 	@Column(name = "id", updatable = false, nullable = false)
 	private UUID id;
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "tenant_id", nullable = false)
-	private Tenant tenant;
+	@Column(name = "tenant_id", nullable = false)
+	private UUID tenantId;
 
 	@Column(name = "name", nullable = false)
 	private String name;

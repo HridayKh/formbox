@@ -1,7 +1,7 @@
 package formbox.core.web;
 
-import formbox.billing.model.Entitlements;
-import formbox.billing.service.PolarCacheService;
+import formbox.billing.PolarSubmissionApi;
+import formbox.shared.Entitlements;
 import formbox.shared.PathRegistry;
 import formbox.core.dto.CachedForm;
 import formbox.core.dto.FormSettingsRequest;
@@ -11,8 +11,7 @@ import formbox.core.entity.Folder;
 import formbox.core.entity.Form;
 import formbox.core.repository.FolderRepository;
 import formbox.core.repository.FormRepository;
-import formbox.auth.tenant.TenantRepository;
-import formbox.billing.service.EntitlementsCacheService;
+import formbox.billing.EntitlementsApi;
 import formbox.core.cache.FolderCacheService;
 import formbox.core.cache.FormCacheService;
 import formbox.core.cache.SubmissionCacheService;
@@ -34,15 +33,14 @@ import java.util.*;
 @RequiredArgsConstructor
 class FormController {
 
-	private final TenantRepository tenantRepository;
 	private final FormRepository formRepository;
 	private final SubmissionCacheService submissionCacheService;
 	private final FormCacheService formCacheService;
 	private final FormSettingsService formSettingsService;
-	private final EntitlementsCacheService entitlementsCacheService;
+	private final EntitlementsApi entitlementsApi;
 	private final FolderRepository folderRepository;
-	private final PolarCacheService polarCacheService;
 	private final FolderCacheService folderCacheService;
+	private final PolarSubmissionApi polarSubmissionApi;
 
 	@PostMapping("/{folderId}")
 	@WithSpan
@@ -53,7 +51,7 @@ class FormController {
 		UUID tenantId = UUID.fromString(Objects.requireNonNull(userMetadata.getSub()));
 		List<CachedForm> forms = formCacheService.getTenantForms(tenantId);
 
-		Entitlements entitlements = entitlementsCacheService.getEntitlements(tenantId);
+		Entitlements entitlements = entitlementsApi.getEntitlements(tenantId);
 		String msg = "Form created successfully!";
 
 		if (forms.size() >= entitlements.formsLimit()) {
@@ -68,7 +66,7 @@ class FormController {
 		}
 
 		Form newForm = new Form();
-		newForm.setTenant(tenantRepository.getReferenceById(tenantId));
+		newForm.setTenantId(tenantId);
 		newForm.setName(formName);
 		newForm.setRedirectUrl(redirectUrl);
 		newForm.setAllowJson(entitlements.jsonFormsAllowed());
@@ -100,12 +98,12 @@ class FormController {
 		}
 
 		FormSubmissionsResponse submissions = submissionCacheService.getFormSubmissionsGrouped(formId);
-		Entitlements entitlements = entitlementsCacheService.getEntitlements(form.tenantId());
+		Entitlements entitlements = entitlementsApi.getEntitlements(form.tenantId());
 
 		log.trace("Loaded dashboard variables for form {}: {} submissions, {} spam", formId, submissions.submissions().size(), submissions.spam().size());
 
 		model.addAttribute("msg", msg);
-		model.addAttribute("balanceLeft", polarCacheService.getCachedSubmissionBalance(form.tenantId()));
+		model.addAttribute("balanceLeft", polarSubmissionApi.getCachedSubmissionBalance(form.tenantId()));
 		model.addAttribute("showManageSubscription", !entitlements.isFree());
 		model.addAttribute("email", userMetadata.getEmail());
 
@@ -130,7 +128,7 @@ class FormController {
 		if (folderOpt.isEmpty())
 			return "redirect:/dashboard?msg=Folder not found!";
 		Folder folder = folderOpt.get();
-		if (!folder.getTenant().getId().toString().equals(userMetadata.getSub())) {
+		if (!folder.getTenantId().toString().equals(userMetadata.getSub())) {
 			log.warn("Unauthorized form move attempt of folder {} by user {}", folderId, userMetadata.getSub());
 			return "redirect:/dashboard?msg=Invalid folder";
 		}
@@ -138,7 +136,7 @@ class FormController {
 		Optional<Form> form = formRepository.findById(formId);
 		if (form.isEmpty())
 			return "redirect:/dashboard?msg=Form not found!";
-		if (!form.get().getTenant().getId().toString().equals(userMetadata.getSub())) {
+		if (!form.get().getTenantId().toString().equals(userMetadata.getSub())) {
 			log.warn("Unauthorized form move attempt of form {} by user {}", formId, userMetadata.getSub());
 			return "redirect:/dashboard?msg=Invalid form";
 		}
@@ -171,7 +169,7 @@ class FormController {
 		// Execute core business logic
 		TierValidationResult result = formSettingsService.updateFormSettings(formId, userMetadata.getSub(), fullRequest);
 
-		Entitlements entitlements = entitlementsCacheService.getEntitlements(UUID.fromString(Objects.requireNonNull(userMetadata.getSub())));
+		Entitlements entitlements = entitlementsApi.getEntitlements(UUID.fromString(Objects.requireNonNull(userMetadata.getSub())));
 		model.addAttribute("entitlements", entitlements);
 		model.addAttribute("redirectUrlNotAllowed", !entitlements.redirectUrlsAllowed());
 		model.addAttribute("fieldValidationsNotAllowed", !entitlements.fieldValidationsAllowed());

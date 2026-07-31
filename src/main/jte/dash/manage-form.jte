@@ -1,4 +1,4 @@
-@import formbox.billing.model.Entitlements
+@import formbox.shared.Entitlements
 @import formbox.core.dto.CachedForm
 @import formbox.core.dto.SubmissionItem
 @import formbox.core.entity.Folder

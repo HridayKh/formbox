@@ -1,12 +1,12 @@
 package formbox.billing.service;
 
-import formbox.billing.model.Entitlements;
-import formbox.auth.tenant.Tenant;
-import formbox.auth.tenant.TenantRepository;
+import formbox.auth.TenantApi;
+import formbox.billing.EntitlementsApi;
+import formbox.shared.CacheNames;
+import formbox.shared.Entitlements;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -19,20 +19,20 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class EntitlementsCacheService {
+public class EntitlementsApiImpl implements EntitlementsApi {
 
-	private final TenantRepository tenantRepository;
 	private final StringRedisTemplate redisTemplate;
 	private final ObjectMapper objectMapper;
 
-	private static final String CACHE_NAME = "tenantEntitlements";
+	private final TenantApi tenantApi;
 
-	@Cacheable(value = CACHE_NAME, key = "#tenantId.toString()")
+	@Cacheable(value = CacheNames.TENANT_ENTITLEMENTS, key = "#tenantId.toString()")
 	@WithSpan
+	@Override
 	public Entitlements getEntitlements(UUID tenantId) {
 		log.trace("Caffeine L1 cache MISS for tenant entitlements ID: {}", tenantId);
 
-		String redisKey = String.format("formbox:%s:%s", CACHE_NAME, tenantId);
+		String redisKey = String.format("formbox:%s:%s", CacheNames.TENANT_ENTITLEMENTS, tenantId);
 		String cachedJson = null;
 		try {
 			cachedJson = redisTemplate.opsForValue().get(redisKey);
@@ -50,8 +50,8 @@ public class EntitlementsCacheService {
 		}
 
 		log.debug("Redis L2 cache MISS for tenant entitlements ID: {}. Fetching from persistent database...", tenantId);
-		Tenant tenant = tenantRepository.findById(tenantId).orElse(null);
-		Entitlements entitlements = tenant != null ? tenant.getEntitlementsOrDefaults() : Entitlements.freeDefaults();
+
+		Entitlements entitlements = tenantApi.getTenantEntitlementsOrDefault(tenantId);
 
 		try {
 			redisTemplate.opsForValue().set(redisKey, objectMapper.writeValueAsString(entitlements), Duration.ofDays(2));
@@ -63,29 +63,18 @@ public class EntitlementsCacheService {
 		return entitlements;
 	}
 
-	@CachePut(value = CACHE_NAME, key = "#tenantId.toString()")
+	@CachePut(value = CacheNames.TENANT_ENTITLEMENTS, key = "#tenantId.toString()")
 	@WithSpan
+	@Override
 	public void updateEntitlementsCache(UUID tenantId, Entitlements entitlements) {
 		log.debug("Updating entitlements cache for tenant ID: {}", tenantId);
-		String redisKey = String.format("formbox:%s:%s", CACHE_NAME, tenantId);
+		String redisKey = String.format("formbox:%s:%s", CacheNames.TENANT_ENTITLEMENTS, tenantId);
 
 		try {
 			redisTemplate.opsForValue().set(redisKey, objectMapper.writeValueAsString(entitlements), Duration.ofDays(2));
 			log.trace("Redis L2 cache successfully updated for tenant entitlements ID: {}", tenantId);
 		} catch (Exception e) {
 			log.error("Failed to update Redis L2 cache for tenant entitlements ID: {}", tenantId, e);
-		}
-	}
-
-	@CacheEvict(value = CACHE_NAME, key = "#tenantId.toString()")
-	@WithSpan
-	public void evictEntitlementsCache(UUID tenantId) {
-		log.debug("Evicting entitlements cache for tenant ID: {}", tenantId);
-		try {
-			Boolean deleted = redisTemplate.delete(String.format("formbox:%s:%s", CACHE_NAME, tenantId));
-			log.trace("Redis L2 cache eviction completion status for tenant entitlements ID {}: {}", tenantId, deleted);
-		} catch (Exception e) {
-			log.error("Failed to purge entitlements key from Redis L2 for ID: {}", tenantId, e);
 		}
 	}
 }

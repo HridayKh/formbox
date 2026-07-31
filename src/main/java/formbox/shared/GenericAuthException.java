@@ -1,4 +1,4 @@
-package formbox.auth;
+package formbox.shared;
 
 
 public class GenericAuthException extends RuntimeException {

@@ -1,7 +1,6 @@
 package formbox.core.repository;
 
 import formbox.core.entity.Form;
-import formbox.auth.tenant.Tenant;
 import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -21,5 +20,5 @@ public interface FormRepository extends JpaRepository<Form, UUID> {
 	@Query(value = "SELECT id FROM forms WHERE is_deleted = true LIMIT :limit", nativeQuery = true)
 	List<UUID> findSoftDeletedFormIds(@Param("limit") int limit);
 
-	List<Form> findByTenantAndIsDeletedIsFalse(Tenant tenant);
+	List<Form> findByTenantIdAndIsDeletedIsFalse(UUID tenantId);
 }

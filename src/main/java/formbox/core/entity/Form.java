@@ -1,7 +1,6 @@
 package formbox.core.entity;
 
 import formbox.core.dto.CachedForm;
-import formbox.auth.tenant.Tenant;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.ColumnDefault;
@@ -27,9 +26,8 @@ public class Form {
 	@Column(name = "id", updatable = false, nullable = false)
 	private UUID id;
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "tenant_id", nullable = false)
-	private Tenant tenant;
+	@Column(name = "tenant_id", nullable = false)
+	private UUID tenantId;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "folder_id", nullable = false)
@@ -76,7 +74,7 @@ public class Form {
 	public CachedForm toCachedFormDto() {
 		return new CachedForm(
 			this.id,
-			this.tenant != null ? this.tenant.getId() : null,
+			this.tenantId,
 			this.name,
 			this.redirectUrl,
 			this.isActive,

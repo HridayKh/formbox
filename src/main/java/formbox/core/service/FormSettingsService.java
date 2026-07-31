@@ -1,8 +1,9 @@
 package formbox.core.service;
 
-import formbox.auth.GenericAuthException;
-import formbox.billing.model.Entitlements;
-import formbox.core.FormNotFoundException;
+import formbox.billing.EntitlementsApi;
+import formbox.shared.GenericAuthException;
+import formbox.shared.Entitlements;
+import formbox.shared.FormNotFoundException;
 import formbox.core.dto.FormSettingsRequest;
 import formbox.core.dto.TierValidationResult;
 import formbox.core.entity.Form;
@@ -24,6 +25,7 @@ public class FormSettingsService {
 	private final FormRepository formRepository;
 	private final FormCacheService formCacheService;
 	private final FormTierValidator tierValidator;
+	private final EntitlementsApi entitlementsApi;
 
 	@Transactional
 	@WithSpan
@@ -33,13 +35,13 @@ public class FormSettingsService {
 			.orElseThrow(() -> new FormNotFoundException(formId));
 
 		// 1. Enforce Authorization Guard
-		if (!form.getTenant().getId().toString().equals(userId)) {
+		if (!form.getTenantId().toString().equals(userId)) {
 			log.warn("Unauthorized settings update attempt for form ID: {} by user: {}", formId, userId);
 			throw new GenericAuthException("Unauthorized access to form system.");
 		}
 
 		// 2. Validate and Sanitize inputs based on Subscription Tier
-		Entitlements entitlements = form.getTenant().getEntitlementsOrDefaults();
+		Entitlements entitlements = entitlementsApi.getEntitlements(form.getTenantId());
 		TierValidationResult validationResult = tierValidator.validateAndSanitize(request, entitlements);
 		FormSettingsRequest sanitized = validationResult.sanitizedRequest();
 
@@ -57,11 +59,11 @@ public class FormSettingsService {
 		Form savedForm = formRepository.save(form);
 
 		formCacheService.updateFormCache(savedForm);
-		formCacheService.evictTenantForms(savedForm.getTenant().getId());
+		formCacheService.evictTenantForms(savedForm.getTenantId());
 
 		validationResult.setUpdatedForm(savedForm.toCachedFormDto());
 
-		log.info("Successfully updated form settings for form ID: {} (tenant: {})", formId, savedForm.getTenant().getId());
+		log.info("Successfully updated form settings for form ID: {} (tenant: {})", formId, savedForm.getTenantId());
 		return validationResult;
 	}
 }

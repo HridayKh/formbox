@@ -1,9 +1,9 @@
 package formbox.core.web;
 
-import formbox.billing.model.Entitlements;
-import formbox.billing.service.EntitlementsCacheService;
-import formbox.billing.service.PolarCacheService;
-import formbox.core.FormNotFoundException;
+import formbox.billing.PolarSubmissionApi;
+import formbox.shared.Entitlements;
+import formbox.billing.EntitlementsApi;
+import formbox.shared.FormNotFoundException;
 import formbox.core.cache.FormCacheService;
 import formbox.core.dto.CachedForm;
 import formbox.core.service.FormFileService;
@@ -32,11 +32,11 @@ import java.util.UUID;
 public class SubmissionController {
 
 	private final FormSubmissionService submissionService;
-	private final PolarCacheService polarCacheService;
 	private final FormCacheService formCacheService;
 	private final FormFileService formFileService;
-	private final EntitlementsCacheService entitlementsCacheService;
+	private final EntitlementsApi entitlementsApi;
 	private final ObjectMapper objectMapper;
+	private final PolarSubmissionApi polarSubmissionApi;
 
 	@PostMapping("/f/{formId}")
 	@WithSpan
@@ -71,7 +71,7 @@ public class SubmissionController {
 
 			// step 3: check submissions quota
 			stepStart = System.currentTimeMillis();
-			long balance = polarCacheService.getCachedSubmissionBalance(form.tenantId());
+			long balance = polarSubmissionApi.getCachedSubmissionBalance(form.tenantId());
 			log.debug("Step 3 (Quota check) took {} ms", System.currentTimeMillis() - stepStart);
 			if (balance <= 0) {
 				response.setStatus(HttpServletResponse.SC_PAYMENT_REQUIRED);
@@ -147,7 +147,7 @@ public class SubmissionController {
 
 			// step 11: update leftover submission balance
 			stepStart = System.currentTimeMillis();
-			polarCacheService.asyncDecrementCachedSubmissionBalance(form.tenantId());
+			polarSubmissionApi.asyncDecrementCachedSubmissionBalance(form.tenantId());
 			log.debug("Step 11 (Decrement quota balance) took {} ms", System.currentTimeMillis() - stepStart);
 
 			// step 13: async start upload files/attachments
@@ -166,7 +166,7 @@ public class SubmissionController {
 			}
 
 			stepStart = System.currentTimeMillis();
-			Entitlements entitlements = entitlementsCacheService.getEntitlements(form.tenantId());
+			Entitlements entitlements = entitlementsApi.getEntitlements(form.tenantId());
 			log.debug("Entitlements check took {} ms", System.currentTimeMillis() - stepStart);
 
 			if (form.redirectUrl() == null || form.redirectUrl().isBlank() || !entitlements.redirectUrlsAllowed())

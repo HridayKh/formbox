@@ -2,7 +2,6 @@ package formbox.core.web;
 
 import formbox.core.entity.Folder;
 import formbox.core.repository.FolderRepository;
-import formbox.auth.tenant.TenantRepository;
 import formbox.core.cache.FolderCacheService;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
@@ -22,7 +21,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 class FolderController {
 	private final FolderCacheService folderCacheService;
-	private final TenantRepository tenantRepository;
 	private final FolderRepository folderRepository;
 
 	@PostMapping
@@ -37,7 +35,7 @@ class FolderController {
 
 		Folder newFolder = new Folder();
 		newFolder.setName(folderName);
-		newFolder.setTenant(tenantRepository.getReferenceById(tenantId));
+		newFolder.setTenantId(tenantId);
 
 		Folder savedFolder = folderRepository.save(newFolder);
 		log.info("Successfully persisted new Folder Entity. ID: {} for tenant ID: {}", savedFolder.getId(), tenantId);
@@ -63,7 +61,7 @@ class FolderController {
 			return "redirect:/dashboard?msg=Folder not found!";
 		Folder folder = folderOpt.get();
 
-		if (!folder.getTenant().getId().toString().equals(userMetadata.getSub())) {
+		if (!folder.getTenantId().toString().equals(userMetadata.getSub())) {
 			log.warn("Unauthorized rename attempt of folder {} by user {}", folderId, userMetadata.getSub());
 			return "redirect:/dashboard?msg=Invalid folder";
 		}
@@ -90,7 +88,7 @@ class FolderController {
 		if (folderOpt.isEmpty())
 			return "redirect:/dashboard?msg=Folder not found!";
 
-		if (!folderOpt.get().getTenant().getId().toString().equals(userMetadata.getSub())) {
+		if (!folderOpt.get().getTenantId().toString().equals(userMetadata.getSub())) {
 			log.warn("Unauthorized delete attempt of folder {} by user {}", folderId, userMetadata.getSub());
 			return "redirect:/dashboard?msg=Invalid folder";
 		}

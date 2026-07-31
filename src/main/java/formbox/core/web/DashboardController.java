@@ -1,9 +1,9 @@
 package formbox.core.web;
 
-import formbox.billing.model.Entitlements;
-import formbox.billing.service.PolarCacheService;
+import formbox.billing.PolarSubmissionApi;
+import formbox.shared.Entitlements;
 import formbox.shared.PathRegistry;
-import formbox.billing.service.EntitlementsCacheService;
+import formbox.billing.EntitlementsApi;
 import formbox.core.dto.CachedForm;
 import formbox.core.dto.FolderFormDTO;
 import formbox.core.entity.Folder;
@@ -11,6 +11,7 @@ import formbox.core.cache.FolderCacheService;
 import formbox.core.cache.FormCacheService;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -22,20 +23,14 @@ import java.util.UUID;
 
 @Controller
 @RequestMapping(PathRegistry.DASHBOARD)
+@RequiredArgsConstructor
 @Slf4j
 class DashboardController {
 
-	private final EntitlementsCacheService entitlementsCacheService;
-	private final PolarCacheService polarCacheService;
+	private final EntitlementsApi entitlementsApi;
 	private final FolderCacheService folderCacheService;
 	private final FormCacheService formCacheService;
-
-	public DashboardController(EntitlementsCacheService entitlementsCacheService, PolarCacheService polarCacheService, FolderCacheService folderCacheService, FormCacheService formCacheService) {
-		this.entitlementsCacheService = entitlementsCacheService;
-		this.polarCacheService = polarCacheService;
-		this.folderCacheService = folderCacheService;
-		this.formCacheService = formCacheService;
-	}
+	private final PolarSubmissionApi polarSubmissionApi;
 
 	@GetMapping
 	@WithSpan
@@ -48,7 +43,7 @@ class DashboardController {
 		}
 
 		UUID tenantId = UUID.fromString(userMetadata.getSub());
-		Entitlements entitlements = entitlementsCacheService.getEntitlements(tenantId);
+		Entitlements entitlements = entitlementsApi.getEntitlements(tenantId);
 		log.debug("Resolved entitlements for Tenant ID: {}, Service Tier: {}", tenantId, entitlements.tierName());
 
 		List<CachedForm> forms = formCacheService.getTenantForms(tenantId);
@@ -60,7 +55,7 @@ class DashboardController {
 			folderForms.add(new FolderFormDTO(folder, folderForm));
 		}
 
-		model.addAttribute("balanceLeft", polarCacheService.getCachedSubmissionBalance(tenantId));
+		model.addAttribute("balanceLeft", polarSubmissionApi.getCachedSubmissionBalance(tenantId));
 		model.addAttribute("showManageSubscription", !entitlements.isFree());
 		model.addAttribute("email", userMetadata.getEmail());
 		model.addAttribute("msg", msg);

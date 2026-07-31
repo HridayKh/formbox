@@ -1,9 +1,8 @@
-package formbox.billing.model;
+package formbox.shared;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import formbox.billing.FreeTierDefaults;
 import lombok.Builder;
 import tools.jackson.databind.PropertyNamingStrategies;
 import tools.jackson.databind.annotation.JsonNaming;

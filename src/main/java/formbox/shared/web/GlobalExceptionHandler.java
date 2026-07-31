@@ -1,6 +1,6 @@
 package formbox.shared.web;
 
-import formbox.core.FormNotFoundException;
+import formbox.shared.FormNotFoundException;
 import io.github.jan.supabase.auth.exception.AuthErrorCode;
 import io.github.jan.supabase.auth.exception.AuthRestException;
 import io.github.jan.supabase.auth.exception.TokenExpiredException;

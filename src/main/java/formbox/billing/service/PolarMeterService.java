@@ -1,7 +1,7 @@
 package formbox.billing.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import formbox.billing.PolarIdProperties;
+import formbox.billing.internal.PolarIdProperties;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

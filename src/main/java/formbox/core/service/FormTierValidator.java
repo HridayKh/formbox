@@ -1,6 +1,6 @@
 package formbox.core.service;
 
-import formbox.billing.model.Entitlements;
+import formbox.shared.Entitlements;
 import formbox.core.dto.FormSettingsRequest;
 import formbox.core.dto.TierValidationResult;
 import org.springframework.stereotype.Component;

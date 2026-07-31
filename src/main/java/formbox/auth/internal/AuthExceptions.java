@@ -1,6 +1,6 @@
 package formbox.auth.internal;
 
-import formbox.auth.GenericAuthException;
+import formbox.shared.GenericAuthException;
 
 class InvalidCredentialsException extends GenericAuthException {
 	public InvalidCredentialsException(String message) {

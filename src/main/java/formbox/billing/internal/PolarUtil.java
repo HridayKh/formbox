@@ -1,4 +1,4 @@
-package formbox.billing;
+package formbox.billing.internal;
 
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;

@@ -1,4 +1,4 @@
-package formbox.core;
+package formbox.shared;
 
 import java.util.UUID;
 

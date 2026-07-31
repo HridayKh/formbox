@@ -1,13 +1,10 @@
 package formbox.core.cache;
 
 import formbox.shared.CacheNames;
-import formbox.core.FormNotFoundException;
+import formbox.shared.FormNotFoundException;
 import formbox.core.dto.CachedForm;
 import formbox.core.entity.Form;
-import formbox.auth.tenant.Tenant;
-import formbox.core.repository.FolderRepository;
 import formbox.core.repository.FormRepository;
-import formbox.auth.tenant.TenantRepository;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,11 +29,9 @@ public class FormCacheService {
 	private final FormRepository formRepository;
 	private final StringRedisTemplate redisTemplate;
 	private final ObjectMapper objectMapper;
-	private final TenantRepository tenantRepository;
-	private final FolderRepository folderRepository;
 
 	@Transactional(readOnly = true)
-	@Cacheable(value = CacheNames.FORM_METADATA, key = "#formId")
+	@Cacheable(value = CacheNames.FORM_METADATA, key = "#formId.toString()")
 	@WithSpan
 	public CachedForm getCachedForm(UUID formId) {
 		log.trace("Caffeine L1 cache MISS for form ID: {}", formId);
@@ -76,7 +71,7 @@ public class FormCacheService {
 		return cachedFormDto;
 	}
 
-	@CachePut(value = CacheNames.FORM_METADATA, key = "#updatedForm.id")
+	@CachePut(value = CacheNames.FORM_METADATA, key = "#updatedForm.id.toString()")
 	@WithSpan
 	public void updateFormCache(Form updatedForm) {
 		UUID formId = updatedForm.getId();
@@ -93,7 +88,7 @@ public class FormCacheService {
 		}
 	}
 
-	@CacheEvict(value = CacheNames.FORM_METADATA, key = "#formId")
+	@CacheEvict(value = CacheNames.FORM_METADATA, key = "#formId.toString()")
 	@WithSpan
 	public void evictFormCache(UUID formId) {
 		log.debug("Evicting multi-layer form metadata caches for form ID: {}", formId);
@@ -121,8 +116,7 @@ public class FormCacheService {
 		}
 
 		log.debug("Redis L2 cache MISS for tenant forms on tenant ID: {}. Loading relations from database...", tenantId);
-		Tenant tenant = tenantRepository.getReferenceById(tenantId);
-		List<CachedForm> dbForms = formRepository.findByTenantAndIsDeletedIsFalse(tenant).stream().map(Form::toCachedFormDto).toList();
+		List<CachedForm> dbForms = formRepository.findByTenantIdAndIsDeletedIsFalse(tenantId).stream().map(Form::toCachedFormDto).toList();
 		log.trace("Database query completed. Found {} active forms for tenant ID: {}", dbForms.size(), tenantId);
 
 		try {

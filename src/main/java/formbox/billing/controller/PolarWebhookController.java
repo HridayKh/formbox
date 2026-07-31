@@ -1,6 +1,6 @@
 package formbox.billing.controller;
 
-import formbox.billing.service.WebhookService;
+import formbox.billing.service.PolarWebhookService;
 import formbox.shared.PathRegistry;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,7 +24,7 @@ import java.util.Map;
 public class PolarWebhookController {
 
 	private final PolarWebhookVerifier polarWebhookVerifier;
-	private final WebhookService webhooksService;
+	private final PolarWebhookService webhooksService;
 
 	@PostMapping(PathRegistry.Webhooks.POLAR)
 	@WithSpan

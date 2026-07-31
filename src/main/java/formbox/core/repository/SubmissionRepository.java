@@ -15,7 +15,7 @@ import java.util.UUID;
 public interface SubmissionRepository extends JpaRepository<Submission, UUID> {
 	List<SubmissionItem> findAllByFormId(UUID formId);
 
-	@Query("SELECT COUNT(s) FROM Submission s WHERE s.form.tenant.id = :tenantId AND s.createdAt >= :since")
+	@Query("SELECT COUNT(s) FROM Submission s WHERE s.form.tenantId = :tenantId AND s.createdAt >= :since")
 	long countByTenantIdAndCreatedAtAfter(@Param("tenantId") UUID tenantId, @Param("since") OffsetDateTime since);
 
 	@Modifying
