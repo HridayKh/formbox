@@ -1,15 +1,16 @@
+@import formbox.folder.FolderDto
+@import formbox.form.FormDto
+@import formbox.submission.SubmissionItem
 @import formbox.shared.Entitlements
-@import formbox.core.dto.CachedForm
-@import formbox.core.dto.SubmissionItem
-@import formbox.core.entity.Folder
 @import java.util.List
 
 @param boolean showManageSubscription
 @param Long balanceLeft
 @param String email
 @param String msg
-@param List<Folder> folders
-@param CachedForm form
+@param List<FolderDto> folders
+@param FormDto form
+@param String folderName
 @param Entitlements entitlements
 @param List<SubmissionItem> validSubmissions
 @param List<SubmissionItem> spamSubmissions
@@ -33,7 +34,7 @@
 <body>
 
 <header class="container">
-    @template.dash.navbar(pageName=form.folderName() + " → " + form.name(), balanceLeft=balanceLeft, showManageSubscription=showManageSubscription, email=email)
+    @template.dash.navbar(pageName=folderName + " → " + form.name(), balanceLeft=balanceLeft, showManageSubscription=showManageSubscription, email=email)
     <a href="/dashboard">Go To Dashboard</a>
     <h1>Managing Form '${form.name()}'</h1>
     @if(msg != null && !msg.isBlank())
@@ -68,15 +69,15 @@ what to show per submission:
 <main class="container">
     <section id="move-folders">
         <details>
-            <summary role="button" class="outline">Move this form, current folder: '${form.folderName()}'</summary>
+            <summary role="button" class="outline">Move this form, current folder: '${folderName}'</summary>
             <div class="grid">
-                @for(Folder folder : folders)
-                    !{if(folder.getId().equals(form.folderId())) continue;}
-                    <form action="/forms/${folder.getId().toString()}/${form.id().toString()}/move" method="POST">
+                @for(FolderDto folder : folders)
+                    !{if(folder.id().equals(form.folderId())) continue;}
+                    <form action="/forms/${folder.id().toString()}/${form.id().toString()}/move" method="POST">
                         <button type="submit"
                                 class="small outline"
-                                onclick="return confirm('Are you sure you want to move this form to ${folder.getName()}?');">
-                            Move form to ${folder.getName()}
+                                onclick="return confirm('Are you sure you want to move this form to ${folder.name()}?');">
+                            Move form to ${folder.name()}
                         </button>
                     </form>
                 @endfor

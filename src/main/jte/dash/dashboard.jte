@@ -1,6 +1,6 @@
-@import formbox.core.dto.CachedForm
-@import formbox.core.dto.FolderFormDTO
-@import formbox.core.entity.Folder
+@import formbox.folder.FolderDto
+@import formbox.form.FormDto
+@import formbox.dashboard.FolderFormDTO
 @import java.util.List
 
 @param boolean showManageSubscription
@@ -50,44 +50,44 @@
 
     <section id="list-folders">
         @for(FolderFormDTO folderForm : folderForms)
-            !{Folder folder = folderForm.folder();}
+            !{FolderDto folder = folderForm.folder();}
             <details>
-                <summary role="button" class="outline"><strong>${folder.getName()}</strong></summary>
+                <summary role="button" class="outline"><strong>${folder.name()}</strong></summary>
                 <div role="group">
                     <span></span>
-                    <button class="small" onclick="openM('create-${folder.getId().toString()}')">
+                    <button class="small" onclick="openM('create-${folder.id().toString()}')">
                         + Create Form
                     </button>
                     <span></span>
-                    <button class="secondary small" onclick="openM('rename-${folder.getId().toString()}')">
+                    <button class="secondary small" onclick="openM('rename-${folder.id().toString()}')">
                         Rename This Folder
                     </button>
                     <span></span>
-                    <form action="/forms/${folder.getId().toString()}/delete" method="POST">
+                    <form action="/forms/${folder.id().toString()}/delete" method="POST">
                         <button type="submit"
                                 class="contrast outline small"
-                                onclick="return confirm('Are you sure you want to delete this folder?');">
+                                onclick="return confirm('Are you sure you want to delete this folderId?');">
                             Delete This Folder
                         </button>
                     </form>
                     <span></span>
                 </div>
                 <div class="grid">
-                    @for(CachedForm form : folderForm.forms())
+                    @for(FormDto form : folderForm.forms())
                         <div class="form-card">
-                            <a href="/forms/${folder.getId().toString()}/${form.id().toString()}">${form.name()}</a>
+                            <a href="/forms/${folder.id().toString()}/${form.id().toString()}">${form.name()}</a>
                         </div>
                     @endfor
                 </div>
-                <dialog id="rename-${folder.getId().toString()}">
+                <dialog id="rename-${folder.id().toString()}">
                     <article>
                         <header>
                             <button aria-label="Close" rel="prev"
-                                    onclick="closeM('rename-${folder.getId().toString()}')"></button>
-                            <h3>Rename Folder ${folder.getName()}</h3>
+                                    onclick="closeM('rename-${folder.id().toString()}')"></button>
+                            <h3>Rename Folder ${folder.name()}</h3>
                         </header>
 
-                        <form action="/forms/${folder.getId().toString()}/rename" method="post">
+                        <form action="/forms/${folder.id().toString()}/rename" method="post">
                             <fieldset role="group">
                                 <input type="text" name="newName" placeholder="Enter new folder name" required
                                        autofocus/>
@@ -95,21 +95,21 @@
                             </fieldset>
                         </form>
                         <footer>
-                            <button onclick="closeM('rename-${folder.getId().toString()}')"
+                            <button onclick="closeM('rename-${folder.id().toString()}')"
                                     class="small secondary outline">Cancel
                             </button>
                         </footer>
                     </article>
                 </dialog>
-                <dialog id="create-${folder.getId().toString()}">
+                <dialog id="create-${folder.id().toString()}">
                     <article>
                         <header>
                             <button aria-label="Close" rel="prev"
-                                    onclick="closeM('create-${folder.getId().toString()}')"></button>
-                            <h3>Create Form in ${folder.getName()}</h3>
+                                    onclick="closeM('create-${folder.id().toString()}')"></button>
+                            <h3>Create Form in ${folder.name()}</h3>
                         </header>
 
-                        <form action="/forms/${folder.getId().toString()}" method="post">
+                        <form action="/forms/${folder.id().toString()}" method="post">
                             <label>
                                 Name
                                 <input type="text" name="formName" placeholder="Enter new form name" required
@@ -128,7 +128,7 @@
                             <footer>
                                 <fieldset role="group">
                                     <input type="submit" value="Create"/>
-                                    <button onclick="closeM('create-${folder.getId().toString()}')"
+                                    <button onclick="closeM('create-${folder.id().toString()}')"
                                             class="small secondary outline">Cancel
                                     </button>
                                 </fieldset>
