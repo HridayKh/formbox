@@ -17,7 +17,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Form Endpoints Dashboard | Formbox</title>
     <meta name="description" content="Formbox - Form backend for static sites powered by Cloudflare edge."/>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.pumpkin.min.css"/>
+    <link rel="stylesheet" href="/assets/pico.pumpkin.min.css"/>
     <style>
         .small {
             margin-bottom: 0;
