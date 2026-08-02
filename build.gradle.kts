@@ -84,7 +84,7 @@ dependencies {
 }
 
 group = "in.hridaykh"
-version = "0.0.1-SNAPSHOT"
+version="0.0.1-SNAPSHOT"
 dependencyManagement {
 	imports {
 		mavenBom("org.springframework.modulith:spring-modulith-bom:$springModulithVersion")
@@ -92,6 +92,9 @@ dependencyManagement {
 }
 springBoot {
 	buildInfo()
+}
+tasks.named("jar") {
+	enabled = false
 }
 tasks.withType<Test> {
 	useJUnitPlatform()

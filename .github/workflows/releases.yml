@@ -13,7 +13,6 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-    environment: actions
     outputs:
       version: ${{ steps.version.outputs.version }}
       bump: ${{ steps.parse.outputs.bump }}
@@ -94,7 +93,8 @@ jobs:
           fi
 
           if [ "$BUMP" = "none" ]; then
-            # non-release commit: dev build off current base, not tagged
+            # non-release commit: show as work-in-progress toward next patch
+            PATCH=$((PATCH + 1))
             VERSION="${MAJOR}.${MINOR}.${PATCH}-dev+${RUN_NUMBER}"
           else
             VERSION="${MAJOR}.${MINOR}.${PATCH}+${RUN_NUMBER}"
@@ -110,6 +110,22 @@ jobs:
           SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
         run: ./gradlew build -Pversion="${{ steps.version.outputs.version }}"
+
+      - name: Sync version into build.gradle.kts
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          sed -i "s/^version = \".*\"/version = \"$VERSION\"/" build.gradle.kts
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if ! git diff --quiet build.gradle.kts; then
+            git add build.gradle.kts
+            git commit -m "chore: sync version to $VERSION [skip ci]"
+            git push origin HEAD:main
+          else
+            echo "No version change to commit"
+          fi
 
       - name: Upload JAR artifact
         if: steps.parse.outputs.deploy == 'true'
@@ -139,36 +155,16 @@ jobs:
           version: ${{ steps.version.outputs.version }}
           set_commits: auto
 
-      - name: Create immutable release branch (minor/major only)
-        if: steps.parse.outputs.bump == 'minor' || steps.parse.outputs.bump == 'major'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          TAG="${{ steps.version.outputs.tag_name }}"
-          BRANCH="release/${TAG#v}"
-          git checkout -b "$BRANCH"
-          git push origin "$BRANCH"
-
-          # Lock the branch via GitHub API (no force pushes, no deletions, no direct pushes)
-          curl -sS -X PUT \
-            -H "Authorization: Bearer $GH_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${{ github.repository }}/branches/${BRANCH}/protection" \
-            -d '{
-              "required_status_checks": null,
-              "enforce_admins": true,
-              "required_pull_request_reviews": null,
-              "restrictions": null,
-              "allow_force_pushes": false,
-              "allow_deletions": false
-            }'
-
   deploy:
     needs: build
     if: needs.build.outputs.deploy == 'true'
     runs-on: ubuntu-latest
-    environment: actions
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Download JAR artifact
         uses: actions/download-artifact@v4
         with:
@@ -184,7 +180,7 @@ jobs:
 
       - name: Rename JAR to a predictable filename
         run: |
-          JAR_FILE=$(ls ./dist/*.jar | head -n 1)
+          JAR_FILE=$(ls ./dist/*.jar | grep -v -- '-plain' | head -n 1)
           cp "$JAR_FILE" ./dist/app.jar
 
       - name: SCP JAR to server
@@ -207,4 +203,4 @@ jobs:
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
         with:
           version: ${{ needs.build.outputs.version }}
-          environment: production
+          environment: prod
