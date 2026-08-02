@@ -1,1 +1,2 @@
-<div></div>
+@param String text = ""
+<div>${text}</div>

@@ -31,7 +31,7 @@ public class AuthFilterService {
 	private final AuthServiceKt authServiceKt;
 	private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
-	private static final List<String> OPTIONAL_PATHS = List.of("/", "/auth/**");
+	private static final List<String> OPTIONAL_PATHS = List.of("/", "/auth/**", "/test/**");
 
 	@WithSpan
 	protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
@@ -62,7 +62,6 @@ public class AuthFilterService {
 				log.debug("Valid active session");
 				request.setAttribute("userMetadata", userMetadata);
 				filterChain.doFilter(request, response);
-				log.debug("Request done");
 				return;
 			}
 

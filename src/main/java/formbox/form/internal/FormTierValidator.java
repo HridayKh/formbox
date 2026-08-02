@@ -1,6 +1,6 @@
 package formbox.form.internal;
 
-import formbox.shared.Entitlements;
+import formbox.billing.Entitlements;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 

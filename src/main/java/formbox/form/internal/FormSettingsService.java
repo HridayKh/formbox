@@ -3,7 +3,7 @@ package formbox.form.internal;
 import formbox.billing.EntitlementsApi;
 import formbox.form.FormApi;
 import formbox.shared.GenericAuthException;
-import formbox.shared.Entitlements;
+import formbox.billing.Entitlements;
 import formbox.shared.FormNotFoundException;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;

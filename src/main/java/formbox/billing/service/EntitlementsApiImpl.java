@@ -3,7 +3,7 @@ package formbox.billing.service;
 import formbox.auth.TenantApi;
 import formbox.billing.EntitlementsApi;
 import formbox.shared.CacheNames;
-import formbox.shared.Entitlements;
+import formbox.billing.Entitlements;
 import formbox.shared.RedisCache;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +12,6 @@ import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
 import java.util.UUID;
 
 @Service

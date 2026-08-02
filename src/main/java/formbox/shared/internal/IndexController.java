@@ -3,7 +3,6 @@ package formbox.shared.internal;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.sentry.Sentry;
-import io.sentry.protocol.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -22,17 +21,13 @@ class IndexController {
 		return "index";
 	}
 
-	@GetMapping("/error")
+	@GetMapping("/test/error")
 	@WithSpan
-	public String indexErr() {
-		try {
-			throw new RuntimeException("Intentional Exception!");
-		} catch (RuntimeException e) {
-			log.error("Runtime exception occurred!", e);
-		}
-		User user = new User();
-		user.setId("ID-1234");
-		Sentry.setUser(user);
+	public String indexErr(Model model) {
+		log.info("1234");
+		Sentry.metrics().count("abcd1234");
+		log.error("Runtime exception occurred!");
+		model.addAttribute("text", "pqrs");
 		return "empty";
 	}
 

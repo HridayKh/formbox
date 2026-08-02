@@ -2,7 +2,7 @@ package formbox.form.internal;
 
 import formbox.form.FormApi;
 import formbox.form.FormDto;
-import formbox.shared.Entitlements;
+import formbox.billing.Entitlements;
 import formbox.shared.PathRegistry;
 import formbox.billing.EntitlementsApi;
 import io.github.jan.supabase.auth.jwt.JwtPayload;

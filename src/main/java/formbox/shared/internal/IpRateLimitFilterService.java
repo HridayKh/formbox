@@ -40,17 +40,12 @@ class IpRateLimitFilterService {
 	protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
 		List<String> activeProfiles = Arrays.asList(environment.getActiveProfiles());
 		if (activeProfiles.contains("dev")) {
+			log.info("ip rate limiting for path: {}", request.getRequestURI());
 			filterChain.doFilter(request, response);
 			return;
-		} else {
-			String requestUri = request.getRequestURI();
-			String contextPath = request.getContextPath();
-			String relativePath = requestUri.substring(contextPath.length());
-
-			if (!pathMatcher.match("/", relativePath)) {
-				response.sendRedirect(contextPath + "/");
-				return;
-			}
+		} else if (!pathMatcher.match("/", request.getRequestURI())) {
+			response.sendRedirect("/");
+			return;
 		}
 
 		long start = System.currentTimeMillis();

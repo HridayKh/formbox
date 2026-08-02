@@ -1,6 +1,6 @@
 package formbox.auth.tenant;
 
-import formbox.shared.Entitlements;
+import formbox.billing.Entitlements;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.ToString;

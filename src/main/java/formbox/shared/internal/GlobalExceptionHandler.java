@@ -25,7 +25,8 @@ class GlobalExceptionHandler {
 
 	@ExceptionHandler(NoResourceFoundException.class)
 	public ModelAndView handle404Error(NoResourceFoundException ex) {
-		log.debug("Resource Not Found: {}", ex.getMessage());
+		if (!ex.getMessage().contains("favicon.ico"))
+			log.debug("Resource Not Found: {}", ex.getMessage());
 		return buildErrorResponse("", ex.getMessage(), HttpStatus.NOT_FOUND);
 	}
 

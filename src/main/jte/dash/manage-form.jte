@@ -1,7 +1,7 @@
 @import formbox.folder.FolderDto
 @import formbox.form.FormDto
 @import formbox.submission.SubmissionItem
-@import formbox.shared.Entitlements
+@import formbox.billing.Entitlements
 @import java.util.List
 
 @param boolean showManageSubscription

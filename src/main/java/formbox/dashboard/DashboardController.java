@@ -4,7 +4,7 @@ import formbox.billing.PolarSubmissionApi;
 import formbox.folder.FolderApi;
 import formbox.folder.FolderDto;
 import formbox.form.FormDto;
-import formbox.shared.Entitlements;
+import formbox.billing.Entitlements;
 import formbox.submission.FormSubmissionsResponse;
 import formbox.shared.PathRegistry;
 import formbox.billing.EntitlementsApi;
