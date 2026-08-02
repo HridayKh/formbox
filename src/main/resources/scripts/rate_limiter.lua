@@ -1,4 +1,4 @@
--- KEYS[1]: The Redis key for the IP (e.g., formbox:iprl:192.168.1.1)
+-- KEYS[1]: The Redis key for the IP (e.g., f:iprl:192.168.1.1)
 local key = KEYS[1]
 
 -- ARGV[1]: Max bucket capacity (e.g., 20 tokens)

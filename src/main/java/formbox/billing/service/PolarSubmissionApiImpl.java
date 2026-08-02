@@ -4,7 +4,7 @@ import formbox.auth.TenantApi;
 import formbox.billing.EntitlementsApi;
 import formbox.billing.PolarSubmissionApi;
 import formbox.billing.DbSubmissionCounter;
-import formbox.billing.Entitlements;
+import formbox.shared.Entitlements;
 import formbox.shared.CacheNames;
 import formbox.shared.RedisCache;
 import io.opentelemetry.instrumentation.annotations.WithSpan;

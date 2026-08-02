@@ -1,4 +1,4 @@
-package formbox.billing;
+package formbox.shared;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;

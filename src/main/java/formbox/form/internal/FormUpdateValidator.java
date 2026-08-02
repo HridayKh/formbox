@@ -1,6 +1,6 @@
 package formbox.form.internal;
 
-import formbox.billing.Entitlements;
+import formbox.shared.Entitlements;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -8,9 +8,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
-class FormTierValidator {
+class FormUpdateValidator {
 
-	public FormTierValidationResult validateAndSanitize(FormSettingsRequest request, Entitlements entitlements) {
+	public FormUpdateValidationRes validateAndSanitize(FormSettingsRequest request, Entitlements entitlements) {
 		List<String> warnings = new ArrayList<>();
 		String sanitizedRedirectUrl = request.redirectUrl();
 
@@ -68,7 +68,7 @@ class FormTierValidator {
 			sanitizedFieldValidations
 		);
 
-		return new FormTierValidationResult(null, sanitizedRequest, warnings);
+		return new FormUpdateValidationRes(null, sanitizedRequest, warnings);
 	}
 }
 

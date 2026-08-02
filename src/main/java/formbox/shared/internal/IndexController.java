@@ -2,7 +2,6 @@ package formbox.shared.internal;
 
 import io.github.jan.supabase.auth.jwt.JwtPayload;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
-import io.sentry.Sentry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -19,16 +18,6 @@ class IndexController {
 	public String index(Model model, @RequestAttribute(required = false) JwtPayload userMetadata) {
 		model.addAttribute("loggedIn", userMetadata != null && userMetadata.getSub() != null);
 		return "index";
-	}
-
-	@GetMapping("/test/error")
-	@WithSpan
-	public String indexErr(Model model) {
-		log.info("1234");
-		Sentry.metrics().count("abcd1234");
-		log.error("Runtime exception occurred!");
-		model.addAttribute("text", "pqrs");
-		return "empty";
 	}
 
 }

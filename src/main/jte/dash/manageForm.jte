@@ -1,7 +1,7 @@
 @import formbox.folder.FolderDto
 @import formbox.form.FormDto
 @import formbox.submission.SubmissionItem
-@import formbox.billing.Entitlements
+@import formbox.shared.Entitlements
 @import java.util.List
 
 @param boolean showManageSubscription
@@ -82,6 +82,12 @@ what to show per submission:
                     </form>
                 @endfor
             </div>
+        </details>
+    </section>
+    <section id="form-update">
+        <details>
+            <summary role="button" class="outline">Settings</summary>
+            <div class="grid"> @template.dash.formUpdate() </div>
         </details>
     </section>
 </main>

@@ -1,4 +1,4 @@
-package formbox.billing;
+package formbox.shared;
 
 /**
  * Default entitlement values for the free tier.

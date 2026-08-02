@@ -1,7 +1,7 @@
 package formbox.submission.internal;
 
 import formbox.billing.PolarSubmissionApi;
-import formbox.billing.Entitlements;
+import formbox.shared.Entitlements;
 import formbox.billing.EntitlementsApi;
 import formbox.shared.FormNotFoundException;
 import formbox.form.FormApi;

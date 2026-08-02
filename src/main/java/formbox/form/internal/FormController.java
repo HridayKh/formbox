@@ -2,7 +2,7 @@ package formbox.form.internal;
 
 import formbox.form.FormApi;
 import formbox.form.FormDto;
-import formbox.billing.Entitlements;
+import formbox.shared.Entitlements;
 import formbox.shared.PathRegistry;
 import formbox.billing.EntitlementsApi;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
@@ -28,8 +28,7 @@ class FormController {
 
 	@PostMapping("/{folderId}")
 	@WithSpan
-	public String createForm(@RequestAttribute JwtPayload userMetadata, @RequestParam String formName,
-	                         @RequestParam(required = false) String redirectUrl, @PathVariable UUID folderId) {
+	public String createForm(@RequestAttribute JwtPayload userMetadata, @RequestParam String formName, @RequestParam(required = false) String redirectUrl, @PathVariable UUID folderId) {
 		log.debug("Processing request to create a new form. Name: [{}], Requested Redirect URL: [{}]", formName, redirectUrl);
 
 		UUID tenantId = UUID.fromString(Objects.requireNonNull(userMetadata.getSub()));
@@ -66,23 +65,18 @@ class FormController {
 		return "redirect:/forms/" + folderId + "/" + formApi.updateFormCache(savedForm.toFormDto()).id() + "?msg=" + msg;
 	}
 
-	@PutMapping("/{ignoredFolderId}/{formId}")
-	@WithSpan // TODO: verify the tenant owns the form
-	public String updateForm(@RequestAttribute JwtPayload userMetadata, @PathVariable UUID formId, @RequestParam(value = "fieldValidationsRaw", required = false) String fieldValidationsRaw, @ModelAttribute FormSettingsRequest request, Model model, @PathVariable String ignoredFolderId) {
-
-		log.debug("Initiating settings update for form ID: {}", formId);
-
+	@PutMapping("/{ignoredFId}/{formId}")
+	@WithSpan
+	public String updateForm(@RequestAttribute JwtPayload userMetadata, @PathVariable UUID formId, @PathVariable String ignoredFId, @RequestParam(required = false) String fieldValidationsRaw, Model model, @ModelAttribute FormSettingsRequest request) {
 		List<String> validations = new ArrayList<>();
-		if (fieldValidationsRaw != null) {
+		if (fieldValidationsRaw != null)
 			validations = Arrays.stream(fieldValidationsRaw.split("\\r?\\n")).map(String::strip).filter(s -> !s.isEmpty()).toList();
-		}
 
-		FormSettingsRequest fullRequest = new FormSettingsRequest(request.name(), request.redirectUrl(), request.isActive(), request.turnstileSecretKey(), request.honeypotName(), request.rateLimitRpm(), request.allowFiles(), request.allowHtmx(), request.allowJson(), validations);
+		var fullRequest = new FormSettingsRequest(request.name(), request.redirectUrl(), request.isActive(), request.turnstileSecretKey(), request.honeypotName(), request.rateLimitRpm(), request.allowFiles(), request.allowHtmx(), request.allowJson(), validations);
 
-		// Execute core business logic
-		FormTierValidationResult result = formSettingsService.updateFormSettings(formId, userMetadata.getSub(), fullRequest);
+		var result = formSettingsService.updateFormSettings(formId, userMetadata.getSub(), fullRequest);
 
-		Entitlements entitlements = entitlementsApi.getEntitlements(UUID.fromString(Objects.requireNonNull(userMetadata.getSub())));
+		var entitlements = entitlementsApi.getEntitlements(UUID.fromString(Objects.requireNonNull(userMetadata.getSub())));
 		model.addAttribute("entitlements", entitlements);
 		model.addAttribute("redirectUrlNotAllowed", !entitlements.redirectUrlsAllowed());
 		model.addAttribute("fieldValidationsNotAllowed", !entitlements.fieldValidationsAllowed());
@@ -90,14 +84,12 @@ class FormController {
 		model.addAttribute("jsonFormsNotAllowed", !entitlements.jsonFormsAllowed());
 		model.addAttribute("fileUploadsNotAllowed", !entitlements.fileUploadsAllowed());
 
-		if (result.hasWarnings()) {
-			model.addAttribute("warnings", result.warnings());
-		} else {
-			model.addAttribute("message", "Form configurations updated successfully!");
-		}
+		if (result.hasWarnings()) model.addAttribute("warnings", result.warnings());
+		else model.addAttribute("message", "Form configurations updated successfully!");
 
 		model.addAttribute("form", result.updatedForm());
 
+		log.debug("Updated settings for formId: {}", formId);
 		return "fragments/manage/tab-settings :: settings-panel";
 	}
 

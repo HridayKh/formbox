@@ -1,5 +1,5 @@
 package formbox.auth;
-import formbox.billing.Entitlements;
+import formbox.shared.Entitlements;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 
 import java.util.UUID;

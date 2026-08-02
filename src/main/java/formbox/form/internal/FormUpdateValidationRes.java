@@ -8,7 +8,7 @@ import lombok.Setter;
 import java.util.List;
 
 @AllArgsConstructor
-final class FormTierValidationResult {
+final class FormUpdateValidationRes {
 	@Setter
 	@Getter
 	private FormDto updatedForm;

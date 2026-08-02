@@ -2,7 +2,7 @@ package formbox.billing.controller;
 
 import formbox.billing.internal.PolarUtil;
 import formbox.shared.PathRegistry;
-import formbox.billing.Entitlements;
+import formbox.shared.Entitlements;
 import formbox.billing.EntitlementsApi;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
 import io.opentelemetry.instrumentation.annotations.WithSpan;

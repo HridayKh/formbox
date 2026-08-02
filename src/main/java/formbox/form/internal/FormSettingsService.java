@@ -2,8 +2,9 @@ package formbox.form.internal;
 
 import formbox.billing.EntitlementsApi;
 import formbox.form.FormApi;
+import formbox.form.FormDto;
 import formbox.shared.GenericAuthException;
-import formbox.billing.Entitlements;
+import formbox.shared.Entitlements;
 import formbox.shared.FormNotFoundException;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
@@ -20,12 +21,12 @@ class FormSettingsService {
 
 	private final FormRepository formRepository;
 	private final FormApi formApi;
-	private final FormTierValidator tierValidator;
+	private final FormUpdateValidator formUpdateValidator;
 	private final EntitlementsApi entitlementsApi;
 
 	@Transactional
 	@WithSpan
-	public FormTierValidationResult updateFormSettings(UUID formId, String userId, FormSettingsRequest request) {
+	public FormUpdateValidationRes updateFormSettings(UUID formId, String userId, FormSettingsRequest request) {
 		log.debug("Updating form settings for form ID: {} by user: {}", formId, userId);
 		Form form = formRepository.findById(formId)
 			.orElseThrow(() -> new FormNotFoundException(formId));
@@ -38,7 +39,7 @@ class FormSettingsService {
 
 		// 2. Validate and Sanitize inputs based on Subscription Tier
 		Entitlements entitlements = entitlementsApi.getEntitlements(form.getTenantId());
-		FormTierValidationResult validationResult = tierValidator.validateAndSanitize(request, entitlements);
+		FormUpdateValidationRes validationResult = formUpdateValidator.validateAndSanitize(request, entitlements);
 		FormSettingsRequest sanitized = validationResult.sanitizedRequest();
 
 		form.setName(sanitized.name());

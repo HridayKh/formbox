@@ -40,7 +40,6 @@ class IpRateLimitFilterService {
 	protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
 		List<String> activeProfiles = Arrays.asList(environment.getActiveProfiles());
 		if (activeProfiles.contains("dev")) {
-			log.info("ip rate limiting for path: {}", request.getRequestURI());
 			filterChain.doFilter(request, response);
 			return;
 		} else if (!pathMatcher.match("/", request.getRequestURI())) {
@@ -48,12 +47,9 @@ class IpRateLimitFilterService {
 			return;
 		}
 
-		long start = System.currentTimeMillis();
 		String clientIp = getClientIp(request);
-
 		if (clientIp == null) {
 			filterChain.doFilter(request, response);
-			log.debug("IP rate limit check completed in {}ms", System.currentTimeMillis() - start);
 			return;
 		}
 
@@ -68,12 +64,10 @@ class IpRateLimitFilterService {
 			refillRate = "0.1";
 		}
 
-		// Removed the dangling trailing colon from the string formatter
-		List<String> keys = Collections.singletonList(String.format("formbox:%s:%s:%s", CacheNames.IP_RATE_LIMIT, clientIp, scope));
+		List<String> keys = Collections.singletonList(String.format("f:%s:%s:%s", CacheNames.IP_RATE_LIMIT, clientIp, scope));
 		Object[] args = new Object[]{capacity, refillRate, String.valueOf(Instant.now().getEpochSecond()), "1"};
 
 		Long result = 1L;
-
 		try {
 			result = stringRedisTemplate.execute(rateLimiterScript, keys, args);
 		} catch (Exception e) {
@@ -81,19 +75,19 @@ class IpRateLimitFilterService {
 		}
 
 		if (result != null && result == 1) {
-			log.debug("IP rate limit check completed in {}ms", System.currentTimeMillis() - start);
 			filterChain.doFilter(request, response);
-		} else {
-			log.warn("IP Rate Limit exceeded for IP: {}", clientIp);
-
-			// Handle fallback checking safely for native GET requests where Content-Type is absent
-			String contentType = request.getContentType();
-			String acceptHeader = request.getHeader("Accept");
-
-			boolean isJson = (contentType != null && contentType.contains(MediaType.APPLICATION_JSON_VALUE)) || (acceptHeader != null && acceptHeader.contains(MediaType.APPLICATION_JSON_VALUE));
-
-			handleRateLimitViolation(isJson, response);
+			return;
 		}
+
+		log.warn("IP Rate Limit exceeded for IP: {}", clientIp);
+
+		String contentType = request.getContentType();
+		String acceptHeader = request.getHeader("Accept");
+
+		boolean isJson = (contentType != null && contentType.contains(MediaType.APPLICATION_JSON_VALUE)) || (acceptHeader != null && acceptHeader.contains(MediaType.APPLICATION_JSON_VALUE));
+
+		handleRateLimitViolation(isJson, response);
+
 	}
 
 	@WithSpan
@@ -127,7 +121,6 @@ class IpRateLimitFilterService {
 	@WithSpan
 	private void handleRateLimitViolation(boolean json, HttpServletResponse response) throws IOException {
 		response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
-
 		if (json) {
 			response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 			response.getWriter().write("{\"status\":429,\"error\":\"Too Many Requests\",\"message\":\"Rate limit exceeded. Please try again later.\"}");
