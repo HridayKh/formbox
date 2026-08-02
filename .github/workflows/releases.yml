@@ -13,6 +13,7 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment: actions
     outputs:
       version: ${{ steps.version.outputs.version }}
       bump: ${{ steps.parse.outputs.bump }}
@@ -104,6 +105,16 @@ jobs:
           echo "tag_name=v${MAJOR}.${MINOR}.${PATCH}" >> "$GITHUB_OUTPUT"
           echo "Computed version: $VERSION"
 
+      - name: DEBUG - check Sentry secrets
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        run: |
+          echo "SENTRY_AUTH_TOKEN length: ${#SENTRY_AUTH_TOKEN}"
+          echo "SENTRY_ORG: '${SENTRY_ORG}'"
+          echo "SENTRY_PROJECT: '${SENTRY_PROJECT}'"
+
       - name: Build and test
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
@@ -159,6 +170,7 @@ jobs:
     needs: build
     if: needs.build.outputs.deploy == 'true'
     runs-on: ubuntu-latest
+    environment: actions
     steps:
       - name: Checkout
         uses: actions/checkout@v4
