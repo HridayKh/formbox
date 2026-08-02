@@ -105,14 +105,8 @@ public class AuthFilterService {
 			filterChain.doFilter(request, response);
 			return;
 		}
+		response.sendRedirect(PathRegistry.Auth.Hx.LOGIN_UNAUTHORIZED);
 
-		if ("true".equals(request.getHeader("HX-Request"))) {
-			log.debug("HTMX request metadata verified. Returning target redirect custom header element.");
-			response.setStatus(HttpServletResponse.SC_OK);
-			response.setHeader("HX-Redirect", PathRegistry.Auth.Hx.LOGIN_UNAUTHORIZED);
-		} else {
-			response.sendRedirect(PathRegistry.Auth.Hx.LOGIN_UNAUTHORIZED);
-		}
 	}
 
 	@WithSpan

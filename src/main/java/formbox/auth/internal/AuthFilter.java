@@ -1,6 +1,5 @@
 package formbox.auth.internal;
 
-import io.opentelemetry.instrumentation.annotations.WithSpan;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
