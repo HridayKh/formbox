@@ -47,7 +47,7 @@
 <%--
 1. [x] Move folders
 2. [x] Form settings (delete is here btw)
-3. [ ] Intergrations and Routing
+3. [x] Intergrations and Routing
 4. [ ] View submissions (Seperate Template to Render Submissions so Submission Info THere)
 5. [ ] Export Submissions to csv
 6. [ ] Client Creds (Single pregenerated cred that dont need db, coz they signed using form id)
@@ -68,13 +68,16 @@ what to show per submission:
 
 <main class="container">
     <section id="form-top">
-        <strong>Form Endpoint, Use This With <code>action="post"</code></strong>
-        <div role="group">
-            <label for="url-text"></label><input type="text" id="url-text"
-                                                 value="https://formbox.hridaykh.in/f/${form.id().toString()}"
-                                                 readonly/>
-            <button onclick="copyURL()" id="copy-btn">Copy</button>
-        </div>
+        <article>
+            <header>
+                <strong>Form Endpoint, Use This With <code>action="post"</code></strong>
+            </header>
+            <span style="display: none" id="url-text" class="odd-row-color">https://formbox.hridaykh.in/f/${form.id().toString()}</span>
+            <div role="group">
+                <input type="text" value="https://formbox.hridaykh.in/f/${form.id().toString()}" readonly/>
+                <button onclick="copyURL()" id="copy-btn">Copy</button>
+            </div>
+        </article>
     </section>
 
     <section id="move-folders">
@@ -85,7 +88,7 @@ what to show per submission:
                     !{if(folder.id().equals(form.folderId())) continue;}
                     <form action="/forms/${folder.id().toString()}/${form.id().toString()}/move" method="POST">
                         <button type="submit"
-                                class="small outline"
+                                class="small outline secondary"
                                 onclick="return confirm('Are you sure you want to move this form to ${folder.name()}?');">
                             Move form to ${folder.name()}
                         </button>
