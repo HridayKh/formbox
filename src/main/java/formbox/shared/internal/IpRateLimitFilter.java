@@ -1,4 +1,4 @@
-package formbox.shared.web;
+package formbox.shared.internal;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

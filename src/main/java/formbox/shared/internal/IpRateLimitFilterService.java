@@ -1,4 +1,4 @@
-package formbox.shared.web;
+package formbox.shared.internal;
 
 import formbox.shared.CacheNames;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
@@ -9,8 +9,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
-import org.springframework.core.Ordered;
-import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.core.StringRedisTemplate;

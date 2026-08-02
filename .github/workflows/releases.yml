@@ -1,0 +1,204 @@
+name: Build, Version, and Deploy
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: write
+  administration: write   # needed to lock release branches via branch protection API
+
+env:
+  DEFAULT_BASE_VERSION: "0.5.0"   # used if no tags exist yet
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      bump: ${{ steps.parse.outputs.bump }}
+      deploy: ${{ steps.parse.outputs.deploy }}
+      tag_name: ${{ steps.version.outputs.tag_name }}
+    steps:
+      - name: Checkout (full history, needed for tags)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Parse commit message for keywords
+        id: parse
+        run: |
+          MSG=$(git log -1 --pretty=%B)
+          echo "Commit message: $MSG"
+
+          BUMP="none"
+          if echo "$MSG" | grep -q "#major"; then
+            BUMP="major"
+          elif echo "$MSG" | grep -q "#minor"; then
+            BUMP="minor"
+          elif echo "$MSG" | grep -q "#patch"; then
+            BUMP="patch"
+          fi
+          echo "bump=$BUMP" >> "$GITHUB_OUTPUT"
+
+          HAS_DEPLOY="false"
+          if echo "$MSG" | grep -q "#deploy"; then
+            HAS_DEPLOY="true"
+          fi
+
+          HAS_DEPLOY_FORCE="false"
+          if echo "$MSG" | grep -q "#deploy-force"; then
+            HAS_DEPLOY_FORCE="true"
+          fi
+
+          # Deploy only if: (bump is minor/major AND #deploy present) OR #deploy-force present
+          DEPLOY="false"
+          if [ "$HAS_DEPLOY_FORCE" = "true" ]; then
+            DEPLOY="true"
+          elif [ "$HAS_DEPLOY" = "true" ] && { [ "$BUMP" = "minor" ] || [ "$BUMP" = "major" ]; }; then
+            DEPLOY="true"
+          fi
+          echo "deploy=$DEPLOY" >> "$GITHUB_OUTPUT"
+
+      - name: Compute version
+        id: version
+        run: |
+          BUMP="${{ steps.parse.outputs.bump }}"
+          RUN_NUMBER="${{ github.run_number }}"
+
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+
+          if [ -z "$LAST_TAG" ]; then
+            BASE="${DEFAULT_BASE_VERSION}"
+          else
+            BASE="${LAST_TAG#v}"
+          fi
+
+          MAJOR=$(echo "$BASE" | cut -d. -f1)
+          MINOR=$(echo "$BASE" | cut -d. -f2)
+          PATCH=$(echo "$BASE" | cut -d. -f3)
+
+          if [ "$BUMP" = "major" ]; then
+            MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0
+          elif [ "$BUMP" = "minor" ]; then
+            MINOR=$((MINOR + 1)); PATCH=0
+          elif [ "$BUMP" = "patch" ]; then
+            PATCH=$((PATCH + 1))
+          fi
+
+          if [ "$BUMP" = "none" ]; then
+            # non-release commit: dev build off current base, not tagged
+            VERSION="${MAJOR}.${MINOR}.${PATCH}-dev+${RUN_NUMBER}"
+          else
+            VERSION="${MAJOR}.${MINOR}.${PATCH}+${RUN_NUMBER}"
+          fi
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag_name=v${MAJOR}.${MINOR}.${PATCH}" >> "$GITHUB_OUTPUT"
+          echo "Computed version: $VERSION"
+
+      - name: Build and test
+        run: ./gradlew build -Pversion="${{ steps.version.outputs.version }}"
+
+      - name: Upload JAR artifact
+        if: steps.parse.outputs.deploy == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-jar
+          path: build/libs/*.jar
+          retention-days: 7
+
+      - name: Create and push tag
+        if: steps.parse.outputs.bump != 'none'
+        run: |
+          TAG="${{ steps.version.outputs.tag_name }}"
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git tag -a "$TAG" -m "Release $TAG (build ${{ github.run_number }})"
+          git push origin "$TAG"
+
+      - name: Create Sentry release
+        if: steps.parse.outputs.bump != 'none'
+        uses: getsentry/action-release@v1
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        with:
+          version: ${{ steps.version.outputs.version }}
+          set_commits: auto
+
+      - name: Create immutable release branch (minor/major only)
+        if: steps.parse.outputs.bump == 'minor' || steps.parse.outputs.bump == 'major'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.version.outputs.tag_name }}"
+          BRANCH="release/${TAG#v}"
+          git checkout -b "$BRANCH"
+          git push origin "$BRANCH"
+
+          # Lock the branch via GitHub API (no force pushes, no deletions, no direct pushes)
+          curl -sS -X PUT \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/branches/${BRANCH}/protection" \
+            -d '{
+              "required_status_checks": null,
+              "enforce_admins": true,
+              "required_pull_request_reviews": null,
+              "restrictions": null,
+              "allow_force_pushes": false,
+              "allow_deletions": false
+            }'
+
+  deploy:
+    needs: build
+    if: needs.build.outputs.deploy == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download JAR artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: app-jar
+          path: ./dist
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Rename JAR to a predictable filename
+        run: |
+          JAR_FILE=$(ls ./dist/*.jar | head -n 1)
+          cp "$JAR_FILE" ./dist/app.jar
+
+      - name: SCP JAR to server
+        run: |
+          scp -i ~/.ssh/deploy_key \
+            ./dist/app.jar \
+            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.SSH_REMOTE_PATH }}/app.jar"
+
+      - name: Run remote deploy script
+        run: |
+          ssh -i ~/.ssh/deploy_key "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
+            "bash ${{ secrets.SSH_DEPLOY_SCRIPT }} ${{ needs.build.outputs.version }}"
+
+      - name: Notify Sentry of deploy
+        if: needs.build.outputs.bump != 'none'
+        uses: getsentry/action-release@v1
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        with:
+          version: ${{ needs.build.outputs.version }}
+          environment: production

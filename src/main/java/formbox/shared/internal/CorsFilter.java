@@ -1,6 +1,5 @@
-package formbox.shared.web;
+package formbox.shared.internal;
 
-import io.opentelemetry.instrumentation.annotations.WithSpan;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

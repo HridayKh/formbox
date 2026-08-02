@@ -1,4 +1,4 @@
-package formbox.shared.web;
+package formbox.shared.internal;
 
 import formbox.shared.FormNotFoundException;
 import io.github.jan.supabase.auth.exception.AuthErrorCode;

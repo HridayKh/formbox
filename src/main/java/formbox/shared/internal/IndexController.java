@@ -1,4 +1,4 @@
-package formbox.shared.web;
+package formbox.shared.internal;
 
 import io.github.jan.supabase.auth.jwt.JwtPayload;
 import io.opentelemetry.instrumentation.annotations.WithSpan;

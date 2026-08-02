@@ -90,7 +90,9 @@ dependencyManagement {
 		mavenBom("org.springframework.modulith:spring-modulith-bom:$springModulithVersion")
 	}
 }
-
+springBoot {
+	buildInfo()
+}
 tasks.withType<Test> {
 	useJUnitPlatform()
 }
