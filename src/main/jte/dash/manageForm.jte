@@ -87,7 +87,7 @@ what to show per submission:
     <section id="form-update">
         <details>
             <summary role="button" class="outline">Settings</summary>
-            <div class="grid"> @template.dash.formUpdate() </div>
+            @template.dash.formUpdate(form = form)
         </details>
     </section>
 </main>

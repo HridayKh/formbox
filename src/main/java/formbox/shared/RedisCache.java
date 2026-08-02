@@ -1,6 +1,7 @@
 package formbox.shared;
 
 import io.opentelemetry.instrumentation.annotations.WithSpan;
+import io.sentry.Sentry;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -44,11 +45,15 @@ public class RedisCache {
 		String fullKey = KEY(cacheName, key);
 		try {
 			if (value == null) {
+				long start = System.nanoTime();
 				stringRedisTemplate.opsForValue().set(fullKey, NULL_SENTINEL, timeout);
+				recordRedisTime(start);
 				return;
 			}
 			String jsonValue = objectMapper.writeValueAsString(value);
+			long start = System.nanoTime();
 			stringRedisTemplate.opsForValue().set(fullKey, jsonValue, timeout);
+			recordRedisTime(start);
 		} catch (Exception e) {
 			log.error("Unable to set key {} in redis", fullKey, e);
 		}
@@ -107,6 +112,8 @@ public class RedisCache {
 		CacheLookup<T> cached = lookupFn.get();
 		if (cached.present()) return cached.value();
 
+		log.debug("Redis miss for {}:{}", cacheName, key);
+
 		String fullKey = KEY(cacheName, key);
 		Object lock = keyLocks.computeIfAbsent(fullKey, _ -> new Object());
 		synchronized (lock) {
@@ -128,35 +135,31 @@ public class RedisCache {
 	// ==========================================
 
 	@WithSpan
-	public boolean hasKey(String cacheName, String key) {
-		String fullKey = KEY(cacheName, key);
-		return Boolean.TRUE.equals(stringRedisTemplate.hasKey(fullKey));
-	}
-
-	@WithSpan
 	public boolean delete(String cacheName, String key) {
 		String fullKey = KEY(cacheName, key);
-		return Boolean.TRUE.equals(stringRedisTemplate.delete(fullKey));
+		long start = System.nanoTime();
+		Boolean result = stringRedisTemplate.delete(fullKey);
+		recordRedisTime(start);
+		return Boolean.TRUE.equals(result);
 	}
 
 	@WithSpan
 	public Long delete(String cacheName, Collection<String> keys) {
 		if (keys == null || keys.isEmpty()) return 0L;
 		List<String> fullKeys = keys.stream().map(k -> KEY(cacheName, k)).toList();
-		return stringRedisTemplate.delete(fullKeys);
-	}
-
-	@WithSpan
-	public boolean expire(String cacheName, String key, Duration timeout) {
-		String fullKey = KEY(cacheName, key);
-		return Boolean.TRUE.equals(stringRedisTemplate.expire(fullKey, timeout));
+		long start = System.nanoTime();
+		Long result = stringRedisTemplate.delete(fullKeys);
+		recordRedisTime(start);
+		return result;
 	}
 
 	@WithSpan
 	public Optional<Long> decrement(String cacheName, String key, long delta) {
 		String fullKey = KEY(cacheName, key);
 		try {
+			long start = System.nanoTime();
 			Long newValue = stringRedisTemplate.opsForValue().decrement(fullKey, delta);
+			recordRedisTime(start);
 			return Optional.ofNullable(newValue);
 		} catch (Exception e) {
 			log.error("Unable to decrement key {} in redis", fullKey, e);
@@ -173,13 +176,17 @@ public class RedisCache {
 	public Optional<Long> increment(String cacheName, String key, Duration ttl) {
 		String fullKey = KEY(cacheName, key);
 		try {
+			long start = System.nanoTime();
 			Long currentCount = stringRedisTemplate.opsForValue().increment(fullKey);
+			recordRedisTime(start);
 			if (currentCount == null) {
 				log.error("Redis increment returned null for key: {}", fullKey);
 				return Optional.empty();
 			}
 			if (currentCount == 1 && ttl != null) {
+				long expireStart = System.nanoTime();
 				stringRedisTemplate.expire(fullKey, ttl);
+				recordRedisTime(expireStart);
 			}
 			return Optional.of(currentCount);
 		} catch (Exception e) {
@@ -198,11 +205,18 @@ public class RedisCache {
 	}
 
 	@WithSpan
+	private void recordRedisTime(long startNanos) {
+		Sentry.metrics().distribution("redis.time_ns", System.nanoTime() - startNanos * 1.0, "ns");
+	}
+
+	@WithSpan
 	private <T> CacheLookup<T> lookup(String cacheName, String key, JsonParser<T> parser) {
 		String fullKey = KEY(cacheName, key);
 		String jsonValue;
 		try {
+			long start = System.nanoTime();
 			jsonValue = stringRedisTemplate.opsForValue().get(fullKey);
+			recordRedisTime(start);
 		} catch (Exception e) {
 			log.warn("Redis unavailable while reading key {}, treating as cache miss", fullKey, e);
 			return CacheLookup.miss();

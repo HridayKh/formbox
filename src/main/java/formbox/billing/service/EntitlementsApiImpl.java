@@ -26,15 +26,16 @@ public class EntitlementsApiImpl implements EntitlementsApi {
 	@WithSpan
 	@Override
 	public Entitlements getEntitlements(UUID tenantId) {
-		log.debug("Caffeine L1 cache MISS for tenant entitlements ID: {}", tenantId);
+		log.debug("in-app mem miss for tenant entitlements ID: {}", tenantId);
 		return redisCache.getOrCompute(CacheNames.TENANT_ENTITLEMENTS, tenantId.toString(), Entitlements.class, () -> tenantApi.getTenantEntitlementsOrDefault(tenantId));
 	}
 
 	@CachePut(value = CacheNames.TENANT_ENTITLEMENTS, key = "#tenantId.toString()")
 	@WithSpan
 	@Override
-	public void updateEntitlementsCache(UUID tenantId, Entitlements entitlements) {
+	public Entitlements updateEntitlementsCache(UUID tenantId, Entitlements entitlements) {
 		log.info("Updating entitlements cache for tenant ID: {}", tenantId);
 		redisCache.set(CacheNames.TENANT_ENTITLEMENTS, tenantId.toString(), entitlements);
+		return entitlements;
 	}
 }

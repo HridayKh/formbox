@@ -10,5 +10,5 @@ public interface EntitlementsApi {
 	Entitlements getEntitlements(UUID tenantId);
 
 	@WithSpan
-	void updateEntitlementsCache(UUID tenantId, Entitlements entitlements);
+	Entitlements updateEntitlementsCache(UUID tenantId, Entitlements entitlements);
 }

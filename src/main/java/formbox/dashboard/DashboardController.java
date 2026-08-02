@@ -71,10 +71,10 @@ class DashboardController {
 		return "dash/dashboard";
 	}
 
-	@GetMapping("/forms/{ignoredFolderId}/{formId}")
+	@GetMapping("/forms/{}/{formId}")
 	@WithSpan
-	public String manageFormPage(@RequestAttribute JwtPayload userMetadata, @RequestParam(required = false) String msg, @PathVariable UUID formId, Model model, @PathVariable String ignoredFolderId) {
-		log.debug("Loading primary console management data array structure for form ID: {} triggered by user: {}", formId, userMetadata.getSub());
+	public String manageFormPage(@RequestAttribute JwtPayload userMetadata, @RequestParam(required = false) String msg, @PathVariable UUID formId, Model model) {
+		log.debug("Loading manage form page form Id: {} tenantId: {}", formId, userMetadata.getSub());
 		FormDto form = formApi.getFormDto(formId);
 
 		if (form == null) return "redirect:/dashboard?msg=Form not found!";

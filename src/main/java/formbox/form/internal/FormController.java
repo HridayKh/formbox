@@ -10,7 +10,6 @@ import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -65,50 +64,36 @@ class FormController {
 		return "redirect:/forms/" + folderId + "/" + formApi.updateFormCache(savedForm.toFormDto()).id() + "?msg=" + msg;
 	}
 
-	@PutMapping("/{ignoredFId}/{formId}")
+	@PostMapping("/{}/{formId}/update")
 	@WithSpan
-	public String updateForm(@RequestAttribute JwtPayload userMetadata, @PathVariable UUID formId, @PathVariable String ignoredFId, @RequestParam(required = false) String fieldValidationsRaw, Model model, @ModelAttribute FormSettingsRequest request) {
-		List<String> validations = new ArrayList<>();
-		if (fieldValidationsRaw != null)
-			validations = Arrays.stream(fieldValidationsRaw.split("\\r?\\n")).map(String::strip).filter(s -> !s.isEmpty()).toList();
+	public String updateForm(@RequestAttribute JwtPayload userMetadata, @PathVariable UUID formId, @ModelAttribute FormSettingsRequest request) {
+		UUID tenantId = UUID.fromString(Objects.requireNonNull(userMetadata.getSub()));
 
-		var fullRequest = new FormSettingsRequest(request.name(), request.redirectUrl(), request.isActive(), request.turnstileSecretKey(), request.honeypotName(), request.rateLimitRpm(), request.allowFiles(), request.allowHtmx(), request.allowJson(), validations);
+		var result = formSettingsService.updateFormSettings(formId, tenantId, request);
 
-		var result = formSettingsService.updateFormSettings(formId, userMetadata.getSub(), fullRequest);
-
-		var entitlements = entitlementsApi.getEntitlements(UUID.fromString(Objects.requireNonNull(userMetadata.getSub())));
-		model.addAttribute("entitlements", entitlements);
-		model.addAttribute("redirectUrlNotAllowed", !entitlements.redirectUrlsAllowed());
-		model.addAttribute("fieldValidationsNotAllowed", !entitlements.fieldValidationsAllowed());
-		model.addAttribute("turnstileNotAllowed", !entitlements.turnstileAllowed());
-		model.addAttribute("jsonFormsNotAllowed", !entitlements.jsonFormsAllowed());
-		model.addAttribute("fileUploadsNotAllowed", !entitlements.fileUploadsAllowed());
-
-		if (result.hasWarnings()) model.addAttribute("warnings", result.warnings());
-		else model.addAttribute("message", "Form configurations updated successfully!");
-
-		model.addAttribute("form", result.updatedForm());
+		String msg = "Form configurations updated successfully!";
+		if (result.hasWarnings()) msg += "\nYou have warning(s):\n" + String.join("\n", result.getWarnings());
 
 		log.debug("Updated settings for formId: {}", formId);
-		return "fragments/manage/tab-settings :: settings-panel";
+		return "redirect:/forms/" + result.getFolderId() + "/" + formId + "?msg=" + msg;
 	}
 
-	@DeleteMapping("/{ignoredFolderId}/{formId}")
-	@ResponseBody
+
+	@PostMapping("/{}/{formId}/delete")
 	@WithSpan
-	public void deleteForm(@RequestAttribute JwtPayload userMetadata, @PathVariable UUID formId, @PathVariable String ignoredFolderId) {
-		log.debug("Deleting form with ID: {}", formId);
+	public String deleteForm(@RequestAttribute JwtPayload userMetadata, @PathVariable UUID formId) {
 		FormDto form = formApi.getFormDto(formId);
 
 		if (!form.tenantId().toString().equals(userMetadata.getSub())) {
 			log.warn("Unauthorized delete attempt of form {} by user {}", formId, userMetadata.getSub());
-			return;
+			return "redirect:/forms/" + form.folderId() + "/" + formId + "?msg=Invalid Form";
 		}
 
 		formRepository.deleteById(form.id());
-		log.info("Permanently deleted form ID: {}", formId);
-
 		formApi.evictFormCache(formId);
 		formApi.evictTenantForms(form.tenantId());
+
+		log.info("Deleted form ID: {}", formId);
+		return "redirect:/dashboard?msg=Successfully deleted form: " + form.name();
 	}
 }

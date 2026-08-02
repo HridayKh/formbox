@@ -87,4 +87,18 @@ class Form {
 			this.folderId
 		);
 	}
+
+	void fromFormSettingsRequest(FormSettingsRequest request) {
+		this.setId(request.getId());
+		this.setName(request.getName());
+		this.setRedirectUrl(request.getRedirectUrl());
+		this.setIsActive(request.isActive());
+		this.setTurnstileSecretKey(request.getTurnstileSecretKey());
+		this.setHoneypotName(request.getHoneypotName());
+		this.setRateLimitRpm(request.getRateLimitRpm());
+		this.setAllowFiles(request.isAllowFiles());
+		this.setAllowHtmx(request.isAllowHtmx());
+		this.setAllowJson(request.isAllowJson());
+		this.setFieldValidations(request.getFieldValidations());
+	}
 }

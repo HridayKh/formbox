@@ -66,7 +66,7 @@
                     <form action="/forms/${folder.id().toString()}/delete" method="POST">
                         <button type="submit"
                                 class="contrast outline small"
-                                onclick="return confirm('Are you sure you want to delete this folderId?');">
+                                onclick="return confirm('Are you sure you want to delete this folder (${folder.name()})?');">
                             Delete This Folder
                         </button>
                     </form>
