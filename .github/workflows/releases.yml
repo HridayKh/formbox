@@ -13,6 +13,7 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment: actions
     outputs:
       version: ${{ steps.version.outputs.version }}
       bump: ${{ steps.parse.outputs.bump }}
@@ -166,6 +167,7 @@ jobs:
     needs: build
     if: needs.build.outputs.deploy == 'true'
     runs-on: ubuntu-latest
+    environment: actions
     steps:
       - name: Download JAR artifact
         uses: actions/download-artifact@v4
