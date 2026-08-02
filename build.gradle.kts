@@ -81,6 +81,9 @@ dependencies {
 	// Polar
 	implementation("com.jsandev.polar:polar-java-sdk:0.1.5")
 	implementation("com.jsandev.polar:polar-spring:0.1.5")
+
+	// utils
+	implementation("commons-validator:commons-validator:1.8.0")
 }
 
 group = "in.hridaykh"

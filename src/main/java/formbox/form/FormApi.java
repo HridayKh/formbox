@@ -18,6 +18,9 @@ public interface FormApi {
 	FormDto updateFormFolder(UUID formId, UUID folderId);
 
 	@WithSpan
+	FormDto updateFormNotifs(UUID formId, FormNotifs formNotifs);
+
+	@WithSpan
 	void evictFormCache(UUID formId);
 
 	@WithSpan
@@ -25,4 +28,5 @@ public interface FormApi {
 
 	@WithSpan
 	void evictTenantForms(UUID tenantId);
+
 }

@@ -16,6 +16,12 @@ public class SentryUserProvider implements io.sentry.spring7.SentryUserProvider 
 		ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
 		if (attrs == null) return null;
 
+		if (attrs.getRequest().getRequestURI().startsWith("/f/")) {
+			User user = new User();
+			user.setId("form_sub_" + attrs.getRequest().getRequestURI().replace("/f/", ""));
+			return user;
+		}
+
 		Object userMetadata = attrs.getRequest().getAttribute("user_metadata");
 		if (!(userMetadata instanceof JwtPayload jwtPayload)) return null;
 

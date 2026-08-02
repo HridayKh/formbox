@@ -151,7 +151,7 @@ class SubmissionController {
 			// step 13: async start upload files/attachments
 			// step 14: async 3rd party webhooks and notifs
 			stepStart = System.currentTimeMillis();
-			submissionFileService.uploadFilesAndInitNotifsWebhooks(form, payload, request);
+			submissionFileService.uploadFilesAndInitNotifsWebhooks(form, payload);
 			log.debug("Steps 13 & 14 (Async upload & webhook init) took {} ms", System.currentTimeMillis() - stepStart);
 
 			log.info("Successfully processed submission for form ID: {}", formId);

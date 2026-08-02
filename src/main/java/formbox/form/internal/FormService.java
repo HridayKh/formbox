@@ -2,6 +2,7 @@ package formbox.form.internal;
 
 import formbox.form.FormApi;
 import formbox.form.FormDto;
+import formbox.form.FormNotifs;
 import formbox.shared.CacheNames;
 import formbox.shared.FormNotFoundException;
 import formbox.shared.RedisCache;
@@ -14,6 +15,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.core.type.TypeReference;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -51,8 +53,19 @@ class FormService implements FormApi {
 	@WithSpan
 	@Override
 	public FormDto updateFormFolder(UUID formId, UUID folderId) {
-		Form form = formRepository.findById(formId).orElseThrow();
+		Form form = formRepository.findById(formId).orElseThrow(() -> new FormNotFoundException(formId));
 		form.setFolderId(folderId);
+		FormDto saved = formRepository.save(form).toFormDto();
+		redisCache.set(CacheNames.FORM_METADATA, formId.toString(), saved);
+		return saved;
+	}
+
+	@CachePut(value = CacheNames.FORM_METADATA, key = "#formId.toString()")
+	@WithSpan
+	@Override
+	public FormDto updateFormNotifs(UUID formId, FormNotifs formNotifs) {
+		Form form = formRepository.findById(formId).orElseThrow(() -> new FormNotFoundException(formId));
+		form.setFormNotifs(formNotifs);
 		FormDto saved = formRepository.save(form).toFormDto();
 		redisCache.set(CacheNames.FORM_METADATA, formId.toString(), saved);
 		return saved;

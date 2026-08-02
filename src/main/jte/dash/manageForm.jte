@@ -46,7 +46,7 @@
 
 <%--
 1. [x] Move folders
-2. [ ] Form settings (delete is here btw)
+2. [x] Form settings (delete is here btw)
 3. [ ] Intergrations and Routing
 4. [ ] View submissions (Seperate Template to Render Submissions so Submission Info THere)
 5. [ ] Export Submissions to csv
@@ -67,6 +67,16 @@ what to show per submission:
 --%>
 
 <main class="container">
+    <section id="form-top">
+        <strong>Form Endpoint, Use This With <code>action="post"</code></strong>
+        <div role="group">
+            <label for="url-text"></label><input type="text" id="url-text"
+                                                 value="https://formbox.hridaykh.in/f/${form.id().toString()}"
+                                                 readonly/>
+            <button onclick="copyURL()" id="copy-btn">Copy</button>
+        </div>
+    </section>
+
     <section id="move-folders">
         <details>
             <summary role="button" class="outline">Move this form, current folder: '${folderName}'</summary>
@@ -84,10 +94,20 @@ what to show per submission:
             </div>
         </details>
     </section>
+
     <section id="form-update">
         <details>
             <summary role="button" class="outline">Settings</summary>
             @template.dash.formUpdate(form = form)
+        </details>
+    </section>
+
+    <section id="notifs-integrations">
+        <details>
+            <summary role="button" class="outline">Email, Notifications, Integrations, and Routing</summary>
+            <div style="padding-inline: 5em">
+                @template.dash.formNotifs(form = form)
+            </div>
         </details>
     </section>
 </main>
@@ -98,6 +118,27 @@ what to show per submission:
 
 <script>
     window.history.replaceState(null, '', window.location.origin + window.location.pathname);
+
+    function copyURL() {
+        const textToCopy = document.getElementById("url-text").innerText;
+
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            const btn = document.getElementById("copy-btn");
+
+            // Update button visual state
+            btn.innerText = "Copied!";
+            btn.classList.add("copied");
+
+            // Reset button after 2 seconds
+            setTimeout(() => {
+                btn.innerText = "Copy";
+                btn.classList.remove("copied");
+            }, 2000);
+        }).catch(err => {
+            console.error("Failed to copy text: ", err);
+            alert("Failed to copy to clipboard.");
+        });
+    }
 </script>
 
 </body>

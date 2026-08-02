@@ -1,6 +1,7 @@
 package formbox.form.internal;
 
 import formbox.form.FormDto;
+import formbox.form.FormNotifs;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.ColumnDefault;
@@ -66,26 +67,16 @@ class Form {
 	@Column(name = "field_validations", nullable = false, columnDefinition = "jsonb[]")
 	private List<String> fieldValidations = new ArrayList<>();
 
+	@JdbcTypeCode(SqlTypes.JSON)
+	@Column(name = "form_notifs", nullable = false, columnDefinition = "jsonb")
+	private FormNotifs formNotifs = new FormNotifs("", "");
+
 	@Column(name = "created_at")
 	@ColumnDefault("NOW()")
 	private OffsetDateTime createdAt = OffsetDateTime.now();
 
 	FormDto toFormDto() {
-		return new FormDto(
-			this.id,
-			this.tenantId,
-			this.name,
-			this.redirectUrl,
-			this.isActive,
-			this.turnstileSecretKey,
-			this.honeypotName,
-			this.rateLimitRpm,
-			this.allowFiles,
-			this.allowHtmx,
-			this.allowJson,
-			List.copyOf(this.fieldValidations),
-			this.folderId
-		);
+		return new FormDto(this.id, this.tenantId, this.name, this.redirectUrl, this.isActive, this.turnstileSecretKey, this.honeypotName, this.rateLimitRpm, this.allowFiles, this.allowHtmx, this.allowJson, List.copyOf(this.fieldValidations), this.folderId, this.formNotifs);
 	}
 
 	void fromFormSettingsRequest(FormSettingsRequest request) {

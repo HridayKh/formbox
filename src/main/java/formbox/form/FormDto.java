@@ -19,7 +19,8 @@ public record FormDto(
 	Boolean allowHtmx,
 	Boolean allowJson,
 	List<String> fieldValidations,
-	UUID folderId
+	UUID folderId,
+	FormNotifs formNotifs
 ) implements Serializable {
 	public FormDto {
 		fieldValidations = List.copyOf(fieldValidations);
