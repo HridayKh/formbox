@@ -75,7 +75,7 @@ class DashboardController {
 	@WithSpan
 	public String manageFormPage(@RequestAttribute JwtPayload userMetadata, @RequestParam(required = false) String msg, @PathVariable UUID formId, Model model, @PathVariable String ignoredFolderId) {
 		log.debug("Loading primary console management data array structure for form ID: {} triggered by user: {}", formId, userMetadata.getSub());
-		FormDto form = formApi.getCachedForm(formId);
+		FormDto form = formApi.getFormDto(formId);
 
 		if (form == null) return "redirect:/dashboard?msg=Form not found!";
 

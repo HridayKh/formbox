@@ -1,7 +1,5 @@
 package formbox.form.internal;
 
-import formbox.folder.FolderApi;
-import formbox.folder.FolderDto;
 import formbox.form.FormApi;
 import formbox.form.FormDto;
 import formbox.shared.Entitlements;
@@ -12,7 +10,6 @@ import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,7 +25,6 @@ class FormController {
 	private final FormApi formApi;
 	private final FormSettingsService formSettingsService;
 	private final EntitlementsApi entitlementsApi;
-	private final FolderApi folderApi;
 
 	@PostMapping("/{folderId}")
 	@WithSpan
@@ -65,49 +61,9 @@ class FormController {
 		Form savedForm = formRepository.save(newForm);
 		log.info("Successfully persisted new Form Entity. ID: {} for tenant ID: {}", savedForm.getId(), tenantId);
 
-		formApi.updateFormCache(savedForm.toCachedFormDto());
 		formApi.evictTenantForms(tenantId);
 
-		return "redirect:/forms/" + folderId + "/" + savedForm.getId() + "?msg=" + msg;
-	}
-
-
-
-	@PostMapping("/{folderId}/{formId}/move")
-	@WithSpan
-	@Transactional
-	public String moveForm(@RequestAttribute JwtPayload userMetadata, @PathVariable UUID folderId, @PathVariable UUID formId) {
-		log.debug("Moving folderId: {} for user {}", folderId, userMetadata.getSub());
-
-		UUID tenantId = UUID.fromString(Objects.requireNonNull(userMetadata.getSub()));
-
-		Optional<FolderDto> folderOpt = folderApi.getFolderById(folderId);
-		if (folderOpt.isEmpty())
-			return "redirect:/dashboard?msg=Folder not found!";
-		FolderDto folder = folderOpt.get();
-		if (!folder.tenantId().toString().equals(userMetadata.getSub())) {
-			log.warn("Unauthorized form move attempt of folderId {} by user {}", folderId, userMetadata.getSub());
-			return "redirect:/dashboard?msg=Invalid folderId";
-		}
-
-		Optional<Form> form = formRepository.findById(formId);
-		if (form.isEmpty())
-			return "redirect:/dashboard?msg=Form not found!";
-		if (!form.get().getTenantId().toString().equals(userMetadata.getSub())) {
-			log.warn("Unauthorized form move attempt of form {} by user {}", formId, userMetadata.getSub());
-			return "redirect:/dashboard?msg=Invalid form";
-		}
-
-		Form f = form.get();
-		f.setFolderId(folder.id());
-		Form savedF = formRepository.save(f);
-		log.info("Successfully moved form. ID: {} for tenant ID: {}", formId, tenantId);
-
-		formApi.updateFormCache(savedF.toCachedFormDto());
-		formApi.evictTenantForms(tenantId);
-
-		String msg = "Successfully moved the form " + f.getName() + " to folderId " + folder.name();
-		return "redirect:/forms/" + folderId + "/" + formId + "?msg=" + msg;
+		return "redirect:/forms/" + folderId + "/" + formApi.updateFormCache(savedForm.toFormDto()).id() + "?msg=" + msg;
 	}
 
 	@PutMapping("/{ignoredFolderId}/{formId}")
@@ -150,7 +106,7 @@ class FormController {
 	@WithSpan
 	public void deleteForm(@RequestAttribute JwtPayload userMetadata, @PathVariable UUID formId, @PathVariable String ignoredFolderId) {
 		log.debug("Deleting form with ID: {}", formId);
-		FormDto form = formApi.getCachedForm(formId);
+		FormDto form = formApi.getFormDto(formId);
 
 		if (!form.tenantId().toString().equals(userMetadata.getSub())) {
 			log.warn("Unauthorized delete attempt of form {} by user {}", formId, userMetadata.getSub());

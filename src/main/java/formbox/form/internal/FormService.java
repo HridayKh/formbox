@@ -29,21 +29,33 @@ class FormService implements FormApi {
 	@Cacheable(value = CacheNames.FORM_METADATA, key = "#formId.toString()")
 	@WithSpan
 	@Override
-	public FormDto getCachedForm(UUID formId) {
+	public FormDto getFormDto(UUID formId) {
 		return redisCache.getOrCompute(CacheNames.FORM_METADATA, formId.toString(), FormDto.class, () -> {
 			Form form = formRepository.findById(formId).orElseThrow(() -> {
 				log.warn("Form retrieval failed. Record not found in database for ID: {}", formId);
 				return new FormNotFoundException(formId);
 			});
-			return form.toCachedFormDto();
+			return form.toFormDto();
 		});
 	}
 
 	@CachePut(value = CacheNames.FORM_METADATA, key = "#updatedForm.id.toString()")
 	@WithSpan
 	@Override
-	public void updateFormCache(FormDto updatedForm) {
+	public FormDto updateFormCache(FormDto updatedForm) {
 		redisCache.set(CacheNames.FORM_METADATA, updatedForm.id().toString(), updatedForm);
+		return updatedForm;
+	}
+
+	@CachePut(value = CacheNames.FORM_METADATA, key = "#formId.toString()")
+	@WithSpan
+	@Override
+	public FormDto updateFormFolder(UUID formId, UUID folderId) {
+		Form form = formRepository.findById(formId).orElseThrow();
+		form.setFolderId(folderId);
+		FormDto saved = formRepository.save(form).toFormDto();
+		redisCache.set(CacheNames.FORM_METADATA, formId.toString(), saved);
+		return saved;
 	}
 
 	@CacheEvict(value = CacheNames.FORM_METADATA, key = "#formId.toString()")
@@ -57,7 +69,7 @@ class FormService implements FormApi {
 	@Override
 	public List<FormDto> getTenantForms(UUID tenantId) {
 		return redisCache.getOrCompute(CacheNames.TENANT_FORMS, tenantId.toString(), new TypeReference<>() {
-		}, () -> formRepository.findByTenantIdAndIsDeletedIsFalse(tenantId).stream().map(Form::toCachedFormDto).toList());
+		}, () -> formRepository.findByTenantIdAndIsDeletedIsFalse(tenantId).stream().map(Form::toFormDto).toList());
 	}
 
 	@WithSpan

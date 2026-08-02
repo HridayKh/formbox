@@ -49,7 +49,7 @@ class SubmissionController {
 			stepStart = System.currentTimeMillis();
 			FormDto form;
 			try {
-				form = formApi.getCachedForm(formId);
+				form = formApi.getFormDto(formId);
 				log.debug("Step 1 (Get Form) took {} ms", System.currentTimeMillis() - stepStart);
 			} catch (FormNotFoundException e) {
 				log.debug("Step 1 (Get Form - FormNotFound) took {} ms", System.currentTimeMillis() - stepStart);

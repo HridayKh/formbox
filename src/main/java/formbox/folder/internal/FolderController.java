@@ -1,7 +1,9 @@
 package formbox.folder.internal;
 
+import formbox.folder.FolderApi;
 import formbox.folder.FolderDto;
 import formbox.form.FormApi;
+import formbox.form.FormDto;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +24,7 @@ class FolderController {
 	private final formbox.folder.internal.FolderCacheService folderCacheService;
 	private final FolderRepository folderRepository;
 	private final FormApi formApi;
+	private final FolderApi folderApi;
 
 	@PostMapping
 	@WithSpan
@@ -58,8 +61,7 @@ class FolderController {
 		UUID tenantId = UUID.fromString(Objects.requireNonNull(userMetadata.getSub()));
 
 		Optional<Folder> folderOpt = folderRepository.findById(folderId);
-		if (folderOpt.isEmpty())
-			return "redirect:/dashboard?msg=Folder not found!";
+		if (folderOpt.isEmpty()) return "redirect:/dashboard?msg=Folder not found!";
 		Folder folder = folderOpt.get();
 
 		if (!folder.getTenantId().toString().equals(userMetadata.getSub())) {
@@ -88,8 +90,7 @@ class FolderController {
 
 		Optional<FolderDto> folderOpt = folderCacheService.getFolderById(folderId);
 
-		if (folderOpt.isEmpty())
-			return "redirect:/dashboard?msg=Folder not found!";
+		if (folderOpt.isEmpty()) return "redirect:/dashboard?msg=Folder not found!";
 
 		if (!folderOpt.get().tenantId().toString().equals(userMetadata.getSub())) {
 			log.warn("Unauthorized delete attempt of folderId {} by user {}", folderId, userMetadata.getSub());
@@ -106,6 +107,36 @@ class FolderController {
 		folderCacheService.evictTenantFolders(tenantId);
 
 		return "redirect:/dashboard?msg=Successfully deleted the folderId " + folderOpt.get().name();
+	}
+
+	@PostMapping("/forms/{folderId}/{formId}/move")
+	@WithSpan
+	@Transactional
+	public String moveForm(@RequestAttribute JwtPayload userMetadata, @PathVariable UUID folderId, @PathVariable UUID formId) {
+		log.debug("Moving folderId: {} for user {}", folderId, userMetadata.getSub());
+
+		UUID tenantId = UUID.fromString(Objects.requireNonNull(userMetadata.getSub()));
+
+		Optional<FolderDto> folderOpt = folderApi.getFolderById(folderId);
+		if (folderOpt.isEmpty()) return "redirect:/dashboard?msg=Folder not found!";
+		FolderDto folder = folderOpt.get();
+		if (!folder.tenantId().toString().equals(userMetadata.getSub())) {
+			log.warn("Unauthorized form move attempt of folderId {} by user {}", folderId, userMetadata.getSub());
+			return "redirect:/dashboard?msg=Invalid folderId";
+		}
+
+		FormDto form = formApi.getFormDto(formId);
+		if (form == null) return "redirect:/dashboard?msg=Form not found!";
+		if (!form.tenantId().toString().equals(userMetadata.getSub())) {
+			log.warn("Unauthorized form move attempt of form {} by user {}", formId, userMetadata.getSub());
+			return "redirect:/dashboard?msg=Invalid form";
+		}
+
+		formApi.evictTenantForms(tenantId);
+
+		String msg = "Successfully moved the form " + formApi.updateFormFolder(form.id(), folderId).name() + " to folder " + folder.name();
+		log.info("Successfully moved form. ID: {} for tenant ID: {}", formId, tenantId);
+		return "redirect:/forms/" + folderId + "/" + formId + "?msg=" + msg;
 	}
 
 }

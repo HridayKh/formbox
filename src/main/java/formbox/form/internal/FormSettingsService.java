@@ -54,10 +54,10 @@ class FormSettingsService {
 
 		Form savedForm = formRepository.save(form);
 
-		formApi.updateFormCache(savedForm.toCachedFormDto());
+		formApi.updateFormCache(savedForm.toFormDto());
 		formApi.evictTenantForms(savedForm.getTenantId());
 
-		validationResult.setUpdatedForm(savedForm.toCachedFormDto());
+		validationResult.setUpdatedForm(savedForm.toFormDto());
 
 		log.info("Successfully updated form settings for form ID: {} (tenant: {})", formId, savedForm.getTenantId());
 		return validationResult;

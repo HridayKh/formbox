@@ -70,7 +70,7 @@ class Form {
 	@ColumnDefault("NOW()")
 	private OffsetDateTime createdAt = OffsetDateTime.now();
 
-	FormDto toCachedFormDto() {
+	FormDto toFormDto() {
 		return new FormDto(
 			this.id,
 			this.tenantId,

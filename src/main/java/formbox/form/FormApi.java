@@ -9,10 +9,13 @@ import java.util.UUID;
 public interface FormApi {
 	@Transactional(readOnly = true)
 	@WithSpan
-	FormDto getCachedForm(UUID formId);
+	FormDto getFormDto(UUID formId);
 
 	@WithSpan
-	void updateFormCache(FormDto updatedForm);
+	FormDto updateFormCache(FormDto updatedForm);
+
+	@WithSpan
+	FormDto updateFormFolder(UUID formId, UUID folderId);
 
 	@WithSpan
 	void evictFormCache(UUID formId);
