@@ -2,14 +2,13 @@ name: Build, Version, and Deploy
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
 
 permissions:
   contents: write
-  administration: write   # needed to lock release branches via branch protection API
 
 env:
-  DEFAULT_BASE_VERSION: "0.5.0"   # used if no tags exist yet
+  DEFAULT_BASE_VERSION: "0.1.0"   # used if no tags exist yet
 
 jobs:
   build:
@@ -112,14 +111,14 @@ jobs:
         with:
           name: app-jar
           path: build/libs/*.jar
-          retention-days: 7
+          retention-days: 1
 
       - name: Create and push tag
         if: steps.parse.outputs.bump != 'none'
         run: |
           TAG="${{ steps.version.outputs.tag_name }}"
-          git config user.name "github-actions"
-          git config user.email "github-actions@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag -a "$TAG" -m "Release $TAG (build ${{ github.run_number }})"
           git push origin "$TAG"
 
