@@ -1,5 +1,6 @@
 package formbox.auth.internal
 
+import formbox.shared.CacheNames
 import formbox.shared.GenericAuthException
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.Auth
@@ -18,6 +19,7 @@ import io.github.jan.supabase.logging.LogLevel
 import io.opentelemetry.instrumentation.annotations.WithSpan
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 
 data class SignUpRequest(val email: String, val password: String)
@@ -177,6 +179,7 @@ internal class AuthServiceKt(private val supabaseProps: AuthConfig) {
 	}
 
 	@WithSpan
+	@Cacheable(value = [CacheNames.JWT_TOKEN], key = "#accessToken")
 	fun getUserMetadata(client: SupabaseClient, accessToken: String?): JwtPayload? = runBlocking {
 		log.trace("Resolving claims parsing profile layer context against active token mapping.")
 		if (accessToken.isNullOrBlank()) {

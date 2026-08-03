@@ -2,6 +2,7 @@ package formbox.form.internal;
 
 import formbox.form.FormApi;
 import formbox.form.FormDto;
+import formbox.form.TenantForm;
 import formbox.shared.Entitlements;
 import formbox.shared.PathRegistry;
 import formbox.billing.EntitlementsApi;
@@ -31,7 +32,7 @@ class FormController {
 		log.debug("Processing request to create a new form. Name: [{}], Requested Redirect URL: [{}]", formName, redirectUrl);
 
 		UUID tenantId = UUID.fromString(Objects.requireNonNull(userMetadata.getSub()));
-		List<FormDto> forms = formApi.getTenantForms(tenantId);
+		List<TenantForm> forms = formApi.getTenantForms(tenantId);
 
 		Entitlements entitlements = entitlementsApi.getEntitlements(tenantId);
 		String msg = "Form created successfully!";
@@ -74,7 +75,7 @@ class FormController {
 		String msg = "Form configurations updated successfully!";
 		if (result.hasWarnings()) msg += "\nYou have warning(s):\n" + String.join("\n", result.getWarnings());
 
-		log.debug("Updated settings for formId: {}", formId);
+		log.debug("Updated settings for id: {}", formId);
 		return "redirect:/forms/" + result.getFolderId() + "/" + formId + "?msg=" + msg;
 	}
 

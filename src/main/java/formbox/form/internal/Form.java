@@ -2,6 +2,7 @@ package formbox.form.internal;
 
 import formbox.form.FormDto;
 import formbox.form.FormNotifs;
+import formbox.form.TenantForm;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.ColumnDefault;
@@ -77,6 +78,10 @@ class Form {
 
 	FormDto toFormDto() {
 		return new FormDto(this.id, this.tenantId, this.name, this.redirectUrl, this.isActive, this.turnstileSecretKey, this.honeypotName, this.rateLimitRpm, this.allowFiles, this.allowHtmx, this.allowJson, List.copyOf(this.fieldValidations), this.folderId, this.formNotifs);
+	}
+
+	TenantForm toTenantForm(){
+		return new TenantForm(this.folderId, this.id, this.name);
 	}
 
 	void fromFormSettingsRequest(FormSettingsRequest request) {

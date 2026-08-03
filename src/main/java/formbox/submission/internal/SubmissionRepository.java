@@ -20,5 +20,5 @@ interface SubmissionRepository extends JpaRepository<Submission, UUID> {
 	@Modifying
 	@Transactional
 	@Query(value = "DELETE FROM submissions WHERE id IN (SELECT id FROM submissions WHERE form_id = :formId LIMIT :batchSize)", nativeQuery = true)
-	int deleteSubmissionsInBatch(@Param("formId") UUID formId, @Param("batchSize") int batchSize);
+	int deleteSubmissionsInBatch(@Param("id") UUID formId, @Param("batchSize") int batchSize);
 }

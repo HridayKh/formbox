@@ -3,6 +3,7 @@ package formbox.form.internal;
 import formbox.form.FormApi;
 import formbox.form.FormDto;
 import formbox.form.FormNotifs;
+import formbox.form.TenantForm;
 import formbox.shared.CacheNames;
 import formbox.shared.FormNotFoundException;
 import formbox.shared.RedisCache;
@@ -80,9 +81,9 @@ class FormService implements FormApi {
 
 	@WithSpan
 	@Override
-	public List<FormDto> getTenantForms(UUID tenantId) {
+	public List<TenantForm> getTenantForms(UUID tenantId) {
 		return redisCache.getOrCompute(CacheNames.TENANT_FORMS, tenantId.toString(), new TypeReference<>() {
-		}, () -> formRepository.findByTenantIdAndIsDeletedIsFalse(tenantId).stream().map(Form::toFormDto).toList());
+		}, () -> formRepository.findByTenantIdAndIsDeletedIsFalse(tenantId));
 	}
 
 	@WithSpan

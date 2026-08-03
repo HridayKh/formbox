@@ -13,8 +13,15 @@ plugins {
 	id("org.jetbrains.kotlin.plugin.spring") version "2.3.21"
 
 	id("io.sentry.jvm.gradle") version "6.14.0"
+	id("gg.jte.gradle") version "3.2.4"
 }
-
+tasks.named("generateSentryBundleIdJava") {
+	dependsOn("generateJte")
+//	mustRunAfter("generateJte")
+}
+jte {
+	generate()
+}
 repositories {
 	mavenCentral()
 }
@@ -87,7 +94,7 @@ dependencies {
 }
 
 group = "in.hridaykh"
-version = "0.3.1+14"
+version = "0.3.1-dev+14"
 dependencyManagement {
 	imports {
 		mavenBom("org.springframework.modulith:spring-modulith-bom:$springModulithVersion")

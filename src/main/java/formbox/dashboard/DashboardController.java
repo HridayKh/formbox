@@ -4,6 +4,7 @@ import formbox.billing.PolarSubmissionApi;
 import formbox.folder.FolderApi;
 import formbox.folder.FolderDto;
 import formbox.form.FormDto;
+import formbox.form.TenantForm;
 import formbox.shared.Entitlements;
 import formbox.submission.FormSubmissionsResponse;
 import formbox.shared.PathRegistry;
@@ -47,14 +48,12 @@ class DashboardController {
 		Entitlements entitlements = entitlementsApi.getEntitlements(tenantId);
 		log.debug("Resolved entitlements for Tenant ID: {}, Service Tier: {}", tenantId, entitlements.tierName());
 
-		List<FormDto> forms = formApi.getTenantForms(tenantId);
+		List<TenantForm> forms = formApi.getTenantForms(tenantId);
 		List<FolderDto> folders = folderApi.getTenantFolders(tenantId);
 		List<FolderFormDTO> folderForms = new ArrayList<>(folders.size());
 
-		for (FolderDto folder : folders) {
-			List<FormDto> folderForm = forms.stream().filter((f) -> f.folderId().equals(folder.id())).toList();
-			folderForms.add(new FolderFormDTO(folder, folderForm));
-		}
+		for (FolderDto folder : folders)
+			folderForms.add(new FolderFormDTO(folder, forms.stream().filter(form -> form.folderId().equals(folder.id())).toList()));
 
 		model.addAttribute("balanceLeft", polarSubmissionApi.getCachedSubmissionBalance(tenantId));
 		model.addAttribute("showManageSubscription", !entitlements.isFree());

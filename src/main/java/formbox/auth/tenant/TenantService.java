@@ -13,7 +13,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-class TenantApiImpl implements TenantApi {
+class TenantService implements TenantApi {
 	private final TenantRepository tenantRepository;
 
 	@WithSpan

@@ -24,7 +24,7 @@ public interface FormApi {
 	void evictFormCache(UUID formId);
 
 	@WithSpan
-	List<FormDto> getTenantForms(UUID tenantId);
+	List<TenantForm> getTenantForms(UUID tenantId);
 
 	@WithSpan
 	void evictTenantForms(UUID tenantId);
