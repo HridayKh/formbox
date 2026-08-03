@@ -17,16 +17,11 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class UploadService {
 
-	private final String UPLOAD_DIR = "/home/hridaykh/Code/hriday_tech/formbox/files";
-
-	public String uploadFile(InputStream is) throws IOException {
-		Path uploadPath = Paths.get(UPLOAD_DIR);
-		if (!Files.exists(uploadPath)) {
-			Files.createDirectories(uploadPath);
-		}
-
-		String filename = UUID.randomUUID() + ".tmp";
-		Path targetLocation = uploadPath.resolve(filename);
+	public String uploadFile(InputStream is, String fileName) throws IOException {
+		String UPLOAD_DIR = "/home/hridaykh/Code/hriday_tech/formbox/files";
+		Path uploadPath = Paths.get(UPLOAD_DIR + "/" + UUID.randomUUID());
+		Files.createDirectories(uploadPath);
+		Path targetLocation = uploadPath.resolve(fileName);
 
 		log.info("Saving incoming upload to {}", targetLocation);
 		Files.copy(is, targetLocation, StandardCopyOption.REPLACE_EXISTING);

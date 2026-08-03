@@ -25,7 +25,7 @@ public class TurnstileVerifierUtil {
 		payload.remove("cf-turnstile-response");
 
 		if (turnstileSecretKey == null || turnstileSecretKey.isBlank()) {
-			log.debug("Turnstile validation skipped or failed due to missing token or secret key.");
+			log.debug("Turnstile validation skipped due to missing secret key.");
 			return false;
 		}
 

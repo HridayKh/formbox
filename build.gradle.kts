@@ -19,6 +19,9 @@ tasks.named("generateSentryBundleIdJava") {
 	dependsOn("generateJte")
 //	mustRunAfter("generateJte")
 }
+tasks.matching { it.name == "sentryCollectSourcesJava" }.configureEach {
+	dependsOn(tasks.named("generateJte"))
+}
 jte {
 	generate()
 }

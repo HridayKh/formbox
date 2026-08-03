@@ -10,15 +10,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.Part;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 @Service
 @Slf4j
@@ -29,12 +26,11 @@ class SubmissionFileService {
 	private final UploadService uploadService;
 	private final SubmissionRepository submissionRepository;
 
-	@Async
 	@WithSpan
 	@Transactional
 	public void uploadFilesAndInitNotifsWebhooks(FormDto form, Submission submission, Map<String, String> payload, HttpServletRequest request) {
-		discordNotif.sendDiscordNotif(form.formNotifs(), payload);
 		uploadFiles(request, submission);
+		discordNotif.sendDiscordNotif(form.formNotifs(), payload);
 	}
 
 	@Transactional
@@ -54,7 +50,7 @@ class SubmissionFileService {
 				String contentType = part.getContentType();
 				if (contentType == null || contentType.isBlank()) continue;
 				payload.put(part.getName(), part.getSubmittedFileName());
-				payload.put(part.getName() + "__url", uploadService.uploadFile(part.getInputStream()));
+				payload.put(part.getName() + "__url", uploadService.uploadFile(part.getInputStream(), part.getSubmittedFileName()));
 				Sentry.metrics().distribution("submissions.stats.fileSizeBytes", part.getSize() * 1.0, "byte");
 			}
 			submission.setPayload(payload);

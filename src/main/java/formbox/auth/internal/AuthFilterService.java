@@ -1,30 +1,35 @@
 package formbox.auth.internal;
 
+import formbox.shared.PathRegistry;
 import io.github.jan.supabase.SupabaseClient;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
 import io.github.jan.supabase.auth.user.UserSession;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
+import org.springframework.util.AntPathMatcher;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class AuthFilterService {
 
+	private final AntPathMatcher pathMatcher = new AntPathMatcher();
 	private final AuthService authService;
 	private final AuthServiceKt authServiceKt;
-	private final AuthFilter authFilter;
-
+	private static final List<String> OPTIONAL_PATHS = List.of("/", "/auth/**", "/test/**");
 
 	@WithSpan
 	protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
@@ -35,8 +40,8 @@ public class AuthFilterService {
 		request.setAttribute("supabaseClient", supabaseClient);
 
 		try {
-			String oldAccessToken = authFilter.getCookieValue(request, "sb_token");
-			String oldRefreshToken = authFilter.getCookieValue(request, "sb_refresh");
+			String oldAccessToken = getCookieValue(request, "sb_token");
+			String oldRefreshToken = getCookieValue(request, "sb_refresh");
 
 			request.setAttribute("userMetadata", null);
 
@@ -59,7 +64,7 @@ public class AuthFilterService {
 			}
 
 			if (oldRefreshToken == null || oldRefreshToken.isBlank()) {
-				authFilter.handleUnauthorizedRedirect(request, response, filterChain);
+				handleUnauthorizedRedirect(request, response, filterChain);
 				return;
 			}
 
@@ -70,7 +75,7 @@ public class AuthFilterService {
 			} catch (Exception e) {
 				log.warn("Unexpected error during session token rotation", e);
 				authService.clearAuthCookies(response);
-				authFilter.handleUnauthorizedRedirect(request, response, filterChain);
+				handleUnauthorizedRedirect(request, response, filterChain);
 				return;
 			}
 
@@ -89,6 +94,23 @@ public class AuthFilterService {
 		} finally {
 			authServiceKt.closeIsolatedClient(supabaseClient);
 		}
+	}
+
+
+	@WithSpan
+	void handleUnauthorizedRedirect(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws IOException, ServletException {
+		if (OPTIONAL_PATHS.stream().anyMatch(pattern -> pathMatcher.match(pattern, request.getRequestURI()))) {
+			filterChain.doFilter(request, response);
+			return;
+		}
+		response.sendRedirect(PathRegistry.Auth.Hx.LOGIN_UNAUTHORIZED);
+
+	}
+
+	@WithSpan
+	String getCookieValue(HttpServletRequest request, String name) {
+		if (request.getCookies() == null) return null;
+		return Arrays.stream(request.getCookies()).filter(cookie -> name.equals(cookie.getName())).map(Cookie::getValue).findFirst().orElse(null);
 	}
 
 }
