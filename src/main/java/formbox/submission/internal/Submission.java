@@ -4,6 +4,7 @@ import formbox.submission.SubmissionItem;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -37,6 +38,7 @@ class Submission {
 	@Column(name = "tenant_id", nullable = false)
 	private UUID tenantId;
 
+	@Setter
 	@JdbcTypeCode(SqlTypes.JSON)
 	@Column(name = "payload", nullable = false)
 	private Map<String, String> payload;

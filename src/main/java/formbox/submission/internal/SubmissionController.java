@@ -1,13 +1,12 @@
 package formbox.submission.internal;
 
 import formbox.billing.PolarSubmissionApi;
-import formbox.shared.Entitlements;
-import formbox.billing.EntitlementsApi;
 import formbox.shared.FormNotFoundException;
 import formbox.form.FormApi;
 import formbox.form.FormDto;
 import formbox.shared.TurnstileVerifierUtil;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
+import io.sentry.Sentry;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.Part;
@@ -32,148 +31,146 @@ class SubmissionController {
 	private final FormSubmissionService submissionService;
 	private final FormApi formApi;
 	private final SubmissionFileService submissionFileService;
-	private final EntitlementsApi entitlementsApi;
 	private final ObjectMapper objectMapper;
 	private final PolarSubmissionApi polarSubmissionApi;
+
 
 	@PostMapping("/f/{formId}")
 	@WithSpan
 	public String submission(@PathVariable UUID formId, @RequestParam Map<String, String> payload, HttpServletRequest request, HttpServletResponse response) throws IOException {
-		long startTime = System.currentTimeMillis();
-		long stepStart;
+		log.debug("Handling form submission for form ID: {}", formId);
 
-		log.debug("Processing incoming webhook submission request path channel for form ID: {}", formId);
+		String userAgent = request.getHeader("User-Agent");
 
+		Sentry.metrics().count(SubmissionMetrics.ANY_SUBMISSION);
+		Sentry.configureScope(scope -> {
+			scope.setTag("formId", formId.toString());
+			scope.setTag("userAgent", userAgent != null ? userAgent : "unknown");
+		});
+
+		FormDto form;
 		try {
-			// step 1: get form (404 if db request says form doesn't exist)
-			stepStart = System.currentTimeMillis();
-			FormDto form;
-			try {
-				form = formApi.getFormDto(formId);
-				log.debug("Step 1 (Get Form) took {} ms", System.currentTimeMillis() - stepStart);
-			} catch (FormNotFoundException e) {
-				log.debug("Step 1 (Get Form - FormNotFound) took {} ms", System.currentTimeMillis() - stepStart);
-				log.warn("Submission rejected. Form ID {} not found.", formId);
-				response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-				return "submit/form-not-found";
-			}
-
-			// step 2: per form rate limit (error 429)
-			stepStart = System.currentTimeMillis();
-			boolean rateLimitPassed = submissionService.rateLimitPassed(formId, form.rateLimitRpm());
-			log.debug("Step 2 (Rate Limit check) took {} ms", System.currentTimeMillis() - stepStart);
-			if (!rateLimitPassed) {
-				response.setStatus(429);
-				return "submit/rate-limit";
-			}
-
-			// step 3: check submissions quota
-			stepStart = System.currentTimeMillis();
-			long balance = polarSubmissionApi.getCachedSubmissionBalance(form.tenantId());
-			log.debug("Step 3 (Quota check) took {} ms", System.currentTimeMillis() - stepStart);
-			if (balance <= 0) {
-				response.setStatus(HttpServletResponse.SC_PAYMENT_REQUIRED);
-				return "submit/out-of-submissions";
-			}
-
-			// step 4: check if content type allowed
-			stepStart = System.currentTimeMillis();
-			boolean isContentTypeJson = submissionService.isContentTypeJson(request);
-			log.debug("Step 4 (Content-Type check) took {} ms", System.currentTimeMillis() - stepStart);
-			if (!form.allowJson() && isContentTypeJson)
-				return "submit/json-not-allowed";
-
-			// step 5: check honeypot
-			stepStart = System.currentTimeMillis();
-			boolean isHoneypot = !payload.getOrDefault(form.honeypotName(), "").isBlank();
-			if (isHoneypot) {
-				submissionService.asyncSaveSubmission(form.id(), form.tenantId(), request.getRemoteAddr(), payload, true);
-				log.debug("Step 5 (Honeypot caught & saved) took {} ms", System.currentTimeMillis() - stepStart);
-				return "submit/thanks";
-			}
-			log.debug("Step 5 (Honeypot check passed) took {} ms", System.currentTimeMillis() - stepStart);
-
-			// step 6: check turnstile
-			stepStart = System.currentTimeMillis();
-			String turnstileSecretKey = form.turnstileSecretKey();
-			boolean turnstileFailed = TurnstileVerifierUtil.turnstileFailed(payload, turnstileSecretKey, objectMapper);
-			if (turnstileFailed) {
-				submissionService.asyncSaveSubmission(form.id(), form.tenantId(), request.getRemoteAddr(), payload, true);
-				log.debug("Step 6 (Turnstile failed & saved) took {} ms", System.currentTimeMillis() - stepStart);
-				return "submit/thanks";
-			}
-			log.debug("Step 6 (Turnstile verification passed) took {} ms", System.currentTimeMillis() - stepStart);
-
-			// step 7: abort request if files not allowed (error 400)
-			stepStart = System.currentTimeMillis();
-			if (!form.allowFiles()) {
-				try {
-					Collection<Part> parts = request.getParts();
-					if (parts != null && !parts.isEmpty()) {
-						log.debug("Step 7 (File check - forbidden) took {} ms", System.currentTimeMillis() - stepStart);
-						response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-						return "submit/files-not-allowed";
-					}
-				} catch (Exception e) {
-					log.trace("Suppressed content parse failure context check. Client sent no multi-part payload structure.");
-				}
-			}
-			log.debug("Step 7 (File check passed) took {} ms", System.currentTimeMillis() - stepStart);
-
-			// step 8: abort request if invalid mime type on file (error 400)
-			stepStart = System.currentTimeMillis();
-			boolean validMime = submissionService.filesHaveValidMimeTypes(request);
-			log.debug("Step 8 (MIME type check) took {} ms", System.currentTimeMillis() - stepStart);
-			if (!validMime) {
-				response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-				return "submit/files-not-allowed";
-			}
-
-			// step 9: check custom filters and validations (error 400)
-			stepStart = System.currentTimeMillis();
-			boolean validFields = submissionService.validateFields(payload, form);
-			log.debug("Step 9 (Field validations) took {} ms", System.currentTimeMillis() - stepStart);
-			if (!validFields) {
-				response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-				return "submit/invalid-fields";
-			}
-
-			// step 10: save form payload and metadata
-			stepStart = System.currentTimeMillis();
-			submissionService.asyncSaveSubmission(form.id(), form.tenantId(), request.getRemoteAddr(), payload, false);
-			log.debug("Step 10 (Save payload) took {} ms", System.currentTimeMillis() - stepStart);
-
-			// step 11: update leftover submission balance
-			stepStart = System.currentTimeMillis();
-			polarSubmissionApi.asyncDecrementCachedSubmissionBalance(form.tenantId());
-			log.debug("Step 11 (Decrement quota balance) took {} ms", System.currentTimeMillis() - stepStart);
-
-			// step 13: async start upload files/attachments
-			// step 14: async 3rd party webhooks and notifs
-			stepStart = System.currentTimeMillis();
-			submissionFileService.uploadFilesAndInitNotifsWebhooks(form, payload);
-			log.debug("Steps 13 & 14 (Async upload & webhook init) took {} ms", System.currentTimeMillis() - stepStart);
-
-			log.info("Successfully processed submission for form ID: {}", formId);
-
-			// step 12: return 200 ok
-			if (isContentTypeJson) {
-				response.setStatus(HttpServletResponse.SC_OK);
-				response.setContentType("application/json");
-				return "submit/json-response";
-			}
-
-			stepStart = System.currentTimeMillis();
-			Entitlements entitlements = entitlementsApi.getEntitlements(form.tenantId());
-			log.debug("Entitlements check took {} ms", System.currentTimeMillis() - stepStart);
-
-			if (form.redirectUrl() == null || form.redirectUrl().isBlank() || !entitlements.redirectUrlsAllowed())
-				return "submit/thanks";
-
-			return "redirect:" + form.redirectUrl();
-		} finally {
-			log.info("TOTAL request execution time for form ID {}: {} ms", formId, System.currentTimeMillis() - startTime);
+			form = formApi.getFormDto(formId);
+		} catch (FormNotFoundException e) {
+			log.info("Submission rejected. Form ID {} not found.", formId);
+			Sentry.addBreadcrumb("Form not found for formId " + formId);
+			Sentry.metrics().count(SubmissionMetrics.Failed.FORM_NOT_FOUND);
+			response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+			return "submit/form-not-found";
 		}
+
+		boolean isContentTypeJson = submissionService.isContentTypeJson(request);
+		Sentry.configureScope(scope -> {
+			scope.setTag("tenantId", form.tenantId().toString());
+			scope.setTag("contentType", isContentTypeJson ? "json" : "form");
+		});
+
+		double payloadFieldCount = payload.size();
+		double payloadSizeBytes = payload.entrySet().stream().mapToLong(e -> e.getKey().length() + (e.getValue() == null ? 0 : e.getValue().length())).sum();
+
+		Sentry.metrics().distribution(SubmissionMetrics.PAYLOAD_FIELD_COUNT, payloadFieldCount);
+		Sentry.metrics().distribution(SubmissionMetrics.PAYLOAD_SIZE_BYTES, payloadSizeBytes);
+
+		if (!submissionService.rateLimitPassed(formId, form.rateLimitRpm())) {
+			Sentry.addBreadcrumb("Rate limit exceeded for form " + formId);
+			Sentry.metrics().count(SubmissionMetrics.Failed.RATE_LIMIT_PASSED);
+			response.setStatus(429);
+			return "submit/rate-limit";
+		}
+
+		if (polarSubmissionApi.getCachedSubmissionBalance(form.tenantId()) <= 0) {
+			Sentry.addBreadcrumb("Submission balance exhausted for tenant " + form.tenantId());
+			Sentry.metrics().count(SubmissionMetrics.Failed.OUT_OF_SUBMISSIONS);
+			response.setStatus(HttpServletResponse.SC_PAYMENT_REQUIRED);
+			return "submit/out-of-submissions";
+		}
+
+		if (!form.allowJson() && isContentTypeJson) {
+			Sentry.addBreadcrumb("JSON content type rejected for form " + formId);
+			Sentry.metrics().count(SubmissionMetrics.Failed.JSON_NOT_ALLOWED);
+			return "submit/json-not-allowed";
+		}
+
+		if (!payload.getOrDefault(form.honeypotName(), "").isBlank()) {
+			Sentry.addBreadcrumb("Honeypot field populated for form " + formId);
+			submissionService.saveSubmission(form.id(), form.tenantId(), request.getRemoteAddr(), payload, true);
+			Sentry.metrics().count(SubmissionMetrics.Failed.HONEYPOT);
+			return "submit/thanks";
+		}
+
+		if (TurnstileVerifierUtil.turnstileFailed(payload, form.turnstileSecretKey(), objectMapper)) {
+			Sentry.addBreadcrumb("Turnstile verification failed for form " + formId);
+			submissionService.saveSubmission(form.id(), form.tenantId(), request.getRemoteAddr(), payload, true);
+			Sentry.metrics().count(SubmissionMetrics.Failed.TURNSTILE);
+			return "submit/thanks";
+		}
+
+		if (!form.allowFiles()) {
+			try {
+				Collection<Part> parts = request.getParts();
+				if (parts != null && !parts.isEmpty()) {
+					Sentry.addBreadcrumb("Files rejected for form " + formId + " (files not allowed)");
+					response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+					Sentry.metrics().count(SubmissionMetrics.Failed.FILES_NOT_ALLOWED);
+					return "submit/files-not-allowed";
+				}
+			} catch (Exception e) {
+				log.warn("Failed to read request parts for form {}: {}", formId, e.getMessage(), e);
+				Sentry.addBreadcrumb("Error reading request parts for form " + formId);
+				Sentry.metrics().count(SubmissionMetrics.Failed.PARTS_READ_ERROR);
+			}
+		}
+
+		if (!submissionService.filesHaveValidMimeTypes(request)) {
+			Sentry.addBreadcrumb("Invalid MIME type in files for form " + formId);
+			Sentry.metrics().count(SubmissionMetrics.Failed.INVALID_MIME_TYPES);
+			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+			return "submit/files-not-allowed";
+		}
+
+		if (!submissionService.validateFields(payload, form)) {
+			Sentry.addBreadcrumb("Field validation failed for form " + formId);
+			Sentry.metrics().count(SubmissionMetrics.Failed.INVALID_FIELDS);
+			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+			return "submit/invalid-fields";
+		}
+
+		var submission = submissionService.saveSubmission(form.id(), form.tenantId(), request.getRemoteAddr(), payload, false);
+		submissionFileService.uploadFilesAndInitNotifsWebhooks(form, submission, payload, request);
+		polarSubmissionApi.asyncDecrementCachedSubmissionBalance(form.tenantId());
+
+		log.info("Successfully processed submission for form ID: {}", formId);
+
+		if (isContentTypeJson) {
+			Sentry.metrics().count(SubmissionMetrics.SUCCESSFUL);
+			response.setStatus(HttpServletResponse.SC_OK);
+			response.setContentType("application/json");
+			return "submit/json-response";
+		}
+
+		if (form.redirectUrl() == null || form.redirectUrl().isBlank()) return "submit/thanks";
+
+		return "redirect:" + form.redirectUrl();
 	}
 
+}
+
+interface SubmissionMetrics {
+	String ANY_SUBMISSION = "submissions.stats.anySubmission";
+	String SUCCESSFUL = "submissions.stats.successfull";
+	String PAYLOAD_FIELD_COUNT = "submissions.stats.payloadFieldCount";
+	String PAYLOAD_SIZE_BYTES = "submissions.stats.payloadSizeBytes";
+
+	interface Failed {
+		String FORM_NOT_FOUND = "submissions.statsFailed.formNotFound";
+		String RATE_LIMIT_PASSED = "submissions.statsFailed.rateLimitPassed";
+		String OUT_OF_SUBMISSIONS = "submissions.statsFailed.outOfSubmissions";
+		String JSON_NOT_ALLOWED = "submissions.statsFailed.jsonNotAllowed";
+		String HONEYPOT = "submissions.statsFailed.honeypot";
+		String TURNSTILE = "submissions.statsFailed.turnstile";
+		String FILES_NOT_ALLOWED = "submissions.statsFailed.filesNotAllowed";
+		String INVALID_MIME_TYPES = "submissions.statsFailed.invalidMimeTypes";
+		String INVALID_FIELDS = "submissions.statsFailed.invalidFields";
+		String PARTS_READ_ERROR = "submissions.statsFailed.partsReadError";
+	}
 }

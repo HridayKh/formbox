@@ -43,7 +43,7 @@ class FormNotifController {
 
 		formApi.evictTenantForms(tenantId);
 
-		return "redirect:/forms/" + form.folderId() + "/" + formId + "?msg=Discord settings updated successfully!";
+		return "redirect:/forms/" + form.folderId() + "/" + formId + "?msg=DiscordNotif settings updated successfully!";
 	}
 
 }

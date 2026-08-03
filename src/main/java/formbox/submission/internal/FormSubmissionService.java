@@ -5,6 +5,7 @@ import formbox.form.FormDto;
 import formbox.shared.RedisCache;
 import formbox.submission.SubmissionApi;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
+import io.sentry.Sentry;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.Part;
@@ -16,10 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @Slf4j
@@ -42,62 +40,64 @@ class FormSubmissionService {
 	private final SubmissionApi submissionApi;
 	private final RedisCache redisCache;
 
-	// step 2: per form rate limit (error 429)
 	@WithSpan
 	public boolean rateLimitPassed(UUID formId, Integer rpm) {
 		return redisCache.increment(CacheNames.FORM_RATE_LIMIT_RPM, formId.toString(), Duration.ofMinutes(1)).map(c -> c <= rpm).orElse(false);
 	}
 
-	// step 4: check if content type allowed
 	public boolean isContentTypeJson(HttpServletRequest request) {
 		String contentType = request.getContentType();
 		String accept = request.getHeader("Accept");
 		return (contentType != null && contentType.equalsIgnoreCase(MediaType.APPLICATION_JSON_VALUE)) || (accept != null && accept.equalsIgnoreCase(MediaType.APPLICATION_JSON_VALUE));
 	}
 
-	// step 5: check honeypot
-	// step 6: check turnstile
-	// step 10: save form payload and metadata
 	@WithSpan
-	@Async
-	public void asyncSaveSubmission(UUID formId, UUID tenantId, String remoteAddr, Map<String, String> payload, boolean isSpam) {
-		var s = new Submission(formId, tenantId, payload, remoteAddr, isSpam);
-		submissionRepository.save(s);
-		submissionApi.updateFormSubmissionsCache(formId, s.toSubmissionItem());
+	public Submission saveSubmission(UUID formId, UUID tenantId, String remoteAddr, Map<String, String> payload, boolean isSpam) {
+		var savedSubmission = submissionRepository.save(new Submission(formId, tenantId, payload, remoteAddr, isSpam));
+		submissionApi.updateFormSubmissionsCache(formId, savedSubmission.toSubmissionItem());
+		Sentry.configureScope(scope -> {
+			scope.setTag("submissionId", savedSubmission.getId().toString());
+		});
+		return savedSubmission;
 	}
 
-	// step 8: abort request if invalid mime type on file (error 400)
 	@WithSpan
 	public boolean filesHaveValidMimeTypes(HttpServletRequest request) {
 		if (request.getContentType() == null || !request.getContentType().startsWith("multipart/")) {
 			log.debug("Request is not a multipart form submission; skipping file validation.");
 			return true;
 		}
-
+		List<String> contentTypes = null;
 		try {
 			Collection<Part> parts = request.getParts();
 			if (parts == null || parts.isEmpty()) {
 				return true;
 			}
+			contentTypes = new ArrayList<>(parts.size());
 			for (Part part : parts) {
 				if (part.getSubmittedFileName() == null || part.getSubmittedFileName().isBlank())
 					continue;
 				String contentType = part.getContentType();
 				if (contentType == null || contentType.isBlank()) continue;
+				contentTypes.add(contentType.trim().toLowerCase());
 				if (!ALLOWED_MIME_TYPES.contains(contentType.trim().toLowerCase())) {
 					log.warn("Invalid MIME type detected: {} for file field: {}", contentType, part.getName());
 					return false;
 				}
 			}
-
 			return true;
 		} catch (IOException | ServletException e) {
 			log.error("Failed to parse file parts from HttpServletRequest", e);
 			return true;
+		} finally {
+			var finalContentTypes = contentTypes;
+			Sentry.metrics().distribution("submissions.stats.contentTypes", contentTypes.size() * 1.0);
+			Sentry.configureScope(scope -> {
+				scope.setContexts("contentTypes", finalContentTypes == null ? List.of("") : finalContentTypes);
+			});
 		}
 	}
 
-	// step 9: check custom filters and validations (error 400)
 	public boolean validateFields(Map<String, String> ignoredPayload, FormDto ignoredForm) {
 		return true;
 	}

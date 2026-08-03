@@ -1,50 +1,69 @@
 package formbox.submission.internal;
 
 import formbox.form.FormDto;
+import formbox.notifs.DiscordNotif;
+import formbox.notifs.UploadService;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
+import io.sentry.Sentry;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.Part;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.Objects;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
 class SubmissionFileService {
 
-	private final RestTemplate restTemplate;
+	private final DiscordNotif discordNotif;
+	private final UploadService uploadService;
+	private final SubmissionRepository submissionRepository;
 
 	@Async
 	@WithSpan
-	public void uploadFilesAndInitNotifsWebhooks(FormDto form, Map<String, String> payload) {
-		// step 14: async start upload files/attachments
-		// step 15: async 3rd party webhooks and notifs
-
-
-		Matcher matcher = Pattern.compile("\\{\\{\\s*(.*?)\\s*}}").matcher(form.formNotifs().discordBody());
-		StringBuilder sb = new StringBuilder();
-		while (matcher.find()) {
-			String replacement = payload.getOrDefault(matcher.group(1), matcher.group(0));
-			matcher.appendReplacement(sb, Matcher.quoteReplacement(replacement));
-		}
-		matcher.appendTail(sb);
-
-		DiscordPayload discordPayload = new DiscordPayload(sb.toString());
-
-		HttpHeaders headers = new HttpHeaders();
-		headers.setContentType(MediaType.APPLICATION_JSON);
-		HttpEntity<DiscordPayload> request = new HttpEntity<>(discordPayload, headers);
-		restTemplate.postForEntity(form.formNotifs().discordWebhookUrl(), request, Void.class);
+	@Transactional
+	public void uploadFilesAndInitNotifsWebhooks(FormDto form, Submission submission, Map<String, String> payload, HttpServletRequest request) {
+		discordNotif.sendDiscordNotif(form.formNotifs(), payload);
+		uploadFiles(request, submission);
 	}
-}
 
-record DiscordPayload(String content) {
+	@Transactional
+	@WithSpan
+	void uploadFiles(HttpServletRequest request, Submission submission) {
+		try {
+			if (Sentry.getSpan() != null)
+				Sentry.getSpan().startChild("formbox.submission.internal.SubmissionFileService.uploadFiles");
+			var payload = (submission.getPayload());
+			Collection<Part> parts = request.getParts();
+			if (parts == null || parts.isEmpty()) {
+				return;
+			}
+			for (Part part : parts) {
+				if (part.getSubmittedFileName() == null || part.getSubmittedFileName().isBlank())
+					continue;
+				String contentType = part.getContentType();
+				if (contentType == null || contentType.isBlank()) continue;
+				payload.put(part.getName(), part.getSubmittedFileName());
+				payload.put(part.getName() + "__url", uploadService.uploadFile(part.getInputStream()));
+				Sentry.metrics().distribution("submissions.stats.fileSizeBytes", part.getSize() * 1.0, "byte");
+			}
+			submission.setPayload(payload);
+			submissionRepository.save(submission);
+		} catch (IOException | ServletException e) {
+			log.error("Failed to parse file parts from HttpServletRequest", e);
+		} finally {
+			if (Sentry.getSpan() != null)
+				Sentry.getSpan().finish();
+		}
+	}
 }
