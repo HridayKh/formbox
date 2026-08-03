@@ -1,6 +1,6 @@
 @import formbox.folder.FolderDto
-@import formbox.form.FormDto
 @import formbox.dashboard.FolderFormDTO
+@import formbox.form.TenantForm
 @import java.util.List
 
 @param boolean showManageSubscription
@@ -73,7 +73,7 @@
                     <span></span>
                 </div>
                 <div class="grid">
-                    @for(FormDto form : folderForm.forms())
+                    @for(TenantForm form : folderForm.forms())
                         <div class="form-card">
                             <a href="/forms/${folder.id().toString()}/${form.id().toString()}">${form.name()}</a>
                         </div>

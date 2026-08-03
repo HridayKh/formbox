@@ -58,6 +58,7 @@ dependencies {
 	runtimeOnly("org.springframework.modulith:spring-modulith-observability")
 	implementation("org.springframework.modulith:spring-modulith-starter-core")
 	testImplementation("org.springframework.modulith:spring-modulith-starter-test")
+	testImplementation("org.springframework.modulith:spring-modulith-docs")
 
 	// logging
 	implementation("io.sentry:sentry-spring-boot-4:8.48.0")

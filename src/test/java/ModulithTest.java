@@ -9,6 +9,6 @@ class ModulithTest {
 	void verifyModuleBoundariesAndGenerateDocs() {
 		var modules = ApplicationModules.of(FormboxApplication.class);
 		modules.verify();
-		new Documenter(modules).writeModulesAsPlantUml().writeIndividualModulesAsPlantUml();
+		new Documenter(modules).writeModulesAsPlantUml();
 	}
 }
