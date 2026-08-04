@@ -2,7 +2,7 @@ name: Build, Version, and Deploy
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
 
 permissions:
   contents: write
@@ -16,6 +16,7 @@ jobs:
     environment: actions
     outputs:
       version: ${{ steps.version.outputs.version }}
+      versiondev: ${{ steps.version.outputs.versiondev }}
       bump: ${{ steps.parse.outputs.bump }}
       deploy: ${{ steps.parse.outputs.deploy }}
       tag_name: ${{ steps.version.outputs.tag_name }}
@@ -93,15 +94,12 @@ jobs:
             PATCH=$((PATCH + 1))
           fi
 
-          if [ "$BUMP" = "none" ]; then
-            # non-release commit: show as work-in-progress toward next patch
-            PATCH=$((PATCH + 1))
-            VERSION="${MAJOR}.${MINOR}.${PATCH}-dev+${RUN_NUMBER}"
-          else
-            VERSION="${MAJOR}.${MINOR}.${PATCH}+${RUN_NUMBER}"
-          fi
-
+          VERSION="${MAJOR}.${MINOR}.${PATCH}+${RUN_NUMBER}"
+          VERSIONDEV="${MAJOR}.${MINOR}.$((PATCH + 1))-dev+${RUN_NUMBER}"
+          
+          
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSIONDEV" >> "$GITHUB_OUTPUT"
           echo "tag_name=v${MAJOR}.${MINOR}.${PATCH}" >> "$GITHUB_OUTPUT"
           echo "Computed version: $VERSION"
 
@@ -124,8 +122,8 @@ jobs:
 
       - name: Sync version into build.gradle.kts
         run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          sed -i "s/^version = \".*\"/version = \"$VERSION\"/" build.gradle.kts
+          VERSIONDEV="${{ steps.version.outputs.versiondev }}"
+          sed -i "s/^version = \".*\"/version = \"$VERSIONDEV\"/" build.gradle.kts
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
