@@ -2,8 +2,9 @@ package formbox.submission.internal;
 
 import formbox.form.FormDto;
 import formbox.notifs.DiscordNotif;
-import formbox.notifs.UploadService;
+import formbox.notifs.EmailAutoresponse;import formbox.notifs.UploadService;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
+import io.sentry.ISpan;
 import io.sentry.Sentry;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,21 +25,26 @@ class SubmissionFileService {
 
 	private final DiscordNotif discordNotif;
 	private final UploadService uploadService;
-	private final SubmissionRepository submissionRepository;
+	private final SubmissionRepository submissionRepository;private final EmailAutoresponse emailAutoresponse;
 
 	@WithSpan
 	@Transactional
 	public void uploadFilesAndInitNotifsWebhooks(FormDto form, Submission submission, Map<String, String> payload, HttpServletRequest request) {
 		uploadFiles(request, submission);
 		discordNotif.sendDiscordNotif(form.formNotifs(), payload);
+		emailAutoresponse.sendEmailAutoresponse(form.formNotifs(), payload);
 	}
 
 	@Transactional
-	@WithSpan
 	void uploadFiles(HttpServletRequest request, Submission submission) {
+		ISpan span = null;
 		try {
 			if (Sentry.getSpan() != null)
-				Sentry.getSpan().startChild("formbox.submission.internal.SubmissionFileService.uploadFiles");
+				span = Sentry.getSpan().startChild("SubmissionFileService.uploadFiles");
+			if (request.getContentType() == null || !request.getContentType().startsWith("multipart/")) {
+				log.debug("Skipping file upload for non multipart submission.");
+				return;
+			}
 			var payload = (submission.getPayload());
 			Collection<Part> parts = request.getParts();
 			if (parts == null || parts.isEmpty()) {
@@ -58,8 +64,8 @@ class SubmissionFileService {
 		} catch (IOException | ServletException e) {
 			log.error("Failed to parse file parts from HttpServletRequest", e);
 		} finally {
-			if (Sentry.getSpan() != null)
-				Sentry.getSpan().finish();
+			if (span != null)
+				span.finish();
 		}
 	}
 }

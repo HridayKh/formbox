@@ -17,6 +17,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class UploadService {
 
+	// If this is temporary storage before sending to S3/Cloud Storage, or if you store the original filename in your database separately, go with UUID.ext or UUID_sanitizedOriginalName.
 	public String uploadFile(InputStream is, String fileName) throws IOException {
 		String UPLOAD_DIR = "/home/hridaykh/Code/hriday_tech/formbox/files";
 		Path uploadPath = Paths.get(UPLOAD_DIR + "/" + UUID.randomUUID());

@@ -70,7 +70,7 @@ class Form {
 
 	@JdbcTypeCode(SqlTypes.JSON)
 	@Column(name = "form_notifs", nullable = false, columnDefinition = "jsonb")
-	private FormNotifs formNotifs = new FormNotifs("", "");
+	private FormNotifs formNotifs = FormNotifs.builder().build();
 
 	@Column(name = "created_at")
 	@ColumnDefault("NOW()")
@@ -78,10 +78,6 @@ class Form {
 
 	FormDto toFormDto() {
 		return new FormDto(this.id, this.tenantId, this.name, this.redirectUrl, this.isActive, this.turnstileSecretKey, this.honeypotName, this.rateLimitRpm, this.allowFiles, this.allowHtmx, this.allowJson, List.copyOf(this.fieldValidations), this.folderId, this.formNotifs);
-	}
-
-	TenantForm toTenantForm(){
-		return new TenantForm(this.folderId, this.id, this.name);
 	}
 
 	void fromFormSettingsRequest(FormSettingsRequest request) {

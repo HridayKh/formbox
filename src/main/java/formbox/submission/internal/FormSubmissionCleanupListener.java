@@ -27,9 +27,8 @@ class FormSubmissionCleanupListener {
 			do {
 				deletedCount = submissionRepository.deleteSubmissionsInBatch(event.formId(), BATCH_SIZE);
 				totalDeleted += deletedCount;
-				if (deletedCount > 0) {
+				if (deletedCount > 0)
 					Thread.sleep(PAUSE_MS);
-				}
 			} while (deletedCount > 0);
 			log.info("Cleaned up {} submissions for deleted form {}", totalDeleted, event.formId());
 		} catch (InterruptedException e) {

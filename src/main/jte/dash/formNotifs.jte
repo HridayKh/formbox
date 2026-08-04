@@ -1,27 +1,41 @@
 @param formbox.form.FormDto form
 
-<!-- ========================= EMAIL ========================= -->
-<details>
-    <summary role="button" class="outline secondary">Email</summary>
+<!-- ========================= EMAIL AUTORESPONDER ========================= -->
+<details open>
+    <summary role="button" class="secondary">Email Autoresponder</summary>
 
-    <form method="post" action="/forms/${form.folderId().toString()}/${form.id().toString()}/notifs/email">
+    <form method="post"
+          action="/forms/${form.folderId().toString()}/${form.id().toString()}/notifs/email-autoresponder">
         <fieldset>
-            <label for="submitter-email-field">
+            <label>
                 Submitter email field name
-                <input type="text" id="submitter-email-field" name="submitter_email_field" placeholder="e.g. email"
-                       disabled>
+                <input type="text" name="fieldName" placeholder="e.g. email"
+                       value="${form.formNotifs().autoresponderEmailFieldName()}">
                 <small>
                     Name of the form field that contains the submitter's own email address.
                 </small>
+                <small> <b>Leave empty to disable</b> </small>
             </label>
-            <label for="submitter-email-notify-enabled">
-                <input type="checkbox" id="submitter-email-notify-enabled" name="submitter_email_notify_enabled"
-                       role="switch" disabled>
-                Send the submitter an email
+            <label>
+                Reply-To Address
+                <input type="email" name="replyTo" placeholder="you@example.com"
+                       value="${form.formNotifs().autoresponderReplyTo()}">
+            </label>
+            <label>
+                Subject Line
+                <input type="text" name="subjectLine" placeholder="Thanks for filling out the form!"
+                       value="${form.formNotifs().autoresponderSubjectLine()}">
+                <small>Field variables like <code>{{field_name}}</code> are <b><em>NOT SUPPORTED</em></b>.</small>
+            </label>
+            <label>
+                Autoresponder Email body
+                <textarea rows="4" name="body"
+                          placeholder="Thanks for contacting {{name}}">${form.formNotifs().autoresponderEmailBody()}</textarea>
+                <small>Supports form field variables like <code>{{field_name}}</code>.</small>
             </label>
         </fieldset>
 
-        <button type="submit" disabled>Save</button>
+        <button type="submit">Save</button>
     </form>
 </details>
 
@@ -85,8 +99,8 @@
                     Discord message body
                     <textarea rows="4" name="body"
                               placeholder="New submission from {{name}}: {{message}}">${form.formNotifs().discordBody()}</textarea>
+                    <small>Supports form field variables like <code>{{field_name}}</code>.</small>
                 </label>
-                <small>Supports form field variables like <code>{{field_name}}</code>.</small>
             </fieldset>
 
             <button type="submit">Save</button>

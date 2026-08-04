@@ -6,6 +6,7 @@ import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.sentry.Sentry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.validator.routines.UrlValidator;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -25,21 +26,32 @@ public class DiscordNotif {
 
 	private final RestTemplate restTemplate;
 	private final Pattern pattern = Pattern.compile("\\{\\{\\s*(.*?)\\s*}}");
+	private static final UrlValidator URL_VALIDATOR = new UrlValidator(new String[]{"http", "https"});
 
 	@Async
 	@WithSpan
 	public void sendDiscordNotif(FormNotifs formNotifs, Map<String, String> payload) {
-		Sentry.metrics().count("discord.webhooks.started");
 		long start = System.nanoTime();
 		try {
-			var matcher = pattern.matcher(formNotifs.discordBody());
+			if (formNotifs.discordWebhookUrl() == null || formNotifs.discordWebhookUrl().isBlank() || formNotifs.discordBody() == null || formNotifs.discordBody().isBlank()) {
+				start = -1;
+				return;
+			}
+			if (!URL_VALIDATOR.isValid(formNotifs.discordWebhookUrl().strip())) {
+				start = -1;
+				Sentry.metrics().count("discord.webhooks.invalidUrl");
+				log.error("INVALID discord url somehow got saved!!");
+				return;
+			}
+			Sentry.metrics().count("discord.webhooks.started");
+			var matcher = pattern.matcher(formNotifs.discordBody().strip());
 			var sb = new StringBuilder();
 			while (matcher.find())
 				matcher.appendReplacement(sb, Matcher.quoteReplacement(payload.getOrDefault(matcher.group(1), matcher.group(0))));
 			matcher.appendTail(sb);
 			var headers = new HttpHeaders();
 			headers.setContentType(MediaType.APPLICATION_JSON);
-			restTemplate.postForEntity(formNotifs.discordWebhookUrl(), new HttpEntity<>(new DiscordPayload(sb.toString()), headers), Void.class);
+			restTemplate.postForEntity(formNotifs.discordWebhookUrl().strip(), new HttpEntity<>(new DiscordPayload(sb.toString()), headers), Void.class);
 
 			Sentry.metrics().count("discord.webhooks.succeeded");
 		} catch (Exception e) {
@@ -47,7 +59,8 @@ public class DiscordNotif {
 			log.error("Discord webhook failed!", e);
 			Sentry.captureException(e);
 		} finally {
-			Sentry.metrics().distribution("discord.webhooks.time", start - System.nanoTime() * 1.0, "ns");
+			if (start >= 0)
+				Sentry.metrics().distribution("discord.webhooks.time", start - System.nanoTime() * 1.0, "ns");
 		}
 	}
 }
