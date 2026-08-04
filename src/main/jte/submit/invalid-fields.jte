@@ -6,7 +6,7 @@
   =============================================================================
 -->
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<html lang="en">
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -29,7 +29,7 @@
             </p>
 
             <footer>
-                <small><a href="/">Powered by <strong>Formbox</strong></a> — Cloudflare Edge Form Backend</small>
+                <small><a href="/static">Powered by <strong>Formbox</strong></a> — Cloudflare Edge Form Backend</small>
             </footer>
         </article>
     </main>

@@ -1,16 +1,16 @@
 <!--
   =============================================================================
-  MODEL CONTRACT: Form Submission - Form Not Found (`submit/form-not-found.html`)
+  MODEL CONTRACT: Form Submission - Thanks (`submit/thanks.html`)
   -----------------------------------------------------------------------------
   Required Model Attributes: None
   =============================================================================
 -->
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<html lang="en">
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Form Not Found (404) | Formbox</title>
+    <title>Submission Received | Formbox</title>
     <!-- PicoCSS v2 Pumpkin Theme -->
     <link rel="stylesheet" href="/assets/pico.pumpkin.min.css"/>
 </head>
@@ -19,17 +19,17 @@
     <main class="container" style="max-width: 600px; padding-top: 5rem; padding-bottom: 5rem; text-align: center;">
         <article style="padding: 3rem 2rem;">
             <header style="margin-bottom: 1.5rem;">
-                <mark style="font-size: 2.5rem; display: inline-block; padding: 0.5rem 1rem; border-radius: 50%;">🔍 404</mark>
-                <h1 style="margin-top: 1rem; margin-bottom: 0.5rem;">Endpoint Not Found</h1>
-                <p>The form endpoint URL you submitted data to does not exist or has been deleted.</p>
+                <mark style="font-size: 2.5rem; display: inline-block; padding: 0.5rem 1rem; border-radius: 50%;">✅</mark>
+                <h1 style="margin-top: 1rem; margin-bottom: 0.5rem;">Thank You!</h1>
+                <p>Your form submission has been successfully received and processed.</p>
             </header>
 
             <p style="margin-bottom: 2rem;">
-                Please verify the endpoint UUID in your HTML form's <code>action</code> attribute.
+                The website owner has been notified. You can close this window or return to the main site.
             </p>
 
             <footer>
-                <small><a href="/">Powered by <strong>Formbox</strong></a> — Cloudflare Edge Form Backend</small>
+                <small><a href="/static">Powered by <strong>Formbox</strong></a> — Cloudflare Edge Form Backend</small>
             </footer>
         </article>
     </main>

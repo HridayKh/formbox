@@ -1,16 +1,16 @@
 <!--
   =============================================================================
-  MODEL CONTRACT: Form Submission - Files Disallowed (`submit/files-not-allowed.html`)
+  MODEL CONTRACT: Form Submission - Rate Limit Exceeded (`submit/rate-limit.html`)
   -----------------------------------------------------------------------------
   Required Model Attributes: None
   =============================================================================
 -->
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<html lang="en">
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>File Uploads Disallowed | Formbox</title>
+    <title>Too Many Requests (429) | Formbox</title>
     <!-- PicoCSS v2 Pumpkin Theme -->
     <link rel="stylesheet" href="/assets/pico.pumpkin.min.css"/>
 </head>
@@ -19,17 +19,17 @@
     <main class="container" style="max-width: 600px; padding-top: 5rem; padding-bottom: 5rem; text-align: center;">
         <article style="padding: 3rem 2rem;">
             <header style="margin-bottom: 1.5rem;">
-                <mark style="font-size: 2.5rem; display: inline-block; padding: 0.5rem 1rem; border-radius: 50%;">📎 400</mark>
-                <h1 style="margin-top: 1rem; margin-bottom: 0.5rem;">File Attachments Rejected</h1>
-                <p>File uploads are disabled or contain invalid MIME types for this form endpoint.</p>
+                <mark style="font-size: 2.5rem; display: inline-block; padding: 0.5rem 1rem; border-radius: 50%;">⏳ 429</mark>
+                <h1 style="margin-top: 1rem; margin-bottom: 0.5rem;">Rate Limit Exceeded</h1>
+                <p>Too many requests have been submitted to this form endpoint in a short period.</p>
             </header>
 
             <p style="margin-bottom: 2rem;">
-                Please remove attached files or enable file uploads in the form settings dashboard.
+                Please wait a minute before submitting again.
             </p>
 
             <footer>
-                <small><a href="/">Powered by <strong>Formbox</strong></a> — Cloudflare Edge Form Backend</small>
+                <small><a href="/static">Powered by <strong>Formbox</strong></a> — Cloudflare Edge Form Backend</small>
             </footer>
         </article>
     </main>
