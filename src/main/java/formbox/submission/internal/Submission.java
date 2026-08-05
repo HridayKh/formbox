@@ -1,5 +1,6 @@
 package formbox.submission.internal;
 
+import formbox.notifs.EmailStatus;
 import formbox.submission.SubmissionItem;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -56,6 +57,12 @@ class Submission {
 	@Setter
 	@Column(name = "email_autoresponse_request_id")
 	private String emailAutoresponseRequestId;
+
+	@Setter
+	@JdbcTypeCode(SqlTypes.ENUM)
+	@Enumerated(EnumType.STRING)
+	@Column(name = "email_autoresponse_email_status")
+	private EmailStatus emailAutoresponseEmailStatus;
 
 	public SubmissionItem toSubmissionItem() {
 		return new SubmissionItem(this.id, this.payload, this.senderIp, this.createdAt, this.isSpam);

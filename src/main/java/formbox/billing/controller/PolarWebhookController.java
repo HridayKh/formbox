@@ -1,7 +1,6 @@
 package formbox.billing.controller;
 
 import formbox.billing.service.PolarWebhookService;
-import formbox.shared.PathRegistry;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -26,56 +25,54 @@ public class PolarWebhookController {
 	private final PolarWebhookVerifier polarWebhookVerifier;
 	private final PolarWebhookService webhooksService;
 
-	@PostMapping("/webhooks/zeptomail")
+	@PostMapping("/webhooks/polar")
 	@WithSpan
 	public ResponseEntity<Map<String, Object>> handlePolarWebhook(HttpServletRequest request) {
 		log.trace("Received incoming webhook HTTP request payload from Polar platform.");
 		Map<String, Object> responseBody = new LinkedHashMap<>();
 
-		responseBody.put("status", "accepted");
-		return ResponseEntity.status(201).body(responseBody);
-//		String body;
-//		try (InputStream is = request.getInputStream()) {
-//			body = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-//		} catch (IOException e) {
-//			log.error("Failed to read body from webhook request", e);
-//			responseBody.put("status", "rejected");
-//			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(responseBody);
-//		}
-//
-//		String webhookId = request.getHeader("webhook-id");
-//		String timestamp = request.getHeader("webhook-timestamp");
-//		String signature = request.getHeader("webhook-signature");
-//
-//		log.debug("Extracted verification header values -> Webhook-ID: [{}], Timestamp: [{}], Signature present: {}",
-//			webhookId, timestamp, signature != null);
-//
-//		boolean isValid = false;
-//		try {
-//			isValid = polarWebhookVerifier.verify(body, webhookId, timestamp, signature);
-//		} catch (Exception e) {
-//			log.warn("Cryptographic verification failed for webhook ID: {}", webhookId, e);
-//		}
-//
-//		HttpStatus status = HttpStatus.UNAUTHORIZED;
-//		responseBody.put("status", "rejected");
-//
-//		if (isValid) {
-//			log.info("Polar incoming webhook event payload successfully authenticated. Event ID: {}", webhookId);
-//			status = HttpStatus.OK;
-//			responseBody.put("status", "accepted");
-//
-//			try {
-//				webhooksService.processHook(body);
-//				log.debug("Webhook processing completed for ID: {}", webhookId);
-//			} catch (Exception e) {
-//				log.error("Failed to process webhook for ID: {}", webhookId, e);
-//			}
-//		} else {
-//			log.warn("Security rejection: Incoming request failed signature validation for webhook ID: {}", webhookId);
-//		}
-//
-//		return ResponseEntity.status(status).body(responseBody);
+		String body;
+		try (InputStream is = request.getInputStream()) {
+			body = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+		} catch (IOException e) {
+			log.error("Failed to read body from webhook request", e);
+			responseBody.put("status", "rejected");
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(responseBody);
+		}
+
+		String webhookId = request.getHeader("webhook-id");
+		String timestamp = request.getHeader("webhook-timestamp");
+		String signature = request.getHeader("webhook-signature");
+
+		log.debug("Extracted verification header values -> Webhook-ID: [{}], Timestamp: [{}], Signature present: {}",
+			webhookId, timestamp, signature != null);
+
+		boolean isValid = false;
+		try {
+			isValid = polarWebhookVerifier.verify(body, webhookId, timestamp, signature);
+		} catch (Exception e) {
+			log.warn("Cryptographic verification failed for webhook ID: {}", webhookId, e);
+		}
+
+		HttpStatus status = HttpStatus.UNAUTHORIZED;
+		responseBody.put("status", "rejected");
+
+		if (isValid) {
+			log.info("Polar incoming webhook event payload successfully authenticated. Event ID: {}", webhookId);
+			status = HttpStatus.OK;
+			responseBody.put("status", "accepted");
+
+			try {
+				webhooksService.processHook(body);
+				log.debug("Webhook processing completed for ID: {}", webhookId);
+			} catch (Exception e) {
+				log.error("Failed to process webhook for ID: {}", webhookId, e);
+			}
+		} else {
+			log.warn("Security rejection: Incoming request failed signature validation for webhook ID: {}", webhookId);
+		}
+
+		return ResponseEntity.status(status).body(responseBody);
 	}
 
 }

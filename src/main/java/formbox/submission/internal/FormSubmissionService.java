@@ -1,9 +1,6 @@
 package formbox.submission.internal;
 
-import formbox.notifs.DiscordNotif;
-import formbox.notifs.EmailAutoresponse;
-import formbox.notifs.UploadService;
-import formbox.notifs.ZeptoMailSuccessResponse;
+import formbox.notifs.*;
 import formbox.shared.CacheNames;
 import formbox.form.FormDto;
 import formbox.shared.RedisCache;
@@ -148,10 +145,11 @@ class FormSubmissionService {
 	@WithSpan
 	@Transactional
 	@Async
-	public void asyncSendNotifs(FormDto form, Submission submission, Map<String, String> payload, HttpServletRequest request) {
+	public void asyncSendNotifs(FormDto form, Submission submission, Map<String, String> payload) {
 		discordNotif.sendDiscordNotif(form.formNotifs(), payload);
 		ZeptoMailSuccessResponse autoresponse = emailAutoresponse.sendEmailAutoresponse(form.formNotifs(), payload);
 		submission.setEmailAutoresponseRequestId(autoresponse == null ? null : autoresponse.getRequestId());
+		submission.setEmailAutoresponseEmailStatus(autoresponse == null ? null : EmailStatus.SENT);
 		submissionRepository.save(submission);
 	}
 

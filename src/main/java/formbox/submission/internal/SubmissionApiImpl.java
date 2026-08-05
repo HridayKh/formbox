@@ -1,5 +1,6 @@
 package formbox.submission.internal;
 
+import formbox.notifs.EmailStatus;
 import formbox.shared.CacheNames;
 import formbox.shared.RedisCache;
 import formbox.submission.FormSubmissionsResponse;
@@ -40,10 +41,9 @@ public class SubmissionApiImpl implements SubmissionApi {
 			return;
 		}
 		FormSubmissionsResponse response = cachedResponseOpt.get();
-		if (newSubmission.isSpam())
-			response.spam().addFirst(newSubmission);
-		else
-			response.submissions().addFirst(newSubmission);
+		if (newSubmission.isSpam()) response.spam().addFirst(newSubmission);
+		else response.submissions().addFirst(newSubmission);
 		redisCache.set(CacheNames.FORM_SUBMISSIONS, formId.toString(), new FormSubmissionsResponse(response.submissions(), response.spam()));
 	}
+
 }

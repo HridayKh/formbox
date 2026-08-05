@@ -1,6 +1,7 @@
 package formbox.notifs.internal;
 
-import formbox.notifs.internal.zeptomail.ZeptoMailErrorResponse;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import formbox.notifs.ZeptoMailSuccessResponse;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.sentry.ISpan;
@@ -69,8 +70,8 @@ public class EmailService {
 
 			Sentry.withScope(scope -> {
 				scope.setTag("http_status", e.getStatusCode().toString());
-				if (errorResponse != null && errorResponse.getError() != null) {
-					scope.setTag("zeptomail_error_code", errorResponse.getError().getCode());
+				if (errorResponse != null && errorResponse.error() != null) {
+					scope.setTag("zeptomail_error_code", errorResponse.error().code());
 				}
 				Sentry.captureException(e);
 			});
@@ -126,4 +127,12 @@ public class EmailService {
 	private int sizeOf(List<String> list) {
 		return list == null ? 0 : list.size();
 	}
+}
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+record ZeptoMailErrorResponse(@JsonProperty("error") ZeptoMailError error) {
+}
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+record ZeptoMailError(@JsonProperty("code") String code) {
 }
