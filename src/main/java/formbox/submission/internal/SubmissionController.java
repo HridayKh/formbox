@@ -90,14 +90,14 @@ class SubmissionController {
 
 		if (!payload.getOrDefault(form.honeypotName(), "").isBlank()) {
 			Sentry.addBreadcrumb("Honeypot field populated for form " + formId);
-			submissionService.saveSubmission(form.id(), form.tenantId(), request.getRemoteAddr(), payload, true, request);
+			submissionService.saveSubmission(form.id(), form.tenantId(), payload, true, request);
 			Sentry.metrics().count(SubmissionMetrics.Failed.HONEYPOT);
 			return "submit/thanks";
 		}
 
 		if (TurnstileVerifierUtil.turnstileFailed(payload, form.turnstileSecretKey(), objectMapper)) {
 			Sentry.addBreadcrumb("Turnstile verification failed for form " + formId);
-			submissionService.saveSubmission(form.id(), form.tenantId(), request.getRemoteAddr(), payload, true, request);
+			submissionService.saveSubmission(form.id(), form.tenantId(), payload, true, request);
 			Sentry.metrics().count(SubmissionMetrics.Failed.TURNSTILE);
 			return "submit/thanks";
 		}
@@ -132,7 +132,7 @@ class SubmissionController {
 			return "submit/invalid-fields";
 		}
 
-		var submission = submissionService.saveSubmission(form.id(), form.tenantId(), request.getRemoteAddr(), payload, false, request);
+		var submission = submissionService.saveSubmission(form.id(), form.tenantId(), payload, false, request);
 		submissionService.asyncSendNotifs(form, submission, payload);
 		polarSubmissionApi.asyncDecrementCachedSubmissionBalance(form.tenantId());
 

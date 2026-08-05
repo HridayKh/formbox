@@ -20,11 +20,10 @@ import java.util.UUID;
 @NoArgsConstructor
 class Submission {
 
-	public Submission(UUID formId, UUID tenantId, Map<String, String> payload, String senderIp, Boolean isSpam) {
+	public Submission(UUID formId, UUID tenantId, Map<String, String> payload, Boolean isSpam) {
 		this.formId = formId;
 		this.tenantId = tenantId;
 		this.payload = payload;
-		this.senderIp = senderIp;
 		this.isSpam = isSpam;
 	}
 
@@ -44,9 +43,6 @@ class Submission {
 	@Column(name = "payload", nullable = false)
 	private Map<String, String> payload;
 
-	@Column(name = "sender_ip")
-	private String senderIp;
-
 	@Column(name = "is_spam")
 	private Boolean isSpam = false;
 
@@ -65,7 +61,7 @@ class Submission {
 	private EmailStatus emailAutoresponseEmailStatus;
 
 	public SubmissionItem toSubmissionItem() {
-		return new SubmissionItem(this.id, this.payload, this.senderIp, this.createdAt, this.isSpam);
+		return new SubmissionItem(this.id, this.payload, this.createdAt, this.isSpam, this.emailAutoresponseEmailStatus);
 	}
 
 }

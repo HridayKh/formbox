@@ -1,7 +1,7 @@
 package formbox.notifs;
 
 public enum EmailStatus {
-	SENT(1), DELIVERED(2), SOFT_BOUNCE(3), HARD_BOUNCE(4), MARKED_AS_SPAM(5);
+	SENT(1), SOFT_BOUNCE(2), HARD_BOUNCE(3), DELIVERED(4), MARKED_AS_SPAM(5);
 
 	private final int precedence;
 

@@ -1,5 +1,7 @@
 package formbox.submission;
 
+import formbox.notifs.EmailStatus;
+
 import java.io.Serializable;
 import java.time.OffsetDateTime;
 import java.util.Map;
@@ -8,8 +10,8 @@ import java.util.UUID;
 public record SubmissionItem(
 	UUID id,
 	Map<String, String> payload,
-	String senderIp,
 	OffsetDateTime createdAt,
-	boolean isSpam
+	boolean isSpam,
+	EmailStatus emailAutoresponseEmailStatus
 ) implements Serializable {
 }

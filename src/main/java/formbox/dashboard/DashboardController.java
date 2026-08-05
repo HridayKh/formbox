@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Controller
@@ -83,10 +84,7 @@ class DashboardController {
 			return "redirect:/dashboard?msg=Invalid form";
 		}
 
-		FormSubmissionsResponse submissions = submissionApi.getFormSubmissionsGrouped(formId);
 		Entitlements entitlements = entitlementsApi.getEntitlements(form.tenantId());
-
-		log.trace("Loaded dashboard variables for form {}: {} submissions, {} spam", formId, submissions.submissions().size(), submissions.spam().size());
 
 		model.addAttribute("msg", msg);
 		model.addAttribute("balanceLeft", polarSubmissionApi.getCachedSubmissionBalance(form.tenantId()));
@@ -100,10 +98,35 @@ class DashboardController {
 		model.addAttribute("form", form);
 		model.addAttribute("folderName", thisFolder.getFirst().name());
 		model.addAttribute("entitlements", entitlements);
-		model.addAttribute("validSubmissions", submissions.submissions());
-		model.addAttribute("spamSubmissions", submissions.spam());
 
 		return "dash/manageForm";
 	}
+	@GetMapping("/forms/{}/{formId}/view-submissions")
+	@WithSpan
+	public String discordNotifs(@RequestAttribute JwtPayload userMetadata, @PathVariable UUID formId, Model model) {
+		log.debug("Viewing submissions for form: {}", formId);
 
+		UUID tenantId = UUID.fromString(Objects.requireNonNull(userMetadata.getSub()));
+		FormDto form = formApi.getFormDto(formId);
+
+		if (!tenantId.equals(form.tenantId())) {
+			log.warn("tenant {} tried accessing discord notifs for form {}", tenantId, formId);
+			return "redirect:/dashboard?msg=Invalid form";
+		}
+
+		FormSubmissionsResponse submissions = submissionApi.getFormSubmissionsGrouped(formId);
+		Entitlements entitlements = entitlementsApi.getEntitlements(form.tenantId());
+
+		model.addAttribute("balanceLeft", polarSubmissionApi.getCachedSubmissionBalance(form.tenantId()));
+		model.addAttribute("showManageSubscription", !entitlements.isFree());
+		model.addAttribute("email", userMetadata.getEmail());
+
+		var folder = folderApi.getTenantFolders(form.tenantId()).stream().filter(f -> f.id().equals(form.folderId()));
+
+		model.addAttribute("form", form);
+		model.addAttribute("folderName", folder.toList().getFirst().name());
+		model.addAttribute("validSubmissions", submissions.submissions().reversed());
+		model.addAttribute("spamSubmissions", submissions.spam().reversed());
+		return "dash/submissions";
+	}
 }

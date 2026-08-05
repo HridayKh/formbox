@@ -59,9 +59,9 @@ class FormSubmissionService {
 
 	@WithSpan
 	@Transactional
-	public Submission saveSubmission(UUID formId, UUID tenantId, String remoteAddr, Map<String, String> payload, boolean isSpam, HttpServletRequest request) {
+	public Submission saveSubmission(UUID formId, UUID tenantId, Map<String, String> payload, boolean isSpam, HttpServletRequest request) {
 		Map<String, String> newPayload = isSpam ? payload : uploadFiles(request, payload);
-		var savedSubmission = submissionRepository.save(new Submission(formId, tenantId, newPayload, remoteAddr, isSpam));
+		var savedSubmission = submissionRepository.save(new Submission(formId, tenantId, newPayload, isSpam));
 		submissionApi.updateFormSubmissionsCache(formId, savedSubmission.toSubmissionItem());
 		Sentry.configureScope(scope -> {
 			scope.setTag("submissionId", savedSubmission.getId().toString());

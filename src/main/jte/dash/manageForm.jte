@@ -1,6 +1,5 @@
 @import formbox.folder.FolderDto
 @import formbox.form.FormDto
-@import formbox.submission.SubmissionItem
 @import formbox.shared.Entitlements
 @import java.util.List
 
@@ -12,8 +11,6 @@
 @param FormDto form
 @param String folderName
 @param Entitlements entitlements
-@param List<SubmissionItem> validSubmissions
-@param List<SubmissionItem> spamSubmissions
 
 <!DOCTYPE html>
 <html lang="en">
@@ -42,28 +39,22 @@
             <mark>${msg}</mark>
         </div>
     @endif
+    <div role="search">
+        <a role="button" class="outline" href="/forms/${form.folderId().toString()}/${form.id().toString()}/view-submissions">
+            View Submissions
+        </a>
+    </div>
 </header>
 
 <%--
 1. [x] Move folders
 2. [x] Form settings (delete is here btw)
 3. [x] Intergrations and Routing
-4. [ ] View submissions (Seperate Template to Render Submissions so Submission Info THere)
-5. [ ] Export Submissions to csv
-6. [ ] Client Creds (Single pregenerated cred that dont need db, coz they signed using form id)
-7. [ ] Copy button for endpoint (the new presigned kind)
+4. [x] View submissions (Seperate Template to Render Submissions so Submission Info THere)
+5. [ ] Client Creds (Single pregenerated cred that dont need db, coz they signed using form id)
+6. [ ] Export Submissions to csv
+7. [x] Copy button for endpoint
 8. [ ] Links to templates, maybe even a template generator
-
-notes:
-- Change isSpam to spamReason
-- file attachment stored as fieldName and fieldName_url
-
-what to show per submission:
-1. Timestamp
-2. Email delivery status
-3. Submission preview (truncated concatenation of field values)
-4. spam reason
-5. dropdown for full fields
 --%>
 
 <main class="container">
@@ -72,7 +63,8 @@ what to show per submission:
             <header>
                 <strong>Form Endpoint, Use This With <code>action="post"</code></strong>
             </header>
-            <span style="display: none" id="url-text" class="odd-row-color">https://formbox.hridaykh.in/f/${form.id().toString()}</span>
+            <span style="display: none" id="url-text"
+                  class="odd-row-color">https://formbox.hridaykh.in/f/${form.id().toString()}</span>
             <div role="group">
                 <input type="text" value="https://formbox.hridaykh.in/f/${form.id().toString()}" readonly/>
                 <button onclick="copyURL()" id="copy-btn">Copy</button>
