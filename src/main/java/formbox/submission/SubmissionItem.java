@@ -12,6 +12,7 @@ public record SubmissionItem(
 	Map<String, String> payload,
 	OffsetDateTime createdAt,
 	boolean isSpam,
-	EmailStatus emailAutoresponseEmailStatus
+	EmailStatus emailAutoresponseEmailStatus,
+	EmailStatus emailNotifStatus
 ) implements Serializable {
 }

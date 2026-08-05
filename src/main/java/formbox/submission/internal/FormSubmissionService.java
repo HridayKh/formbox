@@ -44,7 +44,7 @@ class FormSubmissionService {
 	private final RedisCache redisCache;
 	private final UploadService uploadService;
 	private final DiscordNotif discordNotif;
-	private final EmailAutoresponse emailAutoresponse;
+	private final SubmissionEmailsService submissionEmailsService;
 
 	@WithSpan
 	public boolean rateLimitPassed(UUID formId, Integer rpm) {
@@ -63,9 +63,7 @@ class FormSubmissionService {
 		Map<String, String> newPayload = isSpam ? payload : uploadFiles(request, payload);
 		var savedSubmission = submissionRepository.save(new Submission(formId, tenantId, newPayload, isSpam));
 		submissionApi.updateFormSubmissionsCache(formId, savedSubmission.toSubmissionItem());
-		Sentry.configureScope(scope -> {
-			scope.setTag("submissionId", savedSubmission.getId().toString());
-		});
+		Sentry.configureScope(scope -> scope.setTag("submissionId", savedSubmission.getId().toString()));
 		return savedSubmission;
 	}
 
@@ -95,8 +93,7 @@ class FormSubmissionService {
 		} catch (IOException | ServletException e) {
 			log.error("Failed to parse file parts from HttpServletRequest", e);
 		} finally {
-			if (span != null)
-				span.finish();
+			if (span != null) span.finish();
 		}
 		return payload;
 	}
@@ -132,9 +129,7 @@ class FormSubmissionService {
 		} finally {
 			var finalContentTypes = contentTypes;
 			Sentry.metrics().distribution("submissions.stats.contentTypes", contentTypes.size() * 1.0);
-			Sentry.configureScope(scope -> {
-				scope.setContexts("contentTypes", finalContentTypes == null ? List.of("") : finalContentTypes);
-			});
+			Sentry.configureScope(scope -> scope.setContexts("contentTypes", finalContentTypes == null ? List.of("") : finalContentTypes));
 		}
 	}
 
@@ -147,9 +142,15 @@ class FormSubmissionService {
 	@Async
 	public void asyncSendNotifs(FormDto form, Submission submission, Map<String, String> payload) {
 		discordNotif.sendDiscordNotif(form.formNotifs(), payload);
-		ZeptoMailSuccessResponse autoresponse = emailAutoresponse.sendEmailAutoresponse(form.formNotifs(), payload);
+
+		ZeptoMailSuccessResponse autoresponse = submissionEmailsService.sendEmailAutoresponse(form.formNotifs(), payload);
 		submission.setEmailAutoresponseRequestId(autoresponse == null ? null : autoresponse.getRequestId());
 		submission.setEmailAutoresponseEmailStatus(autoresponse == null ? null : EmailStatus.SENT);
+
+		ZeptoMailSuccessResponse emailNotif = submissionEmailsService.sendEmailNotif(form.formNotifs(), payload, form, submission.getCreatedAt());
+		submission.setEmailNotifRequestId(emailNotif == null ? null : emailNotif.getRequestId());
+		submission.setEmailNotifStatus(emailNotif == null ? null : EmailStatus.SENT);
+
 		submissionRepository.save(submission);
 	}
 

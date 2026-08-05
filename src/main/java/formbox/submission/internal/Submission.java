@@ -60,8 +60,19 @@ class Submission {
 	@Column(name = "email_autoresponse_email_status", columnDefinition = "email_status")
 	private EmailStatus emailAutoresponseEmailStatus;
 
+	@Setter
+	@Column(name = "email_notif_request_id")
+	private String emailNotifRequestId;
+
+	@Setter
+	@JdbcTypeCode(SqlTypes.NAMED_ENUM)
+	@Enumerated(EnumType.STRING)
+	@Column(name = "email_notif_status", columnDefinition = "email_status")
+	private EmailStatus emailNotifStatus;
+
 	public SubmissionItem toSubmissionItem() {
-		return new SubmissionItem(this.id, this.payload, this.createdAt, this.isSpam, this.emailAutoresponseEmailStatus);
+		return new SubmissionItem(this.id, this.payload, this.createdAt, this.isSpam,
+			this.emailAutoresponseEmailStatus, this.emailNotifStatus);
 	}
 
 }

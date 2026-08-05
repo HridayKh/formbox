@@ -8,6 +8,8 @@ import io.sentry.ISpan;
 import io.sentry.Sentry;
 import io.sentry.SpanStatus;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.validator.routines.DomainValidator;
+import org.apache.commons.validator.routines.EmailValidator;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -19,24 +21,25 @@ import java.util.List;
 @Service
 @Slf4j
 @EnableConfigurationProperties(EmailProperties.class)
-public class EmailService {
+public class ZeptomailService {
 
 	private final RestClient restClient;
 	private final EmailProperties properties;
+	private static final EmailValidator EMAIL_VALIDATOR = new EmailValidator(false, false, DomainValidator.getInstance(false));
 
-	public EmailService(EmailProperties properties) {
+	public ZeptomailService(EmailProperties properties) {
 		this.properties = properties;
 		this.restClient = RestClient.builder().baseUrl(properties.apiUrl()).defaultHeader("Accept", "application/json").defaultHeader("Authorization", "Zoho-enczapikey " + properties.apiKey()).build();
 	}
 
 	@WithSpan
-	public ZeptoMailSuccessResponse sendEmail(String to, List<String> cc, List<String> bcc, List<String> replyTo, String subject, String htmlBody) {
+	public ZeptoMailSuccessResponse sendEmail(String to, List<String> cc, List<String> bcc, List<String> replyTo, String subject, String htmlBody, String fromName, String fromAddress) {
 
 		int ccCount = sizeOf(cc);
 		int bccCount = sizeOf(bcc);
 		int replyToCount = sizeOf(replyTo);
 
-		log.info("Sending email with {} cc recipients, {} bcc recipients, {} reply-to addresses, subject length {}", ccCount, bccCount, replyToCount, subject == null ? 0 : subject.length());
+		log.info("Sending {} with {} cc recipients, {} bcc recipients, {} reply-to addresses, subject length {}",fromName, ccCount, bccCount, replyToCount, subject == null ? 0 : subject.length());
 
 		ISpan httpSpan = Sentry.getSpan();
 
@@ -47,7 +50,9 @@ public class EmailService {
 		long startedAtNanos = System.nanoTime();
 
 		try {
-			var request = new ZeptoMailRequest(new ZeptoMailRequest.From(properties.fromAddress(), properties.fromName()), List.of(ZeptoMailRequest.Recipient.of(to)), toRecipients(cc), toRecipients(bcc), toReplyTo(replyTo), subject, htmlBody);
+			var request = new ZeptoMailRequest(new ZeptoMailRequest.From(fromAddress + properties.fromAddress(), fromName),
+				List.of(ZeptoMailRequest.Recipient.of(to)),
+				toRecipients(cc), toRecipients(bcc), toReplyTo(replyTo), subject, htmlBody);
 
 			ZeptoMailSuccessResponse response = restClient.post().contentType(MediaType.APPLICATION_JSON).body(request).retrieve().body(ZeptoMailSuccessResponse.class);
 
@@ -66,7 +71,7 @@ public class EmailService {
 
 			ZeptoMailErrorResponse errorResponse = parseErrorResponse(e);
 
-			log.error("Failed to send email after {} ms, http status {}, error {}", durationNs / 1_000_000, e.getStatusCode(), errorResponse, e);
+			log.error("Failed to send autoresponder after {} ms, http status {}, error {}", durationNs / 1_000_000, e.getStatusCode(), errorResponse, e);
 
 			Sentry.withScope(scope -> {
 				scope.setTag("http_status", e.getStatusCode().toString());
@@ -84,7 +89,7 @@ public class EmailService {
 			if (httpSpan != null) httpSpan.setStatus(SpanStatus.INTERNAL_ERROR);
 			recordMetrics(durationNs, false);
 
-			log.error("Failed to send email after {} ms", durationNs, e);
+			log.error("Failed to send autoresponder after {} ms", durationNs, e);
 			Sentry.captureException(e);
 
 			return null;
@@ -104,17 +109,17 @@ public class EmailService {
 	}
 
 	private void recordMetrics(long durationNs, boolean success) {
-		if (success) Sentry.metrics().count("email.autoresponse.failure", 1.0);
-		else Sentry.metrics().count("email.autoresponse.success", 1.0);
-		Sentry.metrics().count("email.sent", 1.0);
-		Sentry.metrics().distribution("email.sendTimeMs", (double) durationNs, "ns");
+		if (success) Sentry.metrics().count("autoresponder.autoresponse.failure", 1.0);
+		else Sentry.metrics().count("autoresponder.autoresponse.success", 1.0);
+		Sentry.metrics().count("autoresponder.sent", 1.0);
+		Sentry.metrics().distribution("autoresponder.sendTimeMs", (double) durationNs, "ns");
 	}
 
 	private List<ZeptoMailRequest.Recipient> toRecipients(List<String> addresses) {
 		if (addresses == null || addresses.isEmpty()) {
 			return List.of();
 		}
-		return addresses.stream().map(ZeptoMailRequest.Recipient::of).toList();
+		return addresses.stream().filter(EMAIL_VALIDATOR::isValid).map(ZeptoMailRequest.Recipient::of).toList();
 	}
 
 	private List<ZeptoMailRequest.ReplyTo> toReplyTo(List<String> addresses) {

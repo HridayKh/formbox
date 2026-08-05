@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.UUID;
 
 interface SubmissionRepository extends JpaRepository<Submission, UUID> {
-	List<SubmissionItem> findAllByFormId(UUID formId);
+	List<SubmissionItem> findAllByFormIdOrderByCreatedAtDesc(UUID formId);
 
 	@Query("SELECT COUNT(s) FROM Submission s WHERE s.tenantId = :tenantId AND s.createdAt >= :since")
 	long countByTenantIdAndCreatedAtAfter(@Param("tenantId") UUID tenantId, @Param("since") OffsetDateTime since);
@@ -22,5 +22,7 @@ interface SubmissionRepository extends JpaRepository<Submission, UUID> {
 	@Query(value = "DELETE FROM submissions WHERE id IN (SELECT id FROM submissions WHERE form_id = :formId LIMIT :batchSize)", nativeQuery = true)
 	int deleteSubmissionsInBatch(@Param("id") UUID formId, @Param("batchSize") int batchSize);
 
-	Submission getSubmissionByEmailAutoresponseRequestId(String emailAutoresponseRequestId);
+	Submission findByEmailAutoresponseRequestId(String emailAutoresponseRequestId);
+
+	Submission findByEmailNotifRequestId(String emailNotifRequestId);
 }

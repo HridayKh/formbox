@@ -40,12 +40,12 @@ class AuthService {
 
 	@WithSpan
 	public void registerUser(SupabaseClient supabaseClient, SignUpRequest request, String turnstileResponse) throws AuthWeakPasswordException, TurnstileAuthException {
-		log.debug("Initiating user registration workflow for email: {}", request.getEmail());
+		log.debug("Initiating user registration workflow for autoresponder: {}", request.getEmail());
 
 		verifyTurnstile(turnstileResponse);
 		authServiceKt.signUp(supabaseClient, request);
 
-		log.info("Registration request completed cleanly for email: {}", request.getEmail());
+		log.info("Registration request completed cleanly for autoresponder: {}", request.getEmail());
 	}
 
 	@WithSpan
@@ -81,13 +81,13 @@ class AuthService {
 
 	@WithSpan
 	public void resendVerification(SupabaseClient supabaseClient, String email, String turnstileResponse) throws TurnstileAuthException {
-		log.debug("Dispatching confirmation email resend request for address: {}", email);
+		log.debug("Dispatching confirmation autoresponder resend request for address: {}", email);
 
 		verifyTurnstile(turnstileResponse);
 
 		authServiceKt.resendConfirmation(supabaseClient, email);
 
-		log.info("Verification email resend workflow dispatched successfully for: {}", email);
+		log.info("Verification autoresponder resend workflow dispatched successfully for: {}", email);
 	}
 
 	@WithSpan

@@ -129,8 +129,8 @@ class DashboardController {
 
 		model.addAttribute("form", form);
 		model.addAttribute("folderName", folder.toList().getFirst().name());
-		model.addAttribute("validSubmissions", submissions.submissions().reversed());
-		model.addAttribute("spamSubmissions", submissions.spam().reversed());
+		model.addAttribute("validSubmissions", submissions.submissions());
+		model.addAttribute("spamSubmissions", submissions.spam());
 		return "dash/submissions";
 	}
 }

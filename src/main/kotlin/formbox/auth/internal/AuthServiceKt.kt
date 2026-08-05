@@ -47,7 +47,7 @@ internal class AuthServiceKt(private val supabaseProps: AuthConfig) {
 
 	@WithSpan
 	fun signUp(client: SupabaseClient, request: SignUpRequest): Unit = runBlocking {
-		log.debug("Initiating Supabase authentication signup pipeline for email: {}", request.email)
+		log.debug("Initiating Supabase authentication signup pipeline for autoresponder: {}", request.email)
 		try {
 			log.trace("Processing Supabase registration chain for: {}", request.email)
 			val user: UserInfo? = client.auth.signUpWith(Email) {
@@ -61,7 +61,7 @@ internal class AuthServiceKt(private val supabaseProps: AuthConfig) {
 				)
 				throw GenericAuthException("Registration failed: Service did not assign a valid User UID.")
 			}
-			log.info("Supabase signup transaction successfully finalized for email: {}", request.email)
+			log.info("Supabase signup transaction successfully finalized for autoresponder: {}", request.email)
 		} catch (e: AuthWeakPasswordException) {
 			log.warn("Sign-up rejected: Weak password rules unmet for target address: {}", request.email, e)
 			throw e
@@ -81,12 +81,12 @@ internal class AuthServiceKt(private val supabaseProps: AuthConfig) {
 
 	@WithSpan
 	fun resendConfirmation(client: SupabaseClient, email: String) = runBlocking {
-		log.debug("Initiating verification recovery flow dispatcher targeting email: {}", email)
+		log.debug("Initiating verification recovery flow dispatcher targeting autoresponder: {}", email)
 		try {
 			log.trace("Triggering remote token reissue request to: {}", email)
 			client.auth.resendEmail(OtpType.Email.SIGNUP, email)
 			log.info(
-				"Successfully dispatched confirmation email trigger sequence via Supabase providers for: {}",
+				"Successfully dispatched confirmation autoresponder trigger sequence via Supabase providers for: {}",
 				email
 			)
 		} catch (e: AuthRestException) {
@@ -99,7 +99,7 @@ internal class AuthServiceKt(private val supabaseProps: AuthConfig) {
 			throw GenericAuthException("Verification server error: ${e.errorDescription}")
 		} catch (e: Exception) {
 			log.error("Failed handling automated token renewal flow for target destination: {}", email, e)
-			throw GenericAuthException("Failed to reissue validation email.", e)
+			throw GenericAuthException("Failed to reissue validation autoresponder.", e)
 		}
 	}
 
@@ -132,12 +132,12 @@ internal class AuthServiceKt(private val supabaseProps: AuthConfig) {
 		} catch (e: AuthRestException) {
 			e.errorCode
 			log.warn(
-				"Supabase reject authenticating credential profile for email: {}", request.email, e
+				"Supabase reject authenticating credential profile for autoresponder: {}", request.email, e
 			)
-			throw InvalidCredentialsException("Invalid email/password or email unverified!")
+			throw InvalidCredentialsException("Invalid autoresponder/password or autoresponder unverified!")
 		} catch (e: AuthSessionMissingException) {
 			log.error(
-				"Identity management pool returned valid confirmation status but zero session payload for email: {}",
+				"Identity management pool returned valid confirmation status but zero session payload for autoresponder: {}",
 				request.email,
 				e
 			)

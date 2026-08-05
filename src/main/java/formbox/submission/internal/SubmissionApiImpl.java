@@ -1,6 +1,5 @@
 package formbox.submission.internal;
 
-import formbox.notifs.EmailStatus;
 import formbox.shared.CacheNames;
 import formbox.shared.RedisCache;
 import formbox.submission.FormSubmissionsResponse;
@@ -27,7 +26,8 @@ public class SubmissionApiImpl implements SubmissionApi {
 	@Override
 	public FormSubmissionsResponse getFormSubmissionsGrouped(UUID formId) {
 		return redisCache.getOrCompute(CacheNames.FORM_SUBMISSIONS, formId.toString(), FormSubmissionsResponse.class, () -> {
-			var partitioned = submissionRepository.findAllByFormId(formId).stream().collect(Collectors.partitioningBy(SubmissionItem::isSpam));
+			var partitioned = submissionRepository.findAllByFormIdOrderByCreatedAtDesc(formId).stream()
+				.collect(Collectors.partitioningBy(SubmissionItem::isSpam));
 			return new FormSubmissionsResponse(partitioned.getOrDefault(false, List.of()), partitioned.getOrDefault(true, List.of()));
 		});
 	}

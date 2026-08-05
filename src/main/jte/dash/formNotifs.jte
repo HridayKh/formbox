@@ -1,7 +1,7 @@
 @param formbox.form.FormDto form
 
 <!-- ========================= EMAIL AUTORESPONDER ========================= -->
-<details open>
+<details>
     <summary role="button" class="secondary">Email Autoresponder</summary>
 
     <form method="post"
@@ -39,43 +39,39 @@
     </form>
 </details>
 
-<!-- ========================= NOTIFICATIONS ========================= -->
+<!-- ========================= EMAIL NOTIFICATIONS ========================= -->
 <details>
-    <summary role="button" class="outline secondary">Email Notifications</summary>
+    <summary role="button" class="secondary">Email Notifications</summary>
 
-    <form method="post" action="/forms/${form.folderId().toString()}/${form.id().toString()}/notifs/notifications">
+    <form method="post"
+          action="/forms/${form.folderId().toString()}/${form.id().toString()}/notifs/email-notifications">
         <fieldset>
-            <label for="email-notify-enabled">
-                <input type="checkbox" id="email-notify-enabled" name="email_notify_enabled" role="switch" disabled>
-                Send an email notification on submit
-            </label>
-
             <label for="notify-to">
                 To
-                <input type="email" id="notify-to" name="notify_to" placeholder="you@example.com" multiple disabled>
+                <input type="email" id="notify-to" name="to" placeholder="you@example.com">
+                <small>Leave 'To' empty to disable.</small>
             </label>
 
             <div class="grid">
                 <label for="notify-cc">
                     CC
-                    <input type="email" id="notify-cc" name="notify_cc" placeholder="cc@example.com" multiple disabled>
+                    <input type="email" id="notify-cc" name="cc" placeholder="cc1@example.com,cc2@example.com" multiple>
                 </label>
 
                 <label for="notify-bcc">
                     BCC
-                    <input type="email" id="notify-bcc" name="notify_bcc" placeholder="bcc@example.com" multiple
-                           disabled>
+                    <input type="email" id="notify-bcc" name="bcc" placeholder="bcc1@example.com,bcc2@example.com" multiple>
                 </label>
             </div>
             <small>Separate multiple addresses with commas.</small>
         </fieldset>
 
-        <button type="submit" disabled>Save</button>
+        <button type="submit">Save</button>
     </form>
 </details>
 
 <!-- ========================= DISCORD ========================= -->
-<details open>
+<details>
     <summary role="button" class="secondary">Discord</summary>
 
     <article>
@@ -108,6 +104,7 @@
     </article>
 </details>
 
+<%--
 <!-- ========================= SLACK ========================= -->
 <details>
     <summary role="button" class="outline secondary">Slack</summary>
@@ -180,7 +177,7 @@
 
 <!-- ========================= CUSTOM WEBHOOK ========================= -->
 <details>
-    <summary role="button" class="outline secondary">Custom Webhook</summary>
+    <summary role="button" class="outline secondary">Custom Webhooks</summary>
 
     <form method="post" action="/forms/${form.folderId().toString()}/${form.id().toString()}/notifs/webhook">
         <fieldset>
@@ -238,3 +235,4 @@
     <summary role="button" class="outline secondary">Routing</summary>
     <p>Submission Routing Coming Soon!</p>
 </details>
+--%>

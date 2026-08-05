@@ -158,7 +158,7 @@
     <section id="form-update">
         <details>
             <summary role="button" class="outline">Settings</summary>
-            @template.dash.formUpdate(form = form)
+            @template.dash.formSettings(form = form)
         </details>
     </section>
 

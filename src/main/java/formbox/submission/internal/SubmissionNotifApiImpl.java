@@ -20,14 +20,24 @@ public class SubmissionNotifApiImpl implements SubmissionNotifApi {
 	public void updateEmailStatus(String requestId, EmailStatus newStatus) {
 		if (newStatus == null) return;
 
-		Submission submission = submissionRepository.getSubmissionByEmailAutoresponseRequestId(requestId);
-		if (submission == null) return;
+		boolean autoResponse = true;
 
-		EmailStatus status = submission.getEmailAutoresponseEmailStatus();
+		Submission submission = submissionRepository.findByEmailAutoresponseRequestId(requestId);
+		if (submission == null) {
+			autoResponse = false;
+			submission = submissionRepository.findByEmailNotifRequestId(requestId);
+			if (submission == null)
+				return;
+		}
+
+		EmailStatus status = autoResponse ? submission.getEmailAutoresponseEmailStatus() : submission.getEmailNotifStatus();
 
 		EmailStatus effectiveStatus = (status != null && status.isAfter(newStatus)) ? status : newStatus;
 
-		submission.setEmailAutoresponseEmailStatus(effectiveStatus);
+		if (autoResponse)
+			submission.setEmailAutoresponseEmailStatus(effectiveStatus);
+		else
+			submission.setEmailNotifStatus(effectiveStatus);
 		submissionRepository.save(submission);
 		submissionApi.updateFormSubmissionsCache(submission.getFormId(), submission.toSubmissionItem());
 	}

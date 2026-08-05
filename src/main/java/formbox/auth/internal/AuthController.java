@@ -48,21 +48,21 @@ class AuthController {
 	@PostMapping(PathRegistry.Auth.SIGNUP)
 	@WithSpan
 	public String handleSignup(@RequestParam String email, @RequestParam String password, @RequestParam("cf-turnstile-response") String turnstileResponse, @RequestAttribute SupabaseClient supabaseClient, HttpServletResponse response, Model model) {
-		log.debug("Processing HTTP POST registration payload submission for email: {}", email);
+		log.debug("Processing HTTP POST registration payload submission for autoresponder: {}", email);
 		try {
 			authService.registerUser(supabaseClient, new SignUpRequest(email, password), turnstileResponse);
-			model.addAttribute("message", "Check your email for confirmation link!");
+			model.addAttribute("message", "Check your autoresponder for confirmation link!");
 			response.setHeader("HX-Redirect", PathRegistry.Auth.Hx.LOGIN_CHECK_EMAIL);
 			return "empty";
 		} catch (TurnstileAuthException e) {
 			model.addAttribute("error", e.getMessage());
 			return "auth/error-alert";
 		} catch (AuthWeakPasswordException e) {
-			log.warn("Registration rejected. Security constraints failed due to weak password for email: {}", email);
+			log.warn("Registration rejected. Security constraints failed due to weak password for autoresponder: {}", email);
 			model.addAttribute("error", "Password must be at least 8 characters long and contain uppercase, lowercase, digits, and symbols");
 			return "auth/error-alert";
 		} catch (Exception e) {
-			log.error("Critical infrastructure handling exception during registration process for email: {}", email, e);
+			log.error("Critical infrastructure handling exception during registration process for autoresponder: {}", email, e);
 			model.addAttribute("error", "An internal processing error occurred. " + e.getClass().getName());
 			return "auth/error-alert";
 		}
@@ -71,7 +71,7 @@ class AuthController {
 	@PostMapping(PathRegistry.Auth.LOGIN)
 	@WithSpan
 	public String handleLogin(@RequestParam String email, @RequestParam String password, @RequestParam("cf-turnstile-response") String turnstileResponse, @RequestAttribute SupabaseClient supabaseClient, HttpServletResponse response, Model model) {
-		log.debug("Processing HTTP POST authentication payload submission for email: {}", email);
+		log.debug("Processing HTTP POST authentication payload submission for autoresponder: {}", email);
 		try {
 			authService.loginUser(supabaseClient, new LoginRequest(email, password), turnstileResponse, response);
 			response.setHeader("HX-Redirect", PathRegistry.DASHBOARD);
@@ -84,7 +84,7 @@ class AuthController {
 			model.addAttribute("error", e.getMessage());
 			return "auth/error-alert";
 		} catch (Exception e) {
-			log.error("Internal orchestration failure detected inside security pipeline for email: {}", email, e);
+			log.error("Internal orchestration failure detected inside security pipeline for autoresponder: {}", email, e);
 			model.addAttribute("error", "Authentication engine service currently unavailable.");
 			return "auth/error-alert";
 		}
@@ -101,13 +101,13 @@ class AuthController {
 	@PostMapping(PathRegistry.Auth.RESEND_CONFIRMATION)
 	@WithSpan
 	public String resend(@RequestParam String email, @RequestParam("cf-turnstile-response") String turnstileResponse, Model model, @RequestAttribute SupabaseClient supabaseClient) {
-		log.debug("Processing HTTP POST request for verification email resend pipeline targeting: {}", email);
+		log.debug("Processing HTTP POST request for verification autoresponder resend pipeline targeting: {}", email);
 		try {
 			authService.resendVerification(supabaseClient, email, turnstileResponse);
 			model.addAttribute("message", "Confirmation validation token successfully transmitted!");
 			return "auth/success-alert";
 		} catch (TurnstileAuthException e) {
-			log.warn("Resend confirmation blocked. Cloudflare Turnstile validation failed for email: {}", email);
+			log.warn("Resend confirmation blocked. Cloudflare Turnstile validation failed for autoresponder: {}", email);
 			model.addAttribute("error", e.getMessage());
 			return "auth/error-alert";
 		} catch (Exception e) {

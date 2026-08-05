@@ -9,24 +9,6 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-/**
- * Top-level response body returned by ZeptoMail on a successful
- * (2xx) call to POST /v1.1/email.
- *
- * Example:
- * {
- *   "data": [
- *     {
- *       "code": "EM_104",
- *       "additional_info": [],
- *       "message": "OK"
- *     }
- *   ],
- *   "message": "OK",
- *   "request_id": "2233519000000965129",
- *   "object": "email"
- * }
- */
 @Data
 @Builder
 @NoArgsConstructor
@@ -46,7 +28,7 @@ public class ZeptoMailSuccessResponse {
 	@JsonProperty("request_id")
 	private String requestId;
 
-	/** Signifies which API the response belongs to, e.g. "email". */
+	/** Signifies which API the response belongs to, e.g. "autoresponder". */
 	@JsonProperty("object")
 	private String object;
 }
