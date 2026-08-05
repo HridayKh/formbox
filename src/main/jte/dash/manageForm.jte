@@ -11,6 +11,7 @@
 @param FormDto form
 @param String folderName
 @param Entitlements entitlements
+@param String creds
 
 <!DOCTYPE html>
 <html lang="en">
@@ -40,7 +41,8 @@
         </div>
     @endif
     <div role="search">
-        <a role="button" class="outline" href="/forms/${form.folderId().toString()}/${form.id().toString()}/view-submissions">
+        <a role="button" class="outline"
+           href="/forms/${form.folderId().toString()}/${form.id().toString()}/view-submissions">
             View Submissions
         </a>
     </div>
@@ -60,14 +62,77 @@
 <main class="container">
     <section id="form-top">
         <article>
-            <header>
-                <strong>Form Endpoint, Use This With <code>action="post"</code></strong>
+            <header style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
+                <strong>Form Endpoint</strong>
+                <small>Use with <code>action="POST"</code></small>
             </header>
-            <span style="display: none" id="url-text"
-                  class="odd-row-color">https://formbox.hridaykh.in/f/${form.id().toString()}</span>
-            <div role="group">
-                <input type="text" value="https://formbox.hridaykh.in/f/${form.id().toString()}" readonly/>
-                <button onclick="copyURL()" id="copy-btn">Copy</button>
+
+            <!-- Hidden data field for clipboard JS -->
+            <span style="display: none" id="url-text">https://formbox.hridaykh.in/f/${form.id().toString()}</span>
+
+            <div>
+                <label for="form-endpoint-url">
+                    <small><strong>Submission Endpoint URL</strong></small>
+                </label>
+                <fieldset role="group" style="margin-bottom: 0;">
+                    <input
+                            id="form-endpoint-url"
+                            type="text"
+                            value="https://formbox.hridaykh.in/f/${form.id().toString()}"
+                            readonly
+                            aria-label="Form Endpoint URL"
+                    />
+                    <button onclick="copyURL()" id="copy-btn">
+                        Copy
+                    </button>
+                </fieldset>
+            </div>
+        </article>
+    </section>
+
+    <section id="client-creds">
+        <article>
+            <header>
+                <strong>Client Page Credentials</strong>
+            </header>
+
+            <!-- Hidden data fields for clipboard JS -->
+            <span style="display: none" id="creds-text">${creds}</span>
+
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <!-- Field 1: Endpoint Link -->
+                <div>
+                    <label>
+                        <small><strong>Client Page Link</strong></small>
+                        <br/>
+                        <a
+                                href="https://formbox.hridaykh.in/c/${form.id().toString()}"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                        >
+                            https://formbox.hridaykh.in/c/${form.id().toString()}
+                        </a>
+                    </label>
+                </div>
+
+                <!-- Field 2: Password -->
+                <div>
+                    <label for="client-page-password">
+                        <small><strong>Client Page Password</strong></small>
+                    </label>
+                    <fieldset role="group" style="margin-bottom: 0;">
+                        <input
+                                id="client-page-password"
+                                type="text"
+                                value="${creds}"
+                                readonly
+                                aria-label="Client Page Password"
+                        />
+                        <button onclick="copyCREDS()" id="creds-copy-btn">
+                            Copy
+                        </button>
+                    </fieldset>
+                </div>
             </div>
         </article>
     </section>
@@ -134,6 +199,28 @@
             alert("Failed to copy to clipboard.");
         });
     }
+
+    function copyCREDS() {
+        const textToCopy = document.getElementById("creds-text").innerText;
+
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            const btn = document.getElementById("creds-copy-btn");
+
+            // Update button visual state
+            btn.innerText = "Copied!";
+            btn.classList.add("copied");
+
+            // Reset button after 2 seconds
+            setTimeout(() => {
+                btn.innerText = "Copy";
+                btn.classList.remove("copied");
+            }, 2000);
+        }).catch(err => {
+            console.error("Failed to copy text: ", err);
+            alert("Failed to copy to clipboard.");
+        });
+    }
+
 </script>
 
 </body>

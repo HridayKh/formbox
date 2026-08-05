@@ -27,7 +27,7 @@ class AuthFilter extends OncePerRequestFilter {
 	private final AntPathMatcher pathMatcher = new AntPathMatcher();
 	private final AuthFilterService authFilterService;
 
-	private static final List<String> EXCLUDED_PATHS = List.of("/f/**", "/favicon.ico", "/assets/**", "/error", "/webhooks/**");
+	private static final List<String> EXCLUDED_PATHS = List.of("/f/**", "/favicon.ico", "/assets/**","/c/**", "/error", "/webhooks/**");
 
 	@Override
 	protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {

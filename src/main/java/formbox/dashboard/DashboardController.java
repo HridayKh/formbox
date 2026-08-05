@@ -6,6 +6,7 @@ import formbox.folder.FolderDto;
 import formbox.form.FormDto;
 import formbox.form.TenantForm;
 import formbox.shared.Entitlements;
+import formbox.shared.HmacSignerService;
 import formbox.submission.FormSubmissionsResponse;
 import formbox.shared.PathRegistry;
 import formbox.billing.EntitlementsApi;
@@ -34,6 +35,7 @@ class DashboardController {
 	private final PolarSubmissionApi polarSubmissionApi;
 	private final SubmissionApi submissionApi;
 	private final FolderApi folderApi;
+	private final HmacSignerService hmacSignerService;
 
 	@GetMapping("/dashboard")
 	@WithSpan
@@ -99,11 +101,13 @@ class DashboardController {
 		model.addAttribute("folderName", thisFolder.getFirst().name());
 		model.addAttribute("entitlements", entitlements);
 
+		model.addAttribute("creds", hmacSignerService.sign(formId.toString()));
+
 		return "dash/manageForm";
 	}
 	@GetMapping("/forms/{}/{formId}/view-submissions")
 	@WithSpan
-	public String discordNotifs(@RequestAttribute JwtPayload userMetadata, @PathVariable UUID formId, Model model) {
+	public String viewSubmissions(@RequestAttribute JwtPayload userMetadata, @PathVariable UUID formId, Model model) {
 		log.debug("Viewing submissions for form: {}", formId);
 
 		UUID tenantId = UUID.fromString(Objects.requireNonNull(userMetadata.getSub()));
