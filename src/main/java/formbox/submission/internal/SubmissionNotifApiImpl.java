@@ -2,6 +2,7 @@ package formbox.submission.internal;
 
 import formbox.notifs.EmailStatus;
 import formbox.notifs.SubmissionNotifApi;
+import formbox.submission.SubmissionApi;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class SubmissionNotifApiImpl implements SubmissionNotifApi {
 	private final SubmissionRepository submissionRepository;
+	private final SubmissionApi submissionApi;
 
 	@WithSpan
 	@Override
@@ -27,5 +29,6 @@ public class SubmissionNotifApiImpl implements SubmissionNotifApi {
 
 		submission.setEmailAutoresponseEmailStatus(effectiveStatus);
 		submissionRepository.save(submission);
+		submissionApi.updateFormSubmissionsCache(submission.getFormId(), submission.toSubmissionItem());
 	}
 }

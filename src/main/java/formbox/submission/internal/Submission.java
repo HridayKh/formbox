@@ -59,9 +59,9 @@ class Submission {
 	private String emailAutoresponseRequestId;
 
 	@Setter
-	@JdbcTypeCode(SqlTypes.ENUM)
+	@JdbcTypeCode(SqlTypes.NAMED_ENUM)
 	@Enumerated(EnumType.STRING)
-	@Column(name = "email_autoresponse_email_status")
+	@Column(name = "email_autoresponse_email_status", columnDefinition = "email_status")
 	private EmailStatus emailAutoresponseEmailStatus;
 
 	public SubmissionItem toSubmissionItem() {

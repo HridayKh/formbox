@@ -7,5 +7,7 @@ public record EmailProperties(
 	String apiUrl,
 	String apiKey,
 	String fromAddress,
-	String fromName
-) {}
+	String fromName,
+	String webhookAuthKey
+) {
+}
