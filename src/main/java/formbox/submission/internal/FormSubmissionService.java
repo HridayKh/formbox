@@ -1,10 +1,15 @@
 package formbox.submission.internal;
 
+import formbox.notifs.DiscordNotif;
+import formbox.notifs.EmailAutoresponse;
+import formbox.notifs.UploadService;
+import formbox.notifs.ZeptoMailSuccessResponse;
 import formbox.shared.CacheNames;
 import formbox.form.FormDto;
 import formbox.shared.RedisCache;
 import formbox.submission.SubmissionApi;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
+import io.sentry.ISpan;
 import io.sentry.Sentry;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -39,6 +45,9 @@ class FormSubmissionService {
 	private final SubmissionRepository submissionRepository;
 	private final SubmissionApi submissionApi;
 	private final RedisCache redisCache;
+	private final UploadService uploadService;
+	private final DiscordNotif discordNotif;
+	private final EmailAutoresponse emailAutoresponse;
 
 	@WithSpan
 	public boolean rateLimitPassed(UUID formId, Integer rpm) {
@@ -52,13 +61,47 @@ class FormSubmissionService {
 	}
 
 	@WithSpan
-	public Submission saveSubmission(UUID formId, UUID tenantId, String remoteAddr, Map<String, String> payload, boolean isSpam) {
-		var savedSubmission = submissionRepository.save(new Submission(formId, tenantId, payload, remoteAddr, isSpam));
+	@Transactional
+	public Submission saveSubmission(UUID formId, UUID tenantId, String remoteAddr, Map<String, String> payload, boolean isSpam, HttpServletRequest request) {
+		Map<String, String> newPayload = isSpam ? payload : uploadFiles(request, payload);
+		var savedSubmission = submissionRepository.save(new Submission(formId, tenantId, newPayload, remoteAddr, isSpam));
 		submissionApi.updateFormSubmissionsCache(formId, savedSubmission.toSubmissionItem());
 		Sentry.configureScope(scope -> {
 			scope.setTag("submissionId", savedSubmission.getId().toString());
 		});
 		return savedSubmission;
+	}
+
+	private Map<String, String> uploadFiles(HttpServletRequest request, Map<String, String> payload) {
+		ISpan span = null;
+		try {
+			if (Sentry.getSpan() != null)
+				span = Sentry.getSpan().startChild("SubmissionFileService.uploadFiles");
+			if (request.getContentType() == null || !request.getContentType().startsWith("multipart/")) {
+				log.debug("Skipping file upload for non multipart submission.");
+				return payload;
+			}
+			Collection<Part> parts = request.getParts();
+			if (parts == null || parts.isEmpty()) {
+				return payload;
+			}
+			for (Part part : parts) {
+				if (part.getSubmittedFileName() == null || part.getSubmittedFileName().isBlank())
+					continue;
+				String contentType = part.getContentType();
+				if (contentType == null || contentType.isBlank()) continue;
+				payload.put(part.getName(), part.getSubmittedFileName());
+				payload.put(part.getName() + "__url", uploadService.uploadFile(part.getInputStream(), part.getSubmittedFileName()));
+				Sentry.metrics().distribution("submissions.stats.fileSizeBytes", part.getSize() * 1.0, "byte");
+			}
+			return payload;
+		} catch (IOException | ServletException e) {
+			log.error("Failed to parse file parts from HttpServletRequest", e);
+		} finally {
+			if (span != null)
+				span.finish();
+		}
+		return payload;
 	}
 
 	@WithSpan
@@ -100,6 +143,16 @@ class FormSubmissionService {
 
 	public boolean validateFields(Map<String, String> ignoredPayload, FormDto ignoredForm) {
 		return true;
+	}
+
+	@WithSpan
+	@Transactional
+	@Async
+	public void asyncSendNotifs(FormDto form, Submission submission, Map<String, String> payload, HttpServletRequest request) {
+		discordNotif.sendDiscordNotif(form.formNotifs(), payload);
+		ZeptoMailSuccessResponse autoresponse = emailAutoresponse.sendEmailAutoresponse(form.formNotifs(), payload);
+		submission.setEmailAutoresponseRequestId(autoresponse == null ? null : autoresponse.getRequestId());
+		submissionRepository.save(submission);
 	}
 
 }

@@ -1,0 +1,82 @@
+write me a zoho webhook controller in spring boot lombook, etc. to store email status, default is sent, then gotta track soft/hard bounce, delivered, and whatever feedback loop means
+
+docs: [https://www.zoho.com/zeptomail/help/webhooks.html](https://www.zoho.com/zeptomail/help/webhooks.html#alink7)
+i also copy pasted the docs too
+
+here are the exact json by the webhooks too:
+{
+   "event_name": [
+      "softbounce"
+   ],
+   "event_message": [
+      {
+         "email_info": {
+            "cc": [
+               {
+                  "email_address": {
+                     "address": "cc@zylker.com",
+                     "name": "TestCC"
+                  }
+               }
+            ],
+            "client_reference": "customer-unique-reference-to-identify-the-mail",
+            "bcc": [
+               {
+                  "email_address": {
+                     "address": "bcc@zylker.com",
+                     "name": "TestBCC"
+                  }
+               }
+            ],
+            "is_smtp_trigger": false,
+            "subject": "webhook test email",
+            "bounce_address": "webhooktest@zylker.com",
+            "is_synced": false,
+            "email_reference": "2518b.bba39629a05d703.m1.89236e80-909a-11f1-a9a2-525400c92439.19fd0b3f568@zylker.com",
+            "reply_to": [
+               {
+                  "address": "replyto@zylker.com",
+                  "name": "TestReplyTo"
+               }
+            ],
+            "from": {
+               "address": "webhooktest@zylker.com",
+               "name": "webhooktest"
+            },
+            "to": [
+               {
+                  "email_address": {
+                     "address": "bouncerecipient@zylker.com",
+                     "name": "BounceRecipient"
+                  }
+               },
+               {
+                  "email_address": {
+                     "address": "testrecipient@zylker.com",
+                     "name": "TestRecipient"
+                  }
+               }
+            ],
+            "tag": "unknown",
+            "processed_time": "2026-08-05T06:54:42Z",
+            "object": "email"
+         },
+         "event_data": [
+            {
+               "details": [
+                  {
+                     "reason": "relaying-issues",
+                     "bounced_recipient": "bouncerecipient@zylker.com",
+                     "time": "2026-08-05T06:54:42Z",
+                     "diagnostic_message": "policy-related"
+                  }
+               ],
+               "object": "softbounce"
+            }
+         ],
+         "request_id": "2518b.bba39629a05d703.m1.89236e80-909a-11f1-a9a2-525400c92439.19fd0b3f568"
+      }
+   ],
+   "mailagent_key": "2518b.bba39629a05d703.35e2213af8737d78",
+   "webhook_request_id": "2518b.bba39629a05d703.w1.892cbd50-909a-11f1-a9a2-525400c92439.19fd0b3f5a5"
+}

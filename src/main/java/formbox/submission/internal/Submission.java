@@ -51,7 +51,11 @@ class Submission {
 
 	@Column(name = "created_at")
 	@ColumnDefault("NOW()")
-	private OffsetDateTime createdAt = OffsetDateTime.now();
+	private final OffsetDateTime createdAt = OffsetDateTime.now();
+
+	@Setter
+	@Column(name = "email_autoresponse_request_id")
+	private String emailAutoresponseRequestId;
 
 	public SubmissionItem toSubmissionItem() {
 		return new SubmissionItem(this.id, this.payload, this.senderIp, this.createdAt, this.isSpam);

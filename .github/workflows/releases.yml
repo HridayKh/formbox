@@ -97,21 +97,11 @@ jobs:
           VERSION="${MAJOR}.${MINOR}.${PATCH}+${RUN_NUMBER}"
           VERSIONDEV="${MAJOR}.${MINOR}.$((PATCH + 1))-dev+${RUN_NUMBER}"
           
-          
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "version=$VERSIONDEV" >> "$GITHUB_OUTPUT"
+          echo "versiondev=$VERSIONDEV" >> "$GITHUB_OUTPUT"
           echo "tag_name=v${MAJOR}.${MINOR}.${PATCH}" >> "$GITHUB_OUTPUT"
           echo "Computed version: $VERSION"
-
-      - name: DEBUG - check Sentry secrets
-        env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
-          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
-        run: |
-          echo "SENTRY_AUTH_TOKEN length: ${#SENTRY_AUTH_TOKEN}"
-          echo "SENTRY_ORG: '${SENTRY_ORG}'"
-          echo "SENTRY_PROJECT: '${SENTRY_PROJECT}'"
+          echo "Computed versiondev: $VERSIONDEV"
 
       - name: Build and test
         env:

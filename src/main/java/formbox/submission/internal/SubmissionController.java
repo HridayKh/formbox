@@ -30,7 +30,6 @@ class SubmissionController {
 
 	private final FormSubmissionService submissionService;
 	private final FormApi formApi;
-	private final SubmissionFileService submissionFileService;
 	private final ObjectMapper objectMapper;
 	private final PolarSubmissionApi polarSubmissionApi;
 
@@ -60,9 +59,7 @@ class SubmissionController {
 			return "submit/form-not-found";
 		}
 
-		Sentry.configureScope(scope -> {
-			scope.setTag("tenantId", form.tenantId().toString());
-		});
+		Sentry.configureScope(scope -> scope.setTag("tenantId", form.tenantId().toString()));
 
 		double payloadFieldCount = payload.size();
 		double payloadSizeBytes = payload.entrySet().stream().mapToLong(e -> e.getKey().length() + (e.getValue() == null ? 0 : e.getValue().length())).sum();
@@ -93,14 +90,14 @@ class SubmissionController {
 
 		if (!payload.getOrDefault(form.honeypotName(), "").isBlank()) {
 			Sentry.addBreadcrumb("Honeypot field populated for form " + formId);
-			submissionService.saveSubmission(form.id(), form.tenantId(), request.getRemoteAddr(), payload, true);
+			submissionService.saveSubmission(form.id(), form.tenantId(), request.getRemoteAddr(), payload, true, request);
 			Sentry.metrics().count(SubmissionMetrics.Failed.HONEYPOT);
 			return "submit/thanks";
 		}
 
 		if (TurnstileVerifierUtil.turnstileFailed(payload, form.turnstileSecretKey(), objectMapper)) {
 			Sentry.addBreadcrumb("Turnstile verification failed for form " + formId);
-			submissionService.saveSubmission(form.id(), form.tenantId(), request.getRemoteAddr(), payload, true);
+			submissionService.saveSubmission(form.id(), form.tenantId(), request.getRemoteAddr(), payload, true, request);
 			Sentry.metrics().count(SubmissionMetrics.Failed.TURNSTILE);
 			return "submit/thanks";
 		}
@@ -135,8 +132,8 @@ class SubmissionController {
 			return "submit/invalid-fields";
 		}
 
-		var submission = submissionService.saveSubmission(form.id(), form.tenantId(), request.getRemoteAddr(), payload, false);
-		submissionFileService.uploadFilesAndInitNotifsWebhooks(form, submission, payload, request);
+		var submission = submissionService.saveSubmission(form.id(), form.tenantId(), request.getRemoteAddr(), payload, false, request);
+		submissionService.asyncSendNotifs(form, submission, payload, request);
 		polarSubmissionApi.asyncDecrementCachedSubmissionBalance(form.tenantId());
 
 		log.info("Successfully processed submission for form ID: {}", formId);

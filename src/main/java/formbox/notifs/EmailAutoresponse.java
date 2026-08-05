@@ -8,7 +8,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.validator.routines.DomainValidator;
 import org.apache.commons.validator.routines.EmailValidator;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -25,23 +24,22 @@ public class EmailAutoresponse {
 	private static final EmailValidator EMAIL_VALIDATOR = new EmailValidator(false, false, DomainValidator.getInstance(false));
 	private final EmailService emailService;
 
-	@Async
 	@WithSpan
-	public void sendEmailAutoresponse(FormNotifs formNotifs, Map<String, String> payload) {
+	public ZeptoMailSuccessResponse sendEmailAutoresponse(FormNotifs formNotifs, Map<String, String> payload) {
 		long start = System.nanoTime();
 		try {
 			if (formNotifs.autoresponderEmailFieldName() == null || formNotifs.autoresponderEmailFieldName().isBlank()
 				|| formNotifs.autoresponderEmailBody() == null || formNotifs.autoresponderEmailBody().isBlank()
 				|| !EMAIL_VALIDATOR.isValid(formNotifs.autoresponderReplyTo())) {
 				start = -1;
-				return;
+				return null;
 			}
 			String emailAddress = payload.getOrDefault(formNotifs.autoresponderEmailFieldName(), null);
 			if (emailAddress == null || emailAddress.isBlank() || !EMAIL_VALIDATOR.isValid(emailAddress)) {
 				start = -1;
 				Sentry.metrics().count("email.autoresponse.invalidEmail");
 				log.debug("Skipping email response for invalid email in submission.");
-				return;
+				return null;
 			}
 
 			Sentry.metrics().count("email.autoresponse.started");
@@ -53,9 +51,10 @@ public class EmailAutoresponse {
 				matcher.appendReplacement(sb, Matcher.quoteReplacement(payload.getOrDefault(matcher.group(1), matcher.group(0))));
 			matcher.appendTail(sb);
 			String body = sb.toString();
-			emailService.sendEmail(emailAddress, null, null, List.of(formNotifs.autoresponderReplyTo()), formNotifs.autoresponderSubjectLine(), body);
 
+			var resp = emailService.sendEmail(emailAddress, null, null, List.of(formNotifs.autoresponderReplyTo()), formNotifs.autoresponderSubjectLine(), body);
 			Sentry.metrics().count("email.autoresponse.succeeded");
+			return resp;
 		} catch (Exception e) {
 			Sentry.metrics().count("email.autoresponse.failed");
 			log.error("Email Autoresponse Failed!", e);
@@ -64,5 +63,6 @@ public class EmailAutoresponse {
 			if (start >= 0)
 				Sentry.metrics().distribution("email.autoresponse.time", start - System.nanoTime() * 1.0, "ns");
 		}
+		return null;
 	}
 }
