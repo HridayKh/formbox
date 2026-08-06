@@ -11,7 +11,6 @@ public interface PathRegistry {
 		String LOGOUT = "/logout";
 		String RESEND_CONFIRMATION = "/resend-confirmation";
 		String SESSION_CALLBACK = "/session-callback";
-		String MAGIC_LINK = "/magic-link";
 		String CALLBACK = "/callback";
 
 		interface Hx {

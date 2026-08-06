@@ -150,16 +150,4 @@ class AuthService {
 		log.info("Send magic link to user!");
 
 	}
-
-	@WithSpan
-	public void handleMagicLink(SupabaseClient supabaseClient, String token, String email, HttpServletResponse response) {
-		log.debug("Initiating magic link verification login for user");
-
-		AuthResponse auth = authServiceKt.loginMagicLink(supabaseClient, token, email);
-
-		setAuthCookie(response, "sb_token", auth.getAccessToken(), 3600);
-		setAuthCookie(response, "sb_refresh", auth.getRefreshToken(), 604800);
-
-		log.info("magic link Login successful for {}", auth.getUserId());
-	}
 }

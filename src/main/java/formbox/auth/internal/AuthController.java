@@ -109,20 +109,6 @@ class AuthController {
 		}
 	}
 
-	@PostMapping(PathRegistry.Auth.MAGIC_LINK + "/{token}")
-	@ResponseBody
-	@WithSpan
-	public String handleMagicLink(@PathVariable String token,@RequestParam String email, @RequestAttribute SupabaseClient supabaseClient, HttpServletResponse response) {
-		log.debug("Verifying magic link");
-		try {
-			authService.handleMagicLink(supabaseClient, token, email, response);
-			return "redirect:/dashboard";
-		} catch (Exception e) {
-			log.error("Invalid magic link.", e);
-			return "redirect:/auth/login?msg=magic_link_invalid";
-		}
-	}
-
 	@GetMapping(PathRegistry.Auth.LOGOUT)
 	@WithSpan
 	public String logout(HttpServletResponse response, @CookieValue(name = "sb_token", required = false) String accessToken, @CookieValue(name = "sb_refresh", required = false) String refreshToken, @RequestAttribute SupabaseClient supabaseClient) {

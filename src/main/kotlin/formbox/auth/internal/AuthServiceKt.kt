@@ -42,88 +42,66 @@ internal class AuthServiceKt(private val supabaseProps: AuthConfig) {
 	}
 
 	fun closeIsolatedClient(client: SupabaseClient) = runBlocking {
-		log.trace("Closing isolated Supabase client connection instance.")
-		client.close()
+		try {
+			client.close()
+		} catch (e: Exception) {
+			log.warn("[KT] Failed to close Supabase client", e)
+		}
 	}
 
 	@WithSpan
 	fun signUp(client: SupabaseClient, request: SignUpRequest): Unit = runBlocking {
-		log.debug("Initiating Supabase authentication signup pipeline for autoresponder: {}", request.email)
 		try {
-			log.trace("Processing Supabase registration chain for: {}", request.email)
 			val user: UserInfo? = client.auth.signUpWith(Email) {
 				email = request.email
 				password = request.password
 			}
 			if (user?.id == null) {
-				log.error(
-					"Supabase registration transaction completed but assigned user reference object was null for: {}",
-					request.email
-				)
+				log.error("[KT] Sign-up succeeded but no user ID was returned")
 				throw GenericAuthException("Registration failed: Service did not assign a valid User UID.")
 			}
-			log.info(
-				"Supabase signup transaction successfully finalized for autoresponder: {}",
-				request.email
-			)
+			log.info("[KT] New user signed up: {}", user.id)
 		} catch (e: AuthWeakPasswordException) {
-			log.warn("Sign-up rejected: Weak password rules unmet for target address: {}", request.email, e)
+			log.warn("[KT] Sign-up rejected: password too weak", e)
 			throw e
 		} catch (e: AuthRestException) {
-			log.warn(
-				"Supabase engine error during user registration [Error Code: {}]: {}",
-				e.errorCode,
-				e.errorDescription,
-				e
-			)
+			log.warn("[KT] Sign-up failed [code={}]: {}", e.errorCode, e.errorDescription, e)
 			throw GenericAuthException("Registration API error: ${e.errorDescription}")
 		} catch (e: Exception) {
-			log.error("Unhandled error context during registration for: {}", request.email, e)
+			log.error("[KT] Sign-up failed unexpectedly", e)
 			throw GenericAuthException("An unexpected registration error occurred.", e)
 		}
 	}
 
 	@WithSpan
 	fun resendConfirmation(client: SupabaseClient, email: String) = runBlocking {
-		log.debug("Initiating verification recovery flow dispatcher targeting autoresponder: {}", email)
 		try {
-			log.trace("Triggering remote token reissue request to: {}", email)
 			client.auth.resendEmail(OtpType.Email.SIGNUP, email)
-			log.info(
-				"Successfully dispatched confirmation autoresponder trigger sequence via Supabase providers for: {}",
-				email
-			)
 		} catch (e: AuthRestException) {
-			log.warn(
-				"Supabase endpoint error during token dispatch to {}: {}", email, e.errorDescription, e
-			)
+			log.warn("[KT] Failed to resend confirmation [code={}]: {}", e.errorCode, e.errorDescription, e)
 			throw GenericAuthException("Verification server error: ${e.errorDescription}")
 		} catch (e: Exception) {
-			log.error("Failed handling automated token renewal flow for target destination: {}", email, e)
+			log.error("[KT] Failed to resend confirmation", e)
 			throw GenericAuthException("Failed to reissue validation autoresponder.", e)
 		}
 	}
 
 	@WithSpan
 	fun sendLoginMagicLink(client: SupabaseClient, userEmail: String) = runBlocking {
-		log.debug("[KT] Sending magic link for login")
 		try {
 			client.auth.signInWith(OTP) { email = userEmail }
-			log.info("[KT] Successfully send magic link for login")
 		} catch (e: AuthRestException) {
-			log.warn("[KT] Supabase endpoint error during sending magic link: {}", e.errorDescription, e)
+			log.warn("[KT] Failed to send magic link [code={}]: {}", e.errorCode, e.errorDescription, e)
 			throw GenericAuthException("Verification server error: ${e.errorDescription}")
 		} catch (e: Exception) {
-			log.error("[KT] Failed handling sending magic link", e)
+			log.error("[KT] Failed to send magic link", e)
 			throw GenericAuthException("Failed to send magic link", e)
 		}
 	}
 
 	@WithSpan
 	fun login(client: SupabaseClient, request: LoginRequest): AuthResponse = runBlocking {
-		log.debug("Initiating primary authentication verification loop for address: {}", request.email)
 		try {
-			log.trace("Forwarding authentication request parameters for user: {}", request.email)
 			client.auth.signInWith(Email) {
 				email = request.email
 				password = request.password
@@ -135,89 +113,28 @@ internal class AuthServiceKt(private val supabaseProps: AuthConfig) {
 			val assignedUserId = currentSession.user?.id
 				?: throw GenericAuthException("Missing User ID context in valid payload profile.")
 
-			log.info(
-				"Supabase session generation handshake completed cleanly for user UID: {}",
-				assignedUserId
-			)
-
 			AuthResponse(
 				userId = assignedUserId,
 				accessToken = currentSession.accessToken,
 				refreshToken = currentSession.refreshToken
 			)
 		} catch (e: AuthRestException) {
-			e.errorCode
-			log.warn(
-				"Supabase reject authenticating credential profile for autoresponder: {}",
-				request.email,
-				e
-			)
+			log.warn("[KT] Login rejected [code={}]: {}", e.errorCode, e.errorDescription)
 			throw InvalidCredentialsException("Invalid autoresponder/password or autoresponder unverified!")
 		} catch (e: AuthSessionMissingException) {
-			log.error(
-				"Identity management pool returned valid confirmation status but zero session payload for autoresponder: {}",
-				request.email,
-				e
-			)
+			log.error("[KT] Login succeeded but no session was returned", e)
 			throw InvalidCredentialsException("Session initialization failure. Please try again.")
 		} catch (e: InvalidJwtException) {
-			log.warn(
-				"Token structural formatting rejection error during credential payload exchange for target: {}",
-				request.email,
-				e
-			)
+			log.warn("[KT] Login failed: malformed token", e)
 			throw InvalidCredentialsException("Authentication structure corrupted.")
 		} catch (e: Exception) {
-			log.error("Unexpected login failure context tracking profile address: {}", request.email, e)
-			throw GenericAuthException("Authentication server encountered an unexpected error.", e)
-		}
-	}
-
-	fun loginMagicLink(client: SupabaseClient, token: String, userEmail: String): AuthResponse = runBlocking {
-		try {
-			log.trace("Forwarding authentication request parameters for user")
-			client.auth.verifyEmailOtp(type = OtpType.Email.EMAIL, email = userEmail, token = token)
-
-			val currentSession = client.auth.currentSessionOrNull()
-				?: throw GenericAuthException("Session missing from authentication response engine.")
-
-			val assignedUserId = currentSession.user?.id
-				?: throw GenericAuthException("Missing User ID context in valid payload profile.")
-
-			log.info("Signed in user with magic link!: {}", assignedUserId)
-
-			AuthResponse(
-				userId = assignedUserId,
-				accessToken = currentSession.accessToken,
-				refreshToken = currentSession.refreshToken
-			)
-		} catch (e: AuthRestException) {
-			e.errorCode
-			log.warn(
-				"Supabase reject authenticating credential profile for magic link", e
-			)
-			throw InvalidCredentialsException("Invalid or magic link unverified!")
-		} catch (e: AuthSessionMissingException) {
-			log.error(
-				"Identity management pool returned valid confirmation status but zero session payload for magic link",
-				e
-			)
-			throw InvalidCredentialsException("Session initialization failure. Please try again.")
-		} catch (e: InvalidJwtException) {
-			log.warn(
-				"Token structural formatting rejection error during credential payload exchange for target",
-				e
-			)
-			throw InvalidCredentialsException("Authentication structure corrupted.")
-		} catch (e: Exception) {
-			log.error("Unexpected login failure context tracking profile address", e)
+			log.error("[KT] Login failed unexpectedly", e)
 			throw GenericAuthException("Authentication server encountered an unexpected error.", e)
 		}
 	}
 
 	@WithSpan
 	fun logout(client: SupabaseClient, accessToken: String, refreshToken: String): Unit = runBlocking {
-		log.debug("Initiating backend logout state invalidation pipeline sequence.")
 		val dummySession = UserSession(
 			accessToken = accessToken,
 			refreshToken = refreshToken,
@@ -228,12 +145,8 @@ internal class AuthServiceKt(private val supabaseProps: AuthConfig) {
 		try {
 			client.auth.importSession(dummySession)
 			client.auth.signOut()
-			log.debug("Remote session revocation completed successfully against network endpoint.")
 		} catch (e: Exception) {
-			log.warn(
-				"Supabase failed to properly acknowledge explicit session termination tracking arguments.",
-				e
-			)
+			log.warn("[KT] Logout failed to revoke session remotely", e)
 			throw e
 		}
 	}
@@ -241,29 +154,24 @@ internal class AuthServiceKt(private val supabaseProps: AuthConfig) {
 	@WithSpan
 	@Cacheable(value = [CacheNames.JWT_TOKEN], key = "#accessToken")
 	fun getUserMetadata(client: SupabaseClient, accessToken: String?): JwtPayload? = runBlocking {
-		log.trace("Resolving claims parsing profile layer context against active token mapping.")
 		if (accessToken.isNullOrBlank()) {
-			log.debug("Claims token payload tracking verification skipped. Argument provided is completely blank.")
 			return@runBlocking null
 		}
 		try {
-			val claims = client.auth.getClaims(accessToken).claims
-			log.trace("User session security claims metadata decoded successfully.")
-			return@runBlocking claims
+			return@runBlocking client.auth.getClaims(accessToken).claims
 		} catch (e: Exception) {
-			log.warn(
-				"Failed to decode user security claims context array from raw access token payload string.",
-				e
-			)
+			log.warn("[KT] Failed to decode claims from access token", e)
 			null
 		}
 	}
 
 	@WithSpan
 	fun refreshSession(client: SupabaseClient, refreshToken: String): UserSession = runBlocking {
-		log.debug("Issuing downstream token rotation refresh verification exchange handler sequence.")
-		val session = client.auth.refreshSession(refreshToken)
-		log.debug("Session context tokens rolled successfully through asynchronous infrastructure channel.")
-		return@runBlocking session
+		try {
+			return@runBlocking client.auth.refreshSession(refreshToken)
+		} catch (e: Exception) {
+			log.warn("[KT] Failed to refresh session", e)
+			throw e
+		}
 	}
 }
