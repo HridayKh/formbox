@@ -70,12 +70,31 @@ class AuthController {
 
 	@PostMapping(PathRegistry.Auth.LOGIN)
 	@WithSpan
-	public String handleLogin(@RequestParam String email, @RequestParam String password, @RequestParam("cf-turnstile-response") String turnstileResponse, @RequestAttribute SupabaseClient supabaseClient, HttpServletResponse response, Model model) {
-		log.debug("Processing HTTP POST authentication payload submission for autoresponder: {}", email);
+	public String handleLogin(
+		@RequestParam String email,
+		@RequestParam(required = false) String password,
+		@RequestParam(value = "action", defaultValue = "password_login") String action,
+		@RequestParam("cf-turnstile-response") String turnstileResponse,
+		@RequestAttribute SupabaseClient supabaseClient,
+		HttpServletResponse response,
+		Model model) {
+
+		log.debug("Processing HTTP POST auth payload submission for email: {}, action: {}", email, action);
+
 		try {
-			authService.loginUser(supabaseClient, new LoginRequest(email, password), turnstileResponse, response);
-			response.setHeader("HX-Redirect", PathRegistry.DASHBOARD);
-			return "empty";
+			if ("magic_link".equalsIgnoreCase(action)) {
+				authService.sendLoginUserMagicLink(supabaseClient, email, turnstileResponse);
+				model.addAttribute("message", "Magic link sent! Please check your email inbox.");
+			} else {
+				if (password == null || password.isBlank()) {
+					model.addAttribute("error", "Password is required for password login.");
+					return "auth/error-alert";
+				}
+				authService.loginUser(supabaseClient, new LoginRequest(email, password), turnstileResponse, response);
+				response.setHeader("HX-Redirect", PathRegistry.DASHBOARD);
+				model.addAttribute("message", "Login Successfully!");
+			}
+			return "auth/success-alert";
 		} catch (TurnstileAuthException e) {
 			model.addAttribute("error", e.getMessage());
 			return "auth/error-alert";
@@ -84,9 +103,23 @@ class AuthController {
 			model.addAttribute("error", e.getMessage());
 			return "auth/error-alert";
 		} catch (Exception e) {
-			log.error("Internal orchestration failure detected inside security pipeline for autoresponder: {}", email, e);
+			log.error("Internal orchestration failure detected inside security pipeline for email: {}", email, e);
 			model.addAttribute("error", "Authentication engine service currently unavailable.");
 			return "auth/error-alert";
+		}
+	}
+
+	@PostMapping(PathRegistry.Auth.MAGIC_LINK + "/{token}")
+	@ResponseBody
+	@WithSpan
+	public String handleMagicLink(@PathVariable String token,@RequestParam String email, @RequestAttribute SupabaseClient supabaseClient, HttpServletResponse response) {
+		log.debug("Verifying magic link");
+		try {
+			authService.handleMagicLink(supabaseClient, token, email, response);
+			return "redirect:/dashboard";
+		} catch (Exception e) {
+			log.error("Invalid magic link.", e);
+			return "redirect:/auth/login?msg=magic_link_invalid";
 		}
 	}
 

@@ -12,6 +12,7 @@ import io.github.jan.supabase.auth.exception.AuthWeakPasswordException
 import io.github.jan.supabase.auth.exception.InvalidJwtException
 import io.github.jan.supabase.auth.jwt.JwtPayload
 import io.github.jan.supabase.auth.providers.builtin.Email
+import io.github.jan.supabase.auth.providers.builtin.OTP
 import io.github.jan.supabase.auth.user.UserInfo
 import io.github.jan.supabase.auth.user.UserSession
 import io.github.jan.supabase.createSupabaseClient
@@ -61,7 +62,10 @@ internal class AuthServiceKt(private val supabaseProps: AuthConfig) {
 				)
 				throw GenericAuthException("Registration failed: Service did not assign a valid User UID.")
 			}
-			log.info("Supabase signup transaction successfully finalized for autoresponder: {}", request.email)
+			log.info(
+				"Supabase signup transaction successfully finalized for autoresponder: {}",
+				request.email
+			)
 		} catch (e: AuthWeakPasswordException) {
 			log.warn("Sign-up rejected: Weak password rules unmet for target address: {}", request.email, e)
 			throw e
@@ -91,15 +95,27 @@ internal class AuthServiceKt(private val supabaseProps: AuthConfig) {
 			)
 		} catch (e: AuthRestException) {
 			log.warn(
-				"Supabase endpoint error during token dispatch to {}: {}",
-				email,
-				e.errorDescription,
-				e
+				"Supabase endpoint error during token dispatch to {}: {}", email, e.errorDescription, e
 			)
 			throw GenericAuthException("Verification server error: ${e.errorDescription}")
 		} catch (e: Exception) {
 			log.error("Failed handling automated token renewal flow for target destination: {}", email, e)
 			throw GenericAuthException("Failed to reissue validation autoresponder.", e)
+		}
+	}
+
+	@WithSpan
+	fun sendLoginMagicLink(client: SupabaseClient, userEmail: String) = runBlocking {
+		log.debug("[KT] Sending magic link for login")
+		try {
+			client.auth.signInWith(OTP) { email = userEmail }
+			log.info("[KT] Successfully send magic link for login")
+		} catch (e: AuthRestException) {
+			log.warn("[KT] Supabase endpoint error during sending magic link: {}", e.errorDescription, e)
+			throw GenericAuthException("Verification server error: ${e.errorDescription}")
+		} catch (e: Exception) {
+			log.error("[KT] Failed handling sending magic link", e)
+			throw GenericAuthException("Failed to send magic link", e)
 		}
 	}
 
@@ -132,7 +148,9 @@ internal class AuthServiceKt(private val supabaseProps: AuthConfig) {
 		} catch (e: AuthRestException) {
 			e.errorCode
 			log.warn(
-				"Supabase reject authenticating credential profile for autoresponder: {}", request.email, e
+				"Supabase reject authenticating credential profile for autoresponder: {}",
+				request.email,
+				e
 			)
 			throw InvalidCredentialsException("Invalid autoresponder/password or autoresponder unverified!")
 		} catch (e: AuthSessionMissingException) {
@@ -151,6 +169,48 @@ internal class AuthServiceKt(private val supabaseProps: AuthConfig) {
 			throw InvalidCredentialsException("Authentication structure corrupted.")
 		} catch (e: Exception) {
 			log.error("Unexpected login failure context tracking profile address: {}", request.email, e)
+			throw GenericAuthException("Authentication server encountered an unexpected error.", e)
+		}
+	}
+
+	fun loginMagicLink(client: SupabaseClient, token: String, userEmail: String): AuthResponse = runBlocking {
+		try {
+			log.trace("Forwarding authentication request parameters for user")
+			client.auth.verifyEmailOtp(type = OtpType.Email.EMAIL, email = userEmail, token = token)
+
+			val currentSession = client.auth.currentSessionOrNull()
+				?: throw GenericAuthException("Session missing from authentication response engine.")
+
+			val assignedUserId = currentSession.user?.id
+				?: throw GenericAuthException("Missing User ID context in valid payload profile.")
+
+			log.info("Signed in user with magic link!: {}", assignedUserId)
+
+			AuthResponse(
+				userId = assignedUserId,
+				accessToken = currentSession.accessToken,
+				refreshToken = currentSession.refreshToken
+			)
+		} catch (e: AuthRestException) {
+			e.errorCode
+			log.warn(
+				"Supabase reject authenticating credential profile for magic link", e
+			)
+			throw InvalidCredentialsException("Invalid or magic link unverified!")
+		} catch (e: AuthSessionMissingException) {
+			log.error(
+				"Identity management pool returned valid confirmation status but zero session payload for magic link",
+				e
+			)
+			throw InvalidCredentialsException("Session initialization failure. Please try again.")
+		} catch (e: InvalidJwtException) {
+			log.warn(
+				"Token structural formatting rejection error during credential payload exchange for target",
+				e
+			)
+			throw InvalidCredentialsException("Authentication structure corrupted.")
+		} catch (e: Exception) {
+			log.error("Unexpected login failure context tracking profile address", e)
 			throw GenericAuthException("Authentication server encountered an unexpected error.", e)
 		}
 	}

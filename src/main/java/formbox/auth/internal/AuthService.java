@@ -40,17 +40,17 @@ class AuthService {
 
 	@WithSpan
 	public void registerUser(SupabaseClient supabaseClient, SignUpRequest request, String turnstileResponse) throws AuthWeakPasswordException, TurnstileAuthException {
-		log.debug("Initiating user registration workflow for autoresponder: {}", request.getEmail());
+		log.debug("Initiating user registration");
 
 		verifyTurnstile(turnstileResponse);
 		authServiceKt.signUp(supabaseClient, request);
 
-		log.info("Registration request completed cleanly for autoresponder: {}", request.getEmail());
+		log.info("Registration request completed");
 	}
 
 	@WithSpan
 	public void loginUser(SupabaseClient supabaseClient, LoginRequest request, String turnstileResponse, HttpServletResponse response) throws TurnstileAuthException {
-		log.debug("Initiating login for user: {}", request.getEmail());
+		log.debug("Initiating login for user");
 
 		verifyTurnstile(turnstileResponse);
 		AuthResponse auth = authServiceKt.login(supabaseClient, request);
@@ -108,12 +108,14 @@ class AuthService {
 		response.setHeader("HX-Redirect", PathRegistry.DASHBOARD);
 	}
 
+	@WithSpan
 	public void clearAuthCookies(HttpServletResponse response) {
 		log.trace("Executing blanket wipe of local auth session tracking cookies.");
 		setAuthCookie(response, "sb_token", "", 0);
 		setAuthCookie(response, "sb_refresh", "", 0);
 	}
 
+	@WithSpan
 	public void setAuthCookie(HttpServletResponse response, String name, String value, int maxAge) {
 		log.trace("Injecting secure cookie response header attribute -> Name: [{}], MaxAge: [{}]", name, maxAge);
 
@@ -136,5 +138,28 @@ class AuthService {
 			log.warn("Cloudflare Turnstile verification failed.");
 			throw new TurnstileAuthException("Security verification failed. Please try again.");
 		}
+	}
+
+	@WithSpan
+	public void sendLoginUserMagicLink(SupabaseClient supabaseClient, String email, String turnstileResponse) throws TurnstileAuthException {
+		log.debug("Initiating magic link login for user");
+
+		verifyTurnstile(turnstileResponse);
+		authServiceKt.sendLoginMagicLink(supabaseClient, email);
+
+		log.info("Send magic link to user!");
+
+	}
+
+	@WithSpan
+	public void handleMagicLink(SupabaseClient supabaseClient, String token, String email, HttpServletResponse response) {
+		log.debug("Initiating magic link verification login for user");
+
+		AuthResponse auth = authServiceKt.loginMagicLink(supabaseClient, token, email);
+
+		setAuthCookie(response, "sb_token", auth.getAccessToken(), 3600);
+		setAuthCookie(response, "sb_refresh", auth.getRefreshToken(), 604800);
+
+		log.info("magic link Login successful for {}", auth.getUserId());
 	}
 }

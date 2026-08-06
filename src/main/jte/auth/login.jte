@@ -12,6 +12,8 @@
                         You have been safely logged out.
                     @elseif(msg.equals("unauthorized"))
                         Please log in to access your dashboard.
+                    @elseif(msg.equals("magic_link_invalid"))
+                        Invalid magic link!
                     @endif
                 @endif
             </ins>
@@ -19,9 +21,11 @@
     </section>
 
     <section>
-        <form hx-post="/auth/login" hx-target="#alert-container" hx-swap="outerHTML"
-              hx-on::before-request="this.querySelector('button').setAttribute('aria-busy', 'true')"
-              hx-on::after-request="this.querySelector('button').setAttribute('aria-busy', 'false')">
+        <form hx-post="/auth/login"
+              hx-target="#alert-container"
+              hx-swap="outerHTML"
+              hx-on::before-request="this.querySelector('button[type=submit]:focus')?.setAttribute('aria-busy', 'true')"
+              hx-on::after-request="this.querySelectorAll('button').forEach(b => b.setAttribute('aria-busy', 'false'))">
             <fieldset>
                 <label>
                     Email
@@ -29,11 +33,25 @@
                 </label>
                 <label>
                     Password
-                    <input type="password" name="password" required autocomplete="current-password"/>
+                    <input id="password-input" type="password" name="password" autocomplete="current-password"/>
                 </label>
             </fieldset>
+
             <div class="cf-turnstile" data-sitekey="0x4AAAAAAD1xEDYqYOi7tGNB" style="margin-top: 1rem;"></div>
-            <button type="submit" aria-busy="false">Sign In</button>
+
+            <button type="submit"
+                    name="action"
+                    value="password_login"
+                    onclick="document.getElementById('password-input').required = true">
+                Sign In
+            </button>
+
+            <button type="submit"
+                    name="action"
+                    value="magic_link"
+                    onclick="document.getElementById('password-input').required = false">
+                Send Magic Link
+            </button>
         </form>
         <p>Don't have an account? <a href="/auth/signup">Register here →</a></p>
     </section>
