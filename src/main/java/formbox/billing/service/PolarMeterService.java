@@ -56,7 +56,6 @@ public class PolarMeterService {
 		try {
 			polar.events().ingest(Map.of("events", List.of(Map.of("name", "form_submissions", "external_customer_id", tenantId))));
 			log.debug("Successfully reported 1 submission event to Polar for user: {}", externalUserId);
-
 		} catch (Exception e) {
 			log.error("Failed to report outbound usage event to Polar for user: {}", externalUserId, e);
 		}

@@ -55,6 +55,7 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.postgresql:postgresql")
 	implementation("gg.jte:jte-spring-boot-starter-4:3.2.4")
+	developmentOnly("org.springframework.boot:spring-boot-devtools")
 
 	// modulith
 	runtimeOnly("org.springframework.modulith:spring-modulith-actuator")
@@ -95,6 +96,7 @@ dependencies {
 
 	// utils
 	implementation("commons-validator:commons-validator:1.8.0")
+	implementation("software.amazon.awssdk:s3:2.51.3")
 }
 
 group = "in.hridaykh"

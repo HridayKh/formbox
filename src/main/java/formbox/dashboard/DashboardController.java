@@ -16,6 +16,8 @@ import io.github.jan.supabase.auth.jwt.JwtPayload;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -27,8 +29,10 @@ import java.util.UUID;
 
 @Controller
 @RequiredArgsConstructor
-@Slf4j
+//@Slf4j
 class DashboardController {
+
+	Logger log = LoggerFactory.getLogger(getClass());
 
 	private final EntitlementsApi entitlementsApi;
 	private final FormApi formApi;
@@ -78,6 +82,7 @@ class DashboardController {
 	public String manageFormPage(@RequestAttribute JwtPayload userMetadata, @RequestParam(required = false) String msg, @PathVariable UUID formId, Model model) {
 		log.debug("Loading manage form page form Id: {} tenantId: {}", formId, userMetadata.getSub());
 		FormDto form = formApi.getFormDto(formId);
+		log.info("Form:\n{}", form);
 
 		if (form == null) return "redirect:/dashboard?msg=Form not found!";
 

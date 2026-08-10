@@ -48,19 +48,22 @@
         <fieldset>
             <label for="notify-to">
                 To
-                <input type="email" id="notify-to" name="to" placeholder="you@example.com">
+                <input type="email" id="notify-to" name="to" placeholder="you@example.com"
+                       value="${form.formNotifs().emailNotifTo()}">
                 <small>Leave 'To' empty to disable.</small>
             </label>
 
             <div class="grid">
                 <label for="notify-cc">
                     CC
-                    <input type="email" id="notify-cc" name="cc" placeholder="cc1@example.com,cc2@example.com" multiple>
+                    <input type="email" id="notify-cc" name="cc" placeholder="cc1@example.com,cc2@example.com"
+                           value="${String.join(",", form.formNotifs().emailNotifCc())}" multiple>
                 </label>
 
                 <label for="notify-bcc">
                     BCC
-                    <input type="email" id="notify-bcc" name="bcc" placeholder="bcc1@example.com,bcc2@example.com" multiple>
+                    <input type="email" id="notify-bcc" name="bcc" placeholder="bcc1@example.com,bcc2@example.com"
+                           value="${String.join(",", form.formNotifs().emailNotifBcc())}" multiple>
                 </label>
             </div>
             <small>Separate multiple addresses with commas.</small>

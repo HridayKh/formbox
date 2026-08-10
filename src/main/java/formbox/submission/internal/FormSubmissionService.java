@@ -14,7 +14,6 @@ import jakarta.servlet.http.Part;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -86,7 +85,7 @@ class FormSubmissionService {
 				String contentType = part.getContentType();
 				if (contentType == null || contentType.isBlank()) continue;
 				payload.put(part.getName(), part.getSubmittedFileName());
-				payload.put(part.getName() + "__url", uploadService.uploadFile(part.getInputStream(), part.getSubmittedFileName()));
+				payload.put(part.getName() + "__url", uploadService.uploadFile(part.getInputStream(), part.getSubmittedFileName(), part.getSize(), part.getContentType()));
 				Sentry.metrics().distribution("submissions.stats.fileSizeBytes", part.getSize() * 1.0, "byte");
 			}
 			return payload;
@@ -139,7 +138,7 @@ class FormSubmissionService {
 
 	@WithSpan
 	@Transactional
-	@Async
+//	@Async
 	public void asyncSendNotifs(FormDto form, Submission submission, Map<String, String> payload) {
 		discordNotif.sendDiscordNotif(form.formNotifs(), payload);
 

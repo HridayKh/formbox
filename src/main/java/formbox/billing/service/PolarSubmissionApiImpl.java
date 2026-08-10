@@ -8,8 +8,12 @@ import formbox.shared.Entitlements;
 import formbox.shared.CacheNames;
 import formbox.shared.RedisCache;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
+import io.sentry.BaggageHeader;
+import io.sentry.Sentry;
+import io.sentry.SentryTraceHeader;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.scheduling.annotation.Async;
@@ -19,6 +23,7 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -51,10 +56,10 @@ class PolarSubmissionApiImpl implements PolarSubmissionApi {
 		}
 	}
 
-	@WithSpan
 	@CacheEvict(value = CacheNames.METER_BALANCE, key = "#tenantId.toString()")
-	@Async
-	public void asyncDecrementCachedSubmissionBalance(UUID tenantId) {
+//	@Async
+	@WithSpan
+	public void decrementSubmissionBalance(UUID tenantId) {
 		if (redisCache.decrement(CacheNames.METER_BALANCE, tenantId.toString()).isEmpty()) {
 			log.warn("Redis meter balance decrement failed for tenant Id: {}", tenantId);
 			return;

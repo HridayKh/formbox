@@ -90,13 +90,13 @@ class FormNotifController {
 		List<String> ccEmail = List.of(cc.split(","));
 		List<String> bccEmail = List.of(bcc.split(","));
 
-		if (!EMAIL_VALIDATOR.isValid(to))
+		if (to.isBlank() || !EMAIL_VALIDATOR.isValid(to))
 			return "redirect:/forms/" + form.folderId() + "/" + formId + "?msg=Invalid To Email Address!";
 
-		if (ccEmail.stream().anyMatch(e -> !EMAIL_VALIDATOR.isValid(e)))
+		if (!ccEmail.isEmpty() && ccEmail.stream().noneMatch(EMAIL_VALIDATOR::isValid))
 			return "redirect:/forms/" + form.folderId() + "/" + formId + "?msg=Invalid CC Email Address!";
 
-		if (ccEmail.stream().anyMatch(e -> !EMAIL_VALIDATOR.isValid(e)))
+		if (!bccEmail.isEmpty() && ccEmail.stream().noneMatch(EMAIL_VALIDATOR::isValid))
 			return "redirect:/forms/" + form.folderId() + "/" + formId + "?msg=Invalid BCC Email Address!";
 
 		if (!tenantId.equals(form.tenantId())) {

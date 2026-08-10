@@ -28,7 +28,7 @@ public class DiscordNotif {
 	private final Pattern pattern = Pattern.compile("\\{\\{\\s*(.*?)\\s*}}");
 	private static final UrlValidator URL_VALIDATOR = new UrlValidator(new String[]{"http", "https"});
 
-	@Async
+//	@Async
 	@WithSpan
 	public void sendDiscordNotif(FormNotifs formNotifs, Map<String, String> payload) {
 		long start = System.nanoTime();

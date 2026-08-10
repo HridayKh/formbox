@@ -18,7 +18,7 @@ class FormSubmissionCleanupListener {
 	private static final long PAUSE_MS = 100;
 
 	@EventListener
-	@Async
+//	@Async
 	@WithSpan
 	public void onFormHardDelete(FormHardDeleteRequestedEvent event) {
 		int deletedCount;

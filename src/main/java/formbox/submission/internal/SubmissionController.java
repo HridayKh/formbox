@@ -134,7 +134,7 @@ class SubmissionController {
 
 		var submission = submissionService.saveSubmission(form.id(), form.tenantId(), payload, false, request);
 		submissionService.asyncSendNotifs(form, submission, payload);
-		polarSubmissionApi.asyncDecrementCachedSubmissionBalance(form.tenantId());
+		polarSubmissionApi.decrementSubmissionBalance(form.tenantId());
 
 		log.info("Successfully processed submission for form ID: {}", formId);
 
