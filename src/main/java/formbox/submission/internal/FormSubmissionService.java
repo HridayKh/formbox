@@ -3,6 +3,7 @@ package formbox.submission.internal;
 import formbox.notifs.*;
 import formbox.shared.CacheNames;
 import formbox.form.FormDto;
+import formbox.shared.Entitlements;
 import formbox.shared.RedisCache;
 import formbox.submission.SubmissionApi;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
@@ -98,7 +99,7 @@ class FormSubmissionService {
 	}
 
 	@WithSpan
-	public boolean filesHaveValidMimeTypes(HttpServletRequest request) {
+	public boolean validateFiles(HttpServletRequest request, Entitlements entitlements) {
 		if (request.getContentType() == null || !request.getContentType().startsWith("multipart/")) {
 			log.debug("Request is not a multipart form submission; skipping file validation.");
 			return true;
@@ -113,11 +114,15 @@ class FormSubmissionService {
 			for (Part part : parts) {
 				if (part.getSubmittedFileName() == null || part.getSubmittedFileName().isBlank())
 					continue;
+				if (part.getSize() > entitlements.maxFileSizeBytes()) {
+					log.debug("File size ({}) too big (max: {}) for field: {}", part.getSize(), entitlements.maxFileSizeBytes(), part.getName());
+					return false;
+				}
 				String contentType = part.getContentType();
 				if (contentType == null || contentType.isBlank()) continue;
 				contentTypes.add(contentType.trim().toLowerCase());
 				if (!ALLOWED_MIME_TYPES.contains(contentType.trim().toLowerCase())) {
-					log.warn("Invalid MIME type detected: {} for file field: {}", contentType, part.getName());
+					log.debug("Invalid MIME type detected: {} for file field: {}", contentType, part.getName());
 					return false;
 				}
 			}

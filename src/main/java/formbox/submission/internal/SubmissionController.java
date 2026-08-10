@@ -1,5 +1,6 @@
 package formbox.submission.internal;
 
+import formbox.auth.TenantApi;
 import formbox.billing.PolarSubmissionApi;
 import formbox.shared.FormNotFoundException;
 import formbox.form.FormApi;
@@ -32,6 +33,7 @@ class SubmissionController {
 	private final FormApi formApi;
 	private final ObjectMapper objectMapper;
 	private final PolarSubmissionApi polarSubmissionApi;
+	private final TenantApi tenantApi;
 
 
 	@PostMapping("/f/{formId}")
@@ -118,7 +120,9 @@ class SubmissionController {
 			}
 		}
 
-		if (!submissionService.filesHaveValidMimeTypes(request)) {
+		var entitlements = tenantApi.getTenantEntitlementsOrDefault(form.tenantId());
+
+		if (!submissionService.validateFiles(request, entitlements)) {
 			Sentry.addBreadcrumb("Invalid MIME type in files for form " + formId);
 			Sentry.metrics().count(SubmissionMetrics.Failed.INVALID_MIME_TYPES);
 			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
