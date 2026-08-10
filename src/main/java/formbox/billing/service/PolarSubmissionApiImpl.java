@@ -8,22 +8,16 @@ import formbox.shared.Entitlements;
 import formbox.shared.CacheNames;
 import formbox.shared.RedisCache;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
-import io.sentry.BaggageHeader;
-import io.sentry.Sentry;
-import io.sentry.SentryTraceHeader;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.Nullable;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -72,10 +66,11 @@ class PolarSubmissionApiImpl implements PolarSubmissionApi {
 		if (entitlements.refreshAt() != null && Instant.now().isAfter(entitlements.refreshAt())) {
 			Instant nextRefresh = entitlements.refreshAt();
 			Instant now = Instant.now();
-			while (!nextRefresh.isAfter(now))
-				nextRefresh = nextRefresh.plus(30, ChronoUnit.DAYS);
-			Entitlements updatedEntitlements = Entitlements.builder().tierName(entitlements.tierName()).tierPriority(entitlements.tierPriority()).refreshAt(nextRefresh).recurringInterval(entitlements.recurringInterval()).submissionsLimit(entitlements.submissionsLimit()).formsLimit(entitlements.formsLimit()).storageLimitBytes(entitlements.storageLimitBytes()).discordNotifsAllowed(entitlements.discordNotifsAllowed()).turnstileAllowed(entitlements.turnstileAllowed()).redirectUrlsAllowed(entitlements.redirectUrlsAllowed()).jsonFormsAllowed(entitlements.jsonFormsAllowed()).fileUploadsAllowed(entitlements.fileUploadsAllowed()).fieldValidationsAllowed(entitlements.fieldValidationsAllowed()).slackNotifsAllowed(entitlements.slackNotifsAllowed()).telegramNotifsAllowed(entitlements.telegramNotifsAllowed()).customWebhooksAllowed(entitlements.customWebhooksAllowed()).csvExportsAllowed(entitlements.csvExportsAllowed()).emailDigestsAllowed(entitlements.emailDigestsAllowed()).altchaAllowed(entitlements.altchaAllowed()).maxRateLimitRpm(entitlements.maxRateLimitRpm()).maxFileSizeBytes(entitlements.maxFileSizeBytes()).build();
-			tenantApi.updateTenantEntitlements(tenantId, updatedEntitlements);
+			while (!nextRefresh.isAfter(now)) nextRefresh = nextRefresh.plus(30, ChronoUnit.DAYS);
+
+			Entitlements updatedEntitlements = entitlements.toBuilder().refreshAt(nextRefresh).build();
+
+			tenantApi.updateTenantEntitlementsInDb(tenantId, updatedEntitlements);
 			entitlementsApi.updateEntitlementsCache(tenantId, updatedEntitlements);
 			redisCache.set(CacheNames.METER_BALANCE, tenantId.toString(), updatedEntitlements.submissionsLimit());
 			log.info("Entitlements monthly refresh boundary crossed. Reset submission counter to {} and refreshAt to {} for tenant: {}", updatedEntitlements.submissionsLimit(), nextRefresh, tenantId);

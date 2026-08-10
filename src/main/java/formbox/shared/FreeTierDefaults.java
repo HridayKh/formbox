@@ -14,6 +14,7 @@ public final class FreeTierDefaults {
 	public static final long SUBMISSIONS_LIMIT = 100;
 	public static final long FORMS_LIMIT = 3;
 	public static final long STORAGE_LIMIT_BYTES = 0;
+	public static final long MAX_EMAIL_NOTIF_RECIPIENTS = 3;
 
 	// Numeric limits
 	public static final int MAX_RATE_LIMIT_RPM = 10;

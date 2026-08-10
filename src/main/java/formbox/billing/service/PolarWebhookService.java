@@ -48,7 +48,7 @@ public class PolarWebhookService {
 		UUID tenantId = UUID.fromString(state.externalId());
 
 		Entitlements entitlements = createEntitlements(state);
-		tenantApi.updateTenantEntitlements(tenantId, entitlements);
+		tenantApi.updateTenantEntitlementsInDb(tenantId, entitlements);
 
 		entitlementsApi.updateEntitlementsCache(tenantId, entitlements);
 		log.info("Entitlements updated for tenant {} (tier: {})", tenantId, entitlements.tierName());
@@ -138,6 +138,7 @@ public class PolarWebhookService {
 		// (forms and storage aren't Polar meters — they're caps enforced by the app)
 		eb.formsLimit(numericLimits.getOrDefault("forms_limit", FreeTierDefaults.FORMS_LIMIT));
 		eb.storageLimitBytes(numericLimits.getOrDefault("storage_limit_bytes", FreeTierDefaults.STORAGE_LIMIT_BYTES));
+		eb.maxEmailNotifRecipients(numericLimits.getOrDefault("max_email_notif_recipients", FreeTierDefaults.MAX_EMAIL_NOTIF_RECIPIENTS));
 
 		// --- 6. Boolean feature flags (present = enabled, absent = disabled) ---
 		eb.discordNotifsAllowed(enabledFeatures.contains("discord_notifs_allowed"));

@@ -1,7 +1,9 @@
 package formbox.form.internal;
 
+import formbox.billing.EntitlementsApi;
 import formbox.form.FormApi;
 import formbox.form.FormDto;
+import formbox.shared.Entitlements;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 @Slf4j
 @Controller
@@ -25,6 +28,7 @@ class FormNotifController {
 	private final FormApi formApi;
 	private static final UrlValidator URL_VALIDATOR = new UrlValidator(new String[]{"http", "https"});
 	private static final EmailValidator EMAIL_VALIDATOR = new EmailValidator(false, false, DomainValidator.getInstance(false));
+	private final EntitlementsApi entitlementsApi;
 
 	@PostMapping("/{}/{formId}/notifs/discord")
 	@WithSpan
@@ -86,9 +90,10 @@ class FormNotifController {
 
 		UUID tenantId = UUID.fromString(Objects.requireNonNull(userMetadata.getSub()));
 		FormDto form = formApi.getFormDto(formId);
+		Entitlements entitlements = entitlementsApi.getEntitlements(tenantId);
 
-		List<String> ccEmail = List.of(cc.split(","));
-		List<String> bccEmail = List.of(bcc.split(","));
+		List<String> ccEmail = Stream.of(cc.split(",")).filter(e -> !e.isBlank()).toList();
+		List<String> bccEmail = Stream.of(bcc.split(",")).filter(e -> !e.isBlank()).toList();
 
 		if (to.isBlank() || !EMAIL_VALIDATOR.isValid(to))
 			return "redirect:/forms/" + form.folderId() + "/" + formId + "?msg=Invalid To Email Address!";
@@ -98,6 +103,9 @@ class FormNotifController {
 
 		if (!bccEmail.isEmpty() && ccEmail.stream().noneMatch(EMAIL_VALIDATOR::isValid))
 			return "redirect:/forms/" + form.folderId() + "/" + formId + "?msg=Invalid BCC Email Address!";
+
+		if (ccEmail.size() + bccEmail.size() + 1 > entitlements.maxEmailNotifRecipients())
+			return "redirect:/forms/" + form.folderId() + "/" + formId + "?msg=Too many email recipients (max for cc + bcc + to = " + entitlements.maxEmailNotifRecipients() + ")!";
 
 		if (!tenantId.equals(form.tenantId())) {
 			log.warn("tenant {} tried accessing email notifications for form {}", tenantId, formId);

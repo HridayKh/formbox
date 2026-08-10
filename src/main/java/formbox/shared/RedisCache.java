@@ -83,30 +83,15 @@ public class RedisCache {
 	// ==========================================
 
 	@WithSpan
-	public <T> T getOrCompute(String cacheName, String key, Class<T> type, Supplier<T> supplier, Duration timeout) {
-		return getOrCompute(cacheName, key, timeout, () -> lookup(cacheName, key, jsonValue -> objectMapper.readValue(jsonValue, type)), supplier);
-	}
-
-	@WithSpan
 	public <T> T getOrCompute(String cacheName, String key, Class<T> type, Supplier<T> supplier) {
-		return getOrCompute(cacheName, key, type, supplier, DEFAULT_TIMEOUT);
-	}
-
-	@WithSpan
-	public <T> T getOrCompute(String cacheName, String key, TypeReference<T> type, Supplier<T> supplier, Duration timeout) {
-		return getOrCompute(cacheName, key, timeout, () -> lookup(cacheName, key, jsonValue -> objectMapper.readValue(jsonValue, type)), supplier);
+		return getOrCompute(cacheName, key, DEFAULT_TIMEOUT, () -> lookup(cacheName, key, jsonValue -> objectMapper.readValue(jsonValue, type)), supplier);
 	}
 
 	@WithSpan
 	public <T> T getOrCompute(String cacheName, String key, TypeReference<T> type, Supplier<T> supplier) {
-		return getOrCompute(cacheName, key, type, supplier, DEFAULT_TIMEOUT);
+		return getOrCompute(cacheName, key, DEFAULT_TIMEOUT, () -> lookup(cacheName, key, jsonValue -> objectMapper.readValue(jsonValue, type)), supplier);
 	}
 
-	/**
-	 * Shared single-flight implementation. `lookupFn` is called (potentially twice, due to
-	 * double-checked locking) to read the current cache state; `supplier` is only ever invoked
-	 * by the thread that wins the per-key lock on a genuine miss.
-	 */
 	@WithSpan
 	private <T> T getOrCompute(String cacheName, String key, Duration timeout, Supplier<CacheLookup<T>> lookupFn, Supplier<T> supplier) {
 		CacheLookup<T> cached = lookupFn.get();
@@ -118,9 +103,8 @@ public class RedisCache {
 		Object lock = keyLocks.computeIfAbsent(fullKey, _ -> new Object());
 		synchronized (lock) {
 			try {
-				/* I have pretty low to no traffic rn so no double lookups for now*/
-				// cached = lookupFn.get();
-				// if (cached.present()) return cached.value();
+				cached = lookupFn.get();
+				if (cached.present()) return cached.value();
 				T freshValue = supplier.get();
 				set(cacheName, key, freshValue, freshValue == null ? NEGATIVE_CACHE_TIMEOUT : timeout);
 				return freshValue;

@@ -20,7 +20,7 @@ import java.time.Instant;
  * Hot counters (actual submission usage) live in Redis/Polar, not here.
  * This record stores only the MAX LIMITS and feature flags.
  */
-@Builder
+@Builder(toBuilder = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public record Entitlements(
@@ -33,6 +33,7 @@ public record Entitlements(
 	@JsonProperty("submissions_limit") long submissionsLimit,
 	@JsonProperty("forms_limit") long formsLimit,
 	@JsonProperty("storage_limit_bytes") long storageLimitBytes,
+	@JsonProperty("max_email_notif_recipients") long maxEmailNotifRecipients,
 
 	// Boolean feature flags (driven by Polar Feature Flag benefits)
 	@JsonProperty("discord_notifs_allowed") boolean discordNotifsAllowed,
@@ -68,6 +69,7 @@ public record Entitlements(
 			.storageLimitBytes(FreeTierDefaults.STORAGE_LIMIT_BYTES)
 			.maxRateLimitRpm(FreeTierDefaults.MAX_RATE_LIMIT_RPM)
 			.maxFileSizeBytes(FreeTierDefaults.MAX_FILE_SIZE_BYTES)
+			.maxEmailNotifRecipients(FreeTierDefaults.MAX_EMAIL_NOTIF_RECIPIENTS)
 			.build();
 	}
 

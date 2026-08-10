@@ -9,7 +9,7 @@ public interface TenantApi {
 	Entitlements getTenantEntitlementsOrDefault(UUID tenantId);
 
 	@WithSpan
-	void updateTenantEntitlements(UUID tenantId, Entitlements entitlements);
+	void updateTenantEntitlementsInDb(UUID tenantId, Entitlements entitlements);
 
 	@WithSpan
 	void createTenant(UUID tenantId, String email);

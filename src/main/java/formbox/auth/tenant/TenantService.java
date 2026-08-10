@@ -27,7 +27,7 @@ class TenantService implements TenantApi {
 
 	@WithSpan
 	@Override
-	public void updateTenantEntitlements(UUID tenantId, Entitlements entitlements){
+	public void updateTenantEntitlementsInDb(UUID tenantId, Entitlements entitlements){
 		var tenant = tenantRepository.findById(tenantId).orElse(null);
 		if (tenant == null)
 			return;
