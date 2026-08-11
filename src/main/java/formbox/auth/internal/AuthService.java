@@ -77,7 +77,7 @@ class AuthService {
 
 		clearAuthCookies(response);
 		log.info("User session successfully terminated.");
-		response.setHeader("HX-Redirect", PathRegistry.Auth.Hx.LOGIN_LOGGED_OUT);
+		response.setHeader("HX-Redirect", PathRegistry.Auth.LoginRedirs.LOGIN_LOGGED_OUT);
 	}
 
 	@WithSpan

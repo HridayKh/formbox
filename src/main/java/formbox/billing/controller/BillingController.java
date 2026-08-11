@@ -37,9 +37,9 @@ public class BillingController {
 		if (userId == null) {
 			log.warn("Customer portal generation rejected. Missing user subject metadata in request attributes.");
 			if (request.getHeader("HX-Request") != null) {
-				response.setHeader("HX-Redirect", PathRegistry.Auth.Hx.LOGIN_UNAUTHORIZED);
+				response.setHeader("HX-Redirect", PathRegistry.Auth.LoginRedirs.LOGIN_UNAUTHORIZED);
 			}
-			return "redirect:" + PathRegistry.Auth.Hx.LOGIN_UNAUTHORIZED;
+			return "redirect:" + PathRegistry.Auth.LoginRedirs.LOGIN_UNAUTHORIZED;
 		}
 
 		Entitlements entitlements = entitlementsApi.getEntitlements(UUID.fromString(userId));

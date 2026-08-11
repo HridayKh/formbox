@@ -11,4 +11,6 @@ public interface CacheNames {
 	String TENANT_ENTITLEMENTS = "tenantEntitlements";
 	String FOLDER_METADATA = "folderMetadata";
 	String JWT_TOKEN = "jwtToken";
+	String TENANT_EMAILS = "tenantEmails";
+	String EMAIL_VERIFY_CODE = "emailVerifyCode";
 }

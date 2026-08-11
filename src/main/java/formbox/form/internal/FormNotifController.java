@@ -1,5 +1,6 @@
 package formbox.form.internal;
 
+import formbox.auth.TenantApi;
 import formbox.billing.EntitlementsApi;
 import formbox.form.FormApi;
 import formbox.form.FormDto;
@@ -29,6 +30,8 @@ class FormNotifController {
 	private static final UrlValidator URL_VALIDATOR = new UrlValidator(new String[]{"http", "https"});
 	private static final EmailValidator EMAIL_VALIDATOR = new EmailValidator(false, false, DomainValidator.getInstance(false));
 	private final EntitlementsApi entitlementsApi;
+
+	private final TenantApi tenantApi;
 
 	@PostMapping("/{}/{formId}/notifs/discord")
 	@WithSpan
@@ -62,15 +65,13 @@ class FormNotifController {
 		UUID tenantId = UUID.fromString(Objects.requireNonNull(userMetadata.getSub()));
 		FormDto form = formApi.getFormDto(formId);
 
-		if (!EMAIL_VALIDATOR.isValid(replyTo.strip()))
-			return "redirect:/forms/" + form.folderId() + "/" + formId + "?msg=Invalid Reply-To autoresponder!";
-
 		if (!tenantId.equals(form.tenantId())) {
-			log.warn("tenant {} tried accessing autoresponder autoresponse for form {}", tenantId, formId);
+			log.warn("tenant {} tried accessing autoresponder for form {}", tenantId, formId);
 			return "redirect:/dashboard?msg=Invalid form";
 		}
 
 		var oldNotifs = form.formNotifs().toBuilder();
+
 		oldNotifs.autoresponderEmailFieldName(fieldName.strip());
 		oldNotifs.autoresponderEmailBody(body.strip());
 		oldNotifs.autoresponderReplyTo(replyTo.strip());
@@ -90,30 +91,44 @@ class FormNotifController {
 
 		UUID tenantId = UUID.fromString(Objects.requireNonNull(userMetadata.getSub()));
 		FormDto form = formApi.getFormDto(formId);
-		Entitlements entitlements = entitlementsApi.getEntitlements(tenantId);
-
-		List<String> ccEmail = Stream.of(cc.split(",")).filter(e -> !e.isBlank()).toList();
-		List<String> bccEmail = Stream.of(bcc.split(",")).filter(e -> !e.isBlank()).toList();
-
-		if (to.isBlank() || !EMAIL_VALIDATOR.isValid(to))
-			return "redirect:/forms/" + form.folderId() + "/" + formId + "?msg=Invalid To Email Address!";
-
-		if (!ccEmail.isEmpty() && ccEmail.stream().noneMatch(EMAIL_VALIDATOR::isValid))
-			return "redirect:/forms/" + form.folderId() + "/" + formId + "?msg=Invalid CC Email Address!";
-
-		if (!bccEmail.isEmpty() && ccEmail.stream().noneMatch(EMAIL_VALIDATOR::isValid))
-			return "redirect:/forms/" + form.folderId() + "/" + formId + "?msg=Invalid BCC Email Address!";
-
-		if (ccEmail.size() + bccEmail.size() + 1 > entitlements.maxEmailNotifRecipients())
-			return "redirect:/forms/" + form.folderId() + "/" + formId + "?msg=Too many email recipients (max for cc + bcc + to = " + entitlements.maxEmailNotifRecipients() + ")!";
 
 		if (!tenantId.equals(form.tenantId())) {
 			log.warn("tenant {} tried accessing email notifications for form {}", tenantId, formId);
 			return "redirect:/dashboard?msg=Invalid form";
 		}
 
+		Entitlements entitlements = entitlementsApi.getEntitlements(tenantId);
+
+		String toEmail = (to != null) ? to.strip() : "";
+		List<String> ccEmail = (cc != null && !cc.isBlank()) ? Stream.of(cc.split(",")).map(String::strip).filter(e -> !e.isBlank()).toList() : List.of();
+		List<String> bccEmail = (bcc != null && !bcc.isBlank()) ? Stream.of(bcc.split(",")).map(String::strip).filter(e -> !e.isBlank()).toList() : List.of();
+
+		// Disallow setting CC or BCC if To is not set
+		if (toEmail.isBlank()) {
+			if (!ccEmail.isEmpty() || !bccEmail.isEmpty()) {
+				return "redirect:/forms/" + form.folderId() + "/" + formId + "?msg=Cannot set CC or BCC when 'To' email address is not set!";
+			}
+		} else {
+			if (!EMAIL_VALIDATOR.isValid(toEmail))
+				return "redirect:/forms/" + form.folderId() + "/" + formId + "?msg=Invalid To Email Address!";
+
+			List<String> verifiedEmails = tenantApi.getVerifiedEmails(tenantId);
+			if (!verifiedEmails.contains(toEmail))
+				return "redirect:/forms/" + form.folderId() + "/" + formId + "?msg=Email address '" + toEmail + "' is not verified! Please verify it in Allowed Emails first.";
+		}
+
+		if (!ccEmail.isEmpty() && ccEmail.stream().anyMatch(e -> !EMAIL_VALIDATOR.isValid(e)))
+			return "redirect:/forms/" + form.folderId() + "/" + formId + "?msg=Invalid CC Email Address!";
+
+		if (!bccEmail.isEmpty() && bccEmail.stream().anyMatch(e -> !EMAIL_VALIDATOR.isValid(e)))
+			return "redirect:/forms/" + form.folderId() + "/" + formId + "?msg=Invalid BCC Email Address!";
+
+		int recipientCount = (toEmail.isBlank() ? 0 : 1) + ccEmail.size() + bccEmail.size();
+		if (recipientCount > entitlements.maxEmailNotifRecipients())
+			return "redirect:/forms/" + form.folderId() + "/" + formId + "?msg=Too many email recipients (max for cc + bcc + to = " + entitlements.maxEmailNotifRecipients() + ")!";
+
 		var oldNotifs = form.formNotifs().toBuilder();
-		oldNotifs.emailNotifTo(to);
+		oldNotifs.emailNotifTo(toEmail);
 		oldNotifs.emailNotifCc(ccEmail);
 		oldNotifs.emailNotifBcc(bccEmail);
 

@@ -51,7 +51,7 @@ class AuthController {
 		try {
 			authService.registerUser(supabaseClient, new SignUpRequest(email, password), turnstileResponse);
 			model.addAttribute("message", "Check your autoresponder for confirmation link!");
-			response.setHeader("HX-Redirect", PathRegistry.Auth.Hx.LOGIN_CHECK_EMAIL);
+			response.setHeader("HX-Redirect", PathRegistry.Auth.LoginRedirs.LOGIN_CHECK_EMAIL);
 			return "empty";
 		} catch (TurnstileAuthException e) {
 			model.addAttribute("error", e.getMessage());

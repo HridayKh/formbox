@@ -12,6 +12,7 @@
 @param String folderName
 @param Entitlements entitlements
 @param String creds
+@param List<String> verifiedEmails
 
 <!DOCTYPE html>
 <html lang="en">
@@ -166,7 +167,7 @@
         <details>
             <summary role="button" class="outline">Email, Notifications, Integrations, and Routing</summary>
             <div style="padding-inline: 5em">
-                @template.dash.formNotifs(form = form)
+                @template.dash.formNotifs(form = form, verifiedEmails = verifiedEmails)
             </div>
         </details>
     </section>

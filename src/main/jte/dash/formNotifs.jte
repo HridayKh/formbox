@@ -1,4 +1,7 @@
+@import java.util.List
+
 @param formbox.form.FormDto form
+@param List<String> verifiedEmails
 
 <!-- ========================= EMAIL AUTORESPONDER ========================= -->
 <details>
@@ -48,29 +51,47 @@
         <fieldset>
             <label for="notify-to">
                 To
-                <input type="email" id="notify-to" name="to" placeholder="you@example.com"
-                       value="${form.formNotifs().emailNotifTo()}">
-                <small>Leave 'To' empty to disable.</small>
+                <select id="notify-to" name="to" onchange="toggleCcBcc(this.value)">
+                    <option value="">-- None (Email notifications disabled) --</option>
+                    @for(String ve : verifiedEmails)
+                        <option value="${ve}" selected="${ve.equals(form.formNotifs().emailNotifTo())}">${ve}</option>
+                    @endfor
+                </select>
+                <small>Only <a href="/dashboard/emails">verified emails</a> can be used. <a href="/dashboard/emails">Verify more →</a></small>
             </label>
 
             <div class="grid">
                 <label for="notify-cc">
                     CC
                     <input type="email" id="notify-cc" name="cc" placeholder="cc1@example.com,cc2@example.com"
-                           value="${String.join(",", form.formNotifs().emailNotifCc())}" multiple>
+                           value="${String.join(",", form.formNotifs().emailNotifCc() != null ? form.formNotifs().emailNotifCc() : java.util.List.of())}" multiple>
                 </label>
 
                 <label for="notify-bcc">
                     BCC
                     <input type="email" id="notify-bcc" name="bcc" placeholder="bcc1@example.com,bcc2@example.com"
-                           value="${String.join(",", form.formNotifs().emailNotifBcc())}" multiple>
+                           value="${String.join(",", form.formNotifs().emailNotifBcc() != null ? form.formNotifs().emailNotifBcc() : java.util.List.of())}" multiple>
                 </label>
             </div>
-            <small>Separate multiple addresses with commas.</small>
+            <small>Separate multiple addresses with commas. <em>CC and BCC require 'To' to be selected.</em></small>
         </fieldset>
 
         <button type="submit">Save</button>
     </form>
+
+    <script>
+        function toggleCcBcc(toValue) {
+            const disabled = !toValue || toValue.trim() === '';
+            const ccInput = document.getElementById('notify-cc');
+            const bccInput = document.getElementById('notify-bcc');
+            if (ccInput) ccInput.disabled = disabled;
+            if (bccInput) bccInput.disabled = disabled;
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            const toSelect = document.getElementById('notify-to');
+            if (toSelect) toggleCcBcc(toSelect.value);
+        });
+    </script>
 </details>
 
 <!-- ========================= DISCORD ========================= -->

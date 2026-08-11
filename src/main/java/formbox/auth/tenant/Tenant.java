@@ -1,5 +1,6 @@
 package formbox.auth.tenant;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import formbox.shared.Entitlements;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -8,6 +9,8 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 
@@ -30,6 +33,11 @@ class Tenant {
 	@JdbcTypeCode(SqlTypes.JSON)
 	@Column(name = "entitlements", columnDefinition = "jsonb")
 	private Entitlements entitlements;
+
+	@JdbcTypeCode(SqlTypes.JSON)
+	@Column(name = "verified_emails", columnDefinition = "jsonb")
+	@JsonDeserialize(using = StringListJsonDeserializer.class)
+	private List<String> verifiedEmails = new ArrayList<>();
 
 	@PreUpdate
 	protected void onUpdate() {

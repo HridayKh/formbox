@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -46,5 +48,37 @@ class TenantService implements TenantApi {
 			newTenant.setEntitlements(Entitlements.freeDefaults());
 			return tenantRepository.saveAndFlush(newTenant);
 		});
+	}
+
+	@WithSpan
+	@Override
+	public List<String> getVerifiedEmails(UUID tenantId) {
+		return tenantRepository.findById(tenantId)
+			.map(Tenant::getVerifiedEmails)
+			.orElse(List.of());
+	}
+
+	@WithSpan
+	@Override
+	public void addVerifiedEmail(UUID tenantId, String email) {
+		var tenant = tenantRepository.findById(tenantId).orElse(null);
+		if (tenant == null) return;
+		List<String> emails = new ArrayList<>(tenant.getVerifiedEmails() != null ? tenant.getVerifiedEmails() : List.of());
+		if (!emails.contains(email)) {
+			emails.add(email);
+			tenant.setVerifiedEmails(emails);
+			tenantRepository.saveAndFlush(tenant);
+		}
+	}
+
+	@WithSpan
+	@Override
+	public void removeVerifiedEmail(UUID tenantId, String email) {
+		var tenant = tenantRepository.findById(tenantId).orElse(null);
+		if (tenant == null) return;
+		List<String> emails = new ArrayList<>(tenant.getVerifiedEmails() != null ? tenant.getVerifiedEmails() : List.of());
+		emails.remove(email);
+		tenant.setVerifiedEmails(emails);
+		tenantRepository.saveAndFlush(tenant);
 	}
 }

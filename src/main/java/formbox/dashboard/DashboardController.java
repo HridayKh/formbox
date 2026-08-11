@@ -39,6 +39,7 @@ class DashboardController {
 	private final SubmissionApi submissionApi;
 	private final FolderApi folderApi;
 	private final HmacSignerService hmacSignerService;
+	private final VerifiedEmailsService verifiedEmailsService;
 
 	@GetMapping("/dashboard")
 	@WithSpan
@@ -47,7 +48,7 @@ class DashboardController {
 
 		if (userMetadata == null || userMetadata.getSub() == null) {
 			log.warn("Dashboard interception access denial rule triggered. User metadata context is completely unauthenticated.");
-			return "redirect:" + PathRegistry.Auth.Hx.LOGIN_UNAUTHORIZED;
+			return "redirect:" + PathRegistry.Auth.LoginRedirs.LOGIN_UNAUTHORIZED;
 		}
 
 		UUID tenantId = UUID.fromString(userMetadata.getSub());
@@ -105,6 +106,7 @@ class DashboardController {
 		model.addAttribute("entitlements", entitlements);
 
 		model.addAttribute("creds", hmacSignerService.sign(formId.toString()));
+		model.addAttribute("verifiedEmails", verifiedEmailsService.getVerifiedEmails(form.tenantId()));
 
 		return "dash/manageForm";
 	}

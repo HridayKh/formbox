@@ -103,7 +103,7 @@ public class AuthFilterService {
 			filterChain.doFilter(request, response);
 			return;
 		}
-		response.sendRedirect(PathRegistry.Auth.Hx.LOGIN_UNAUTHORIZED);
+		response.sendRedirect(PathRegistry.Auth.LoginRedirs.LOGIN_UNAUTHORIZED);
 
 	}
 

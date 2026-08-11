@@ -13,7 +13,7 @@ public interface PathRegistry {
 		String SESSION_CALLBACK = "/session-callback";
 		String CALLBACK = "/callback";
 
-		interface Hx {
+		interface LoginRedirs {
 			String LOGIN_UNAUTHORIZED = BASE + LOGIN + "?msg=unauthorized";
 			String LOGIN_CHECK_EMAIL = BASE + LOGIN + "?msg=check_email";
 			String LOGIN_LOGGED_OUT = BASE + LOGIN + "?msg=logged_out";
