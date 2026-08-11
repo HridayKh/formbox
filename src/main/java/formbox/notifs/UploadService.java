@@ -36,4 +36,34 @@ public class UploadService {
 			.getUrl(GetUrlRequest.builder().bucket(s3Props.attachmentsBucket()).key(s3Key).build())
 			.toString().replace("s3.hridaykh.in", "web-s3.hridaykh.in");
 	}
+
+	public void deleteFileByUrl(String fileUrl) {
+		if (fileUrl == null || fileUrl.isBlank()) return;
+		try {
+			String bucket = s3Props.attachmentsBucket();
+			String bucketToken = "/" + bucket + "/";
+			String s3Key;
+			if (fileUrl.contains(bucketToken)) {
+				s3Key = fileUrl.substring(fileUrl.indexOf(bucketToken) + bucketToken.length());
+			} else if (fileUrl.contains("/uploads/")) {
+				s3Key = fileUrl.substring(fileUrl.indexOf("uploads/"));
+			} else if (fileUrl.contains("/attachments/")) {
+				s3Key = fileUrl.substring(fileUrl.indexOf("attachments/"));
+			} else {
+				log.warn("Could not extract S3 key from file URL");
+				return;
+			}
+
+			software.amazon.awssdk.services.s3.model.DeleteObjectRequest deleteObjectRequest =
+				software.amazon.awssdk.services.s3.model.DeleteObjectRequest.builder()
+					.bucket(bucket)
+					.key(s3Key)
+					.build();
+
+			s3Client.deleteObject(deleteObjectRequest);
+			log.info("Deleted S3 object with key: {} from bucket: {}", s3Key, bucket);
+		} catch (Exception e) {
+			log.error("Failed to delete S3 object for file URL", e);
+		}
+	}
 }

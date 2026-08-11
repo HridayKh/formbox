@@ -81,4 +81,10 @@ class TenantService implements TenantApi {
 		tenant.setVerifiedEmails(emails);
 		tenantRepository.saveAndFlush(tenant);
 	}
+
+	@WithSpan
+	@Override
+	public List<UUID> getAllTenantIds() {
+		return tenantRepository.findAll().stream().map(Tenant::getId).toList();
+	}
 }

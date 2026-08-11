@@ -25,4 +25,6 @@ interface SubmissionRepository extends JpaRepository<Submission, UUID> {
 	Submission findByEmailAutoresponseRequestId(String emailAutoresponseRequestId);
 
 	Submission findByEmailNotifRequestId(String emailNotifRequestId);
+
+	List<Submission> findAllByTenantIdAndCreatedAtBefore(UUID tenantId, OffsetDateTime cutoff);
 }

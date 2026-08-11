@@ -19,6 +19,7 @@ public final class FreeTierDefaults {
 	// Numeric limits
 	public static final int MAX_RATE_LIMIT_RPM = 10;
 	public static final long MAX_FILE_SIZE_BYTES = 0;
+	public static final int RETENTION_DAYS = 7;
 
 	// All boolean feature flags default to false for the free tier
 

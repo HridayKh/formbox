@@ -23,4 +23,7 @@ public interface TenantApi {
 
 	@WithSpan
 	void removeVerifiedEmail(UUID tenantId, String email);
+
+	@WithSpan
+	List<UUID> getAllTenantIds();
 }

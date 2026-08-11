@@ -51,7 +51,8 @@ public record Entitlements(
 
 	// Numeric limits (driven by Polar Feature Flag benefit metadata)
 	@JsonProperty("max_rate_limit_rpm") int maxRateLimitRpm,
-	@JsonProperty("max_file_size_bytes") long maxFileSizeBytes
+	@JsonProperty("max_file_size_bytes") long maxFileSizeBytes,
+	@JsonProperty("retention_days") int retentionDays
 ) {
 
 	/**
@@ -70,7 +71,13 @@ public record Entitlements(
 			.maxRateLimitRpm(FreeTierDefaults.MAX_RATE_LIMIT_RPM)
 			.maxFileSizeBytes(FreeTierDefaults.MAX_FILE_SIZE_BYTES)
 			.maxEmailNotifRecipients(FreeTierDefaults.MAX_EMAIL_NOTIF_RECIPIENTS)
+			.retentionDays(FreeTierDefaults.RETENTION_DAYS)
 			.build();
+	}
+
+	@JsonIgnore
+	public int retentionDaysOrDefault() {
+		return retentionDays > 0 ? retentionDays : FreeTierDefaults.RETENTION_DAYS;
 	}
 
 	/**

@@ -124,11 +124,9 @@ public class PolarWebhookService {
 		// The meter ID is matched via config (polar-ids.submission-meter-id).
 		long submissionsLimit = FreeTierDefaults.SUBMISSIONS_LIMIT;
 		for (ActiveMeters meter : nullSafe(state.activeMeters())) {
-			if (meter.meterId() != null
-				&& meter.meterId().toString().equalsIgnoreCase(polarIdProperties.getSubmissionMeterId())) {
+			if (meter.meterId() != null && meter.meterId().toString().equalsIgnoreCase(polarIdProperties.getSubmissionMeterId())) {
 				submissionsLimit = meter.creditedUnits() != null ? meter.creditedUnits().longValue() : submissionsLimit;
-				log.debug("Submissions meter found: credited={}, consumed={}, balance={}",
-					meter.creditedUnits(), meter.consumedUnits(), meter.balance());
+				log.debug("Submissions meter found: credited={}, consumed={}, balance={}", meter.creditedUnits(), meter.consumedUnits(), meter.balance());
 				break;
 			}
 		}
@@ -155,10 +153,16 @@ public class PolarWebhookService {
 		eb.altchaAllowed(enabledFeatures.contains("altcha_allowed"));
 
 		// --- 7. Numeric limits (take the highest across all benefits) ---
-		eb.maxRateLimitRpm((int) (long) numericLimits.getOrDefault(
-			"max_rate_limit_rpm", (long) FreeTierDefaults.MAX_RATE_LIMIT_RPM));
-		eb.maxFileSizeBytes(numericLimits.getOrDefault(
-			"max_file_size_bytes", FreeTierDefaults.MAX_FILE_SIZE_BYTES));
+		eb.maxRateLimitRpm((int) (long) numericLimits.getOrDefault("max_rate_limit_rpm", (long) FreeTierDefaults.MAX_RATE_LIMIT_RPM));
+		eb.maxFileSizeBytes(numericLimits.getOrDefault("max_file_size_bytes", FreeTierDefaults.MAX_FILE_SIZE_BYTES));
+
+		int defaultRetention = FreeTierDefaults.RETENTION_DAYS;
+		if (tierName.toLowerCase().contains("starter")) {
+			defaultRetention = 30;
+		} else if (tierName.toLowerCase().contains("pro")) {
+			defaultRetention = 90;
+		}
+		eb.retentionDays((int) (long) numericLimits.getOrDefault("retention_days", (long) defaultRetention));
 
 		return eb.build();
 	}
