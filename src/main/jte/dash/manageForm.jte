@@ -1,5 +1,6 @@
 @import formbox.folder.FolderDto
 @import formbox.form.FormDto
+@import formbox.notifs.UploadService.CsvExportItem
 @import formbox.shared.Entitlements
 @import java.util.List
 
@@ -13,6 +14,7 @@
 @param Entitlements entitlements
 @param String creds
 @param List<String> verifiedEmails
+@param List<CsvExportItem> csvExports
 
 <!DOCTYPE html>
 <html lang="en">
@@ -41,11 +43,17 @@
             <mark>${msg}</mark>
         </div>
     @endif
-    <div role="search">
+    <div role="search" style="display: flex; gap: 1rem; align-items: center;">
         <a role="button" class="outline"
            href="/forms/${form.folderId().toString()}/${form.id().toString()}/view-submissions">
             View Submissions
         </a>
+        <form action="/forms/${form.folderId().toString()}/${form.id().toString()}/export-csv" method="post"
+              style="margin: 0;">
+            <button type="submit" class="secondary outline" style="margin: 0;">
+                Export Submissions CSV
+            </button>
+        </form>
     </div>
 </header>
 
@@ -55,7 +63,7 @@
 3. [x] Intergrations and Routing
 4. [x] View submissions (Seperate Template to Render Submissions so Submission Info THere)
 5. [ ] Client Creds (Single pregenerated cred that dont need db, coz they signed using form id)
-6. [ ] Export Submissions to csv
+6. [x] Export Submissions to csv
 7. [x] Copy button for endpoint
 8. [ ] Links to templates, maybe even a template generator
 --%>
@@ -168,6 +176,43 @@
             <summary role="button" class="outline">Email, Notifications, Integrations, and Routing</summary>
             <div style="padding-inline: 5em">
                 @template.dash.formNotifs(form = form, verifiedEmails = verifiedEmails)
+            </div>
+        </details>
+    </section>
+
+    <section id="csv-exports-section">
+        <details>
+            <summary role="button" class="outline">CSV Export History (${csvExports != null ? csvExports.size() : 0})
+            </summary>
+            <div style="padding-inline: 2em">
+                @if(csvExports == null || csvExports.isEmpty())
+                    <p><small>No CSV exports generated for this form yet. Click 'Export Submissions CSV' above to start
+                            one.</small></p>
+                @else
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>File Name</th>
+                            <th>Generated At</th>
+                            <th>Action</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @for(CsvExportItem exp : csvExports)
+                            <tr>
+                                <td><code>${exp.fileName()}</code></td>
+                                <td>${exp.createdAt() != null ? exp.createdAt().toString() : ""}</td>
+                                <td>
+                                    <a href="${exp.downloadUrl()}" role="button" class="outline small" target="_blank"
+                                       download style="margin: 0;">
+                                        ⬇ Download CSV
+                                    </a>
+                                </td>
+                            </tr>
+                        @endfor
+                        </tbody>
+                    </table>
+                @endif
             </div>
         </details>
     </section>

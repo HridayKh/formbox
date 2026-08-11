@@ -66,4 +66,56 @@ public class UploadService {
 			log.error("Failed to delete S3 object for file URL", e);
 		}
 	}
+
+	public record CsvExportItem(String fileName, String downloadUrl, java.time.Instant createdAt) {}
+
+	public String uploadExportCsv(UUID formId, byte[] csvBytes, String fileName) {
+		String s3Key = "exports/" + formId + "/" + fileName;
+
+		PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+			.bucket(s3Props.attachmentsBucket())
+			.key(s3Key)
+			.contentType("text/csv")
+			.contentLength((long) csvBytes.length)
+			.build();
+
+		s3Client.putObject(putObjectRequest, RequestBody.fromBytes(csvBytes));
+
+		return s3Client.utilities()
+			.getUrl(GetUrlRequest.builder().bucket(s3Props.attachmentsBucket()).key(s3Key).build())
+			.toString().replace("s3.hridaykh.in", "web-s3.hridaykh.in");
+	}
+
+	public java.util.List<CsvExportItem> listCsvExports(UUID formId) {
+		if (formId == null) return java.util.List.of();
+		try {
+			String bucket = s3Props.attachmentsBucket();
+			String prefix = "exports/" + formId + "/";
+
+			software.amazon.awssdk.services.s3.model.ListObjectsV2Request request =
+				software.amazon.awssdk.services.s3.model.ListObjectsV2Request.builder()
+					.bucket(bucket)
+					.prefix(prefix)
+					.build();
+
+			software.amazon.awssdk.services.s3.model.ListObjectsV2Response response = s3Client.listObjectsV2(request);
+
+			java.util.List<CsvExportItem> items = new java.util.ArrayList<>();
+			for (software.amazon.awssdk.services.s3.model.S3Object s3Object : response.contents()) {
+				String key = s3Object.key();
+				String fileName = key.substring(key.lastIndexOf('/') + 1);
+				String url = s3Client.utilities()
+					.getUrl(GetUrlRequest.builder().bucket(bucket).key(key).build())
+					.toString().replace("s3.hridaykh.in", "web-s3.hridaykh.in");
+
+				items.add(new CsvExportItem(fileName, url, s3Object.lastModified()));
+			}
+
+			items.sort(java.util.Comparator.comparing(CsvExportItem::createdAt).reversed());
+			return items;
+		} catch (Exception e) {
+			log.error("Failed to list CSV exports for form ID: {}", formId, e);
+			return java.util.List.of();
+		}
+	}
 }

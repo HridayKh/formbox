@@ -27,7 +27,6 @@ public class NotifBeans {
 			.region(Region.of(s3Properties.regionName()))
 			.endpointOverride(URI.create(s3Properties.endpointUrl()))
 			.serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build())
-			.forcePathStyle(true)
 			.build();
 	}
 }

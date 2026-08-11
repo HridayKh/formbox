@@ -17,6 +17,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.UUID;
 
+import formbox.form.FormApi;
+import formbox.form.FormDto;
+import formbox.submission.CsvExportApi;
+import org.springframework.web.bind.annotation.PathVariable;
+
+import java.util.UUID;
+
 @Controller
 @RequiredArgsConstructor
 @Slf4j
@@ -25,6 +32,8 @@ class NewControllers {
 	private final EntitlementsApi entitlementsApi;
 	private final PolarSubmissionApi polarSubmissionApi;
 	private final VerifiedEmailsService verifiedEmailsService;
+	private final FormApi formApi;
+	private final CsvExportApi csvExportApi;
 
 	@GetMapping("/dashboard/support")
 	@WithSpan
@@ -101,6 +110,30 @@ class NewControllers {
 		UUID tenantId = UUID.fromString(userMetadata.getSub());
 		verifiedEmailsService.removeEmail(tenantId, email.strip());
 		return "redirect:/dashboard/emails?msg=" + email.strip() + " removed.";
+	}
+
+	@PostMapping("/forms/{folderId}/{formId}/export-csv")
+	@WithSpan
+	public String exportCsv(@RequestAttribute JwtPayload userMetadata, @PathVariable UUID folderId, @PathVariable UUID formId) {
+		if (userMetadata == null || userMetadata.getSub() == null) {
+			return "redirect:" + PathRegistry.Auth.LoginRedirs.LOGIN_UNAUTHORIZED;
+		}
+
+		UUID tenantId = UUID.fromString(userMetadata.getSub());
+		FormDto form = formApi.getFormDto(formId);
+
+		if (form == null || !form.tenantId().equals(tenantId)) {
+			return "redirect:/dashboard?msg=Invalid form";
+		}
+
+		Entitlements entitlements = entitlementsApi.getEntitlements(tenantId);
+		if (!entitlements.csvExportsAllowed()) {
+			return "redirect:/forms/" + folderId + "/" + formId + "?msg=CSV exports require a plan upgrade. Please upgrade your plan!";
+		}
+
+		csvExportApi.generateAndUploadCsvExport(tenantId, userMetadata.getEmail(), formId);
+
+		return "redirect:/forms/" + folderId + "/" + formId + "?msg=CSV export job started! Check your email for the download link.";
 	}
 
 	private void populateNavbarModel(UUID tenantId, String email, Model model) {

@@ -23,8 +23,15 @@
 
 <header class="container">
     @template.dash.navbar(pageName=folderName + " → " + form.name(), balanceLeft=balanceLeft, showManageSubscription=showManageSubscription, email=email)
-    <a href="/forms/${form.folderId().toString()}/${form.id().toString()}">Go Back</a>
-    <h1>Managing Form '${form.name()}'</h1>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <a href="/forms/${form.folderId().toString()}/${form.id().toString()}">&larr; Back to Form</a>
+        <form action="/forms/${form.folderId().toString()}/${form.id().toString()}/export-csv" method="post" style="margin: 0;">
+            <button type="submit" class="secondary outline small" style="margin: 0;">
+                Export Submissions CSV
+            </button>
+        </form>
+    </div>
+    <h1>Submissions for '${form.name()}'</h1>
 </header>
 
 <main class="container">

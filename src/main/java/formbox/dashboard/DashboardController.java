@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
+import formbox.notifs.UploadService;
+
 @Controller
 @RequiredArgsConstructor
 //@Slf4j
@@ -40,6 +42,7 @@ class DashboardController {
 	private final FolderApi folderApi;
 	private final HmacSignerService hmacSignerService;
 	private final VerifiedEmailsService verifiedEmailsService;
+	private final UploadService uploadService;
 
 	@GetMapping("/dashboard")
 	@WithSpan
@@ -107,6 +110,7 @@ class DashboardController {
 
 		model.addAttribute("creds", hmacSignerService.sign(formId.toString()));
 		model.addAttribute("verifiedEmails", verifiedEmailsService.getVerifiedEmails(form.tenantId()));
+		model.addAttribute("csvExports", uploadService.listCsvExports(formId));
 
 		return "dash/manageForm";
 	}
