@@ -1,10 +1,6 @@
 # dashboard
 
-- push manage subs, email, logout, under a profile button
-- only show submissions and upgrade button
-- show messages, banners, etc. in place of upgrade button and open a modal when clicked
-- options to contact support, give feedback, submit bugs, and request features (all powered by formbox!) 
-- link to docs
+- make it vertical
 
 # submissions
 
