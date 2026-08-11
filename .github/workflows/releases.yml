@@ -87,6 +87,7 @@ jobs:
 
       - name: Compute version
         id: version
+
         run: |
           BUMP="${{ steps.parse.outputs.bump }}"
           RUN_NUMBER="${{ github.run_number }}"
@@ -120,12 +121,13 @@ jobs:
           echo "Computed version: $VERSION"
           echo "Computed versiondev: $VERSIONDEV"
 
+
       - name: Build and test
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
-        run: ./gradlew build -Pversion="${{ steps.version.outputs.version }}"
+        run: ./gradlew build --build-cache -Pversion="${{ steps.version.outputs.version }}" --scan
 
       - name: Sync version into build.gradle.kts
         run: |

@@ -29,6 +29,7 @@ class AuthService {
 	private final AuthConfig authConfig;
 	private final TenantApi tenantApi;
 
+	@WithSpan
 	public void processLoginPage(String msg, HttpServletResponse response) {
 		log.trace("Processing login page evaluation. Provided message trigger parameter: [{}]", msg);
 
@@ -150,4 +151,5 @@ class AuthService {
 		log.info("Send magic link to user!");
 
 	}
+
 }

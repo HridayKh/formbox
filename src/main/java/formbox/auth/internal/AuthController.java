@@ -24,7 +24,6 @@ class AuthController {
 	@GetMapping(PathRegistry.Auth.LOGIN)
 	@WithSpan
 	public String loginPage(@RequestParam(required = false) String msg, @RequestAttribute(required = false) JwtPayload userMetadata, HttpServletResponse response, Model model) {
-		log.trace("Processing HTTP GET for Login view rendering. Message parameter: [{}], Active User Context: [{}]", msg, userMetadata != null ? userMetadata.getSub() : "anonymous");
 		if (userMetadata != null) {
 			log.debug("Active user session detected during login page evaluation. Rerouting to dashboard.");
 			return "redirect:" + PathRegistry.DASHBOARD;
