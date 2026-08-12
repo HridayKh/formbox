@@ -13,17 +13,25 @@ import java.time.Instant;
 /**
  * Entitlements snapshot stored as JSONB on the tenant row.
  * <p>
- * Contains tier identity, feature flags, and meter limits.
- * All values are derived from Polar's granted benefits and active meters
- * via the {@code customer.state_changed} webhook.
+ * Contains subscription state, tier identity, feature flags, and meter limits.
+ * All values are derived from Polar product metadata and subscription state
+ * via the {@code subscription.updated} webhook.
  * <p>
  * Hot counters (actual submission usage) live in Redis/Polar, not here.
- * This record stores only the MAX LIMITS and feature flags.
+ * This record stores only the MAX LIMITS, feature flags, and subscription state.
  */
 @Builder(toBuilder = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public record Entitlements(
+	// Subscription state (tracked for DB persistence and UI)
+	@JsonProperty("subscription_status") String subscriptionStatus,
+	@JsonProperty("subscription_id") String subscriptionId,
+	@JsonProperty("product_id") String productId,
+	@JsonProperty("cancel_at_period_end") boolean cancelAtPeriodEnd,
+	@JsonProperty("current_period_end") Instant currentPeriodEnd,
+
+	// Tier identity
 	@JsonProperty("tier_name") String tierName,
 	@JsonProperty("tier_priority") int tierPriority,
 	@JsonProperty("refresh_at") Instant refreshAt,
@@ -35,7 +43,7 @@ public record Entitlements(
 	@JsonProperty("storage_limit_bytes") long storageLimitBytes,
 	@JsonProperty("max_email_notif_recipients") long maxEmailNotifRecipients,
 
-	// Boolean feature flags (driven by Polar Feature Flag benefits)
+	// Boolean feature flags (driven by Polar product metadata)
 	@JsonProperty("discord_notifs_allowed") boolean discordNotifsAllowed,
 	@JsonProperty("turnstile_allowed") boolean turnstileAllowed,
 	@JsonProperty("redirect_urls_allowed") boolean redirectUrlsAllowed,
@@ -49,7 +57,7 @@ public record Entitlements(
 	@JsonProperty("email_digests_allowed") boolean emailDigestsAllowed,
 	@JsonProperty("altcha_allowed") boolean altchaAllowed,
 
-	// Numeric limits (driven by Polar Feature Flag benefit metadata)
+	// Numeric limits (driven by Polar product metadata)
 	@JsonProperty("max_rate_limit_rpm") int maxRateLimitRpm,
 	@JsonProperty("max_file_size_bytes") long maxFileSizeBytes,
 	@JsonProperty("retention_days") int retentionDays
@@ -57,10 +65,12 @@ public record Entitlements(
 
 	/**
 	 * Returns default entitlements matching the free tier.
-	 * Used for new tenants before Polar provisions their subscription.
+	 * Used for new tenants before Polar provisions their subscription,
+	 * or when a subscription is revoked/canceled/paused.
 	 */
 	public static Entitlements freeDefaults() {
 		return Entitlements.builder()
+			.subscriptionStatus(FreeTierDefaults.SUBSCRIPTION_STATUS)
 			.tierName(FreeTierDefaults.TIER_NAME)
 			.tierPriority(FreeTierDefaults.TIER_PRIORITY)
 			.refreshAt(Instant.now().plus(Duration.ofDays(30)))
@@ -86,5 +96,16 @@ public record Entitlements(
 	@JsonIgnore
 	public boolean isFree() {
 		return FreeTierDefaults.TIER_NAME.equalsIgnoreCase(tierName);
+	}
+
+	/**
+	 * Convenience: does the tenant have an active (access-granting) subscription?
+	 * Active states are: active, trialing, past_due (grace period).
+	 */
+	@JsonIgnore
+	public boolean hasActiveSubscription() {
+		return "active".equals(subscriptionStatus)
+			|| "trialing".equals(subscriptionStatus)
+			|| "past_due".equals(subscriptionStatus);
 	}
 }

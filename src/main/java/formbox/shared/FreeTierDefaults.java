@@ -7,6 +7,7 @@ package formbox.shared;
  */
 public final class FreeTierDefaults {
 
+	public static final String SUBSCRIPTION_STATUS = "free";
 	public static final String TIER_NAME = "free";
 	public static final int TIER_PRIORITY = 0;
 

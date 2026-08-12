@@ -7,4 +7,5 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @Data
 public class PolarIdProperties {
 	private String submissionMeterId;
+	private String storageMeterId;
 }
