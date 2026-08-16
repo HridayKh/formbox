@@ -26,5 +26,8 @@ interface SubmissionRepository extends JpaRepository<Submission, UUID> {
 
 	Submission findByEmailNotifRequestId(String emailNotifRequestId);
 
+	@Query("SELECT COALESCE(SUM(s.storageBytes), 0) FROM Submission s WHERE s.tenantId = :tenantId")
+	long sumStorageBytesByTenantId(@Param("tenantId") UUID tenantId);
+
 	List<Submission> findAllByTenantIdAndCreatedAtBefore(UUID tenantId, OffsetDateTime cutoff);
 }

@@ -1,0 +1,443 @@
+[
+  {
+    "id": "fce2e48f-28eb-4534-8d4d-04768049f4bf",
+    "created_at": "2026-08-16T07:04:24.392885Z",
+    "modified_at": null,
+    "type": "meter_credit",
+    "description": "Pro Storage Meter",
+    "selectable": true,
+    "deletable": true,
+    "is_deleted": false,
+    "organization_id": "0328eb84-0ce0-4efb-a03d-c22aa080c227",
+    "metadata": {},
+    "visibility": "public",
+    "properties": {
+      "units": 1000000000,
+      "rollover": false,
+      "meter_id": "5af6bf19-da65-4d16-87da-5f2722b4c9cc"
+    },
+    "visibility_configurable": true
+  },
+  {
+    "id": "28cb781d-cf5c-4246-875d-40650ecac304",
+    "created_at": "2026-07-16T12:20:40.812866Z",
+    "modified_at": null,
+    "type": "feature_flag",
+    "description": "Limit: Pro Storage (10GB)",
+    "selectable": true,
+    "deletable": true,
+    "is_deleted": false,
+    "organization_id": "0328eb84-0ce0-4efb-a03d-c22aa080c227",
+    "metadata": {
+      "limit_key": "storage_limit_bytes",
+      "limit_value": "10737418240"
+    },
+    "visibility": "private",
+    "properties": {},
+    "visibility_configurable": true
+  },
+  {
+    "id": "e4f6718e-8633-49f5-b584-891c88879e5a",
+    "created_at": "2026-07-16T12:20:40.480267Z",
+    "modified_at": null,
+    "type": "feature_flag",
+    "description": "Limit: Starter Storage (1GB)",
+    "selectable": true,
+    "deletable": true,
+    "is_deleted": false,
+    "organization_id": "0328eb84-0ce0-4efb-a03d-c22aa080c227",
+    "metadata": {
+      "limit_key": "storage_limit_bytes",
+      "limit_value": "1073741824"
+    },
+    "visibility": "private",
+    "properties": {},
+    "visibility_configurable": true
+  },
+  {
+    "id": "de2e6d50-b141-42fe-88a9-6ad9f71d7fc7",
+    "created_at": "2026-07-16T12:20:39.851874Z",
+    "modified_at": null,
+    "type": "feature_flag",
+    "description": "Limit: Pro Forms (Unlimited)",
+    "selectable": true,
+    "deletable": true,
+    "is_deleted": false,
+    "organization_id": "0328eb84-0ce0-4efb-a03d-c22aa080c227",
+    "metadata": {
+      "limit_key": "forms_limit",
+      "limit_value": "2000000000"
+    },
+    "visibility": "private",
+    "properties": {},
+    "visibility_configurable": true
+  },
+  {
+    "id": "a9ec3868-a66c-4392-9c91-4ce8c25478b2",
+    "created_at": "2026-07-16T12:20:39.500020Z",
+    "modified_at": null,
+    "type": "feature_flag",
+    "description": "Limit: Starter Forms (10)",
+    "selectable": true,
+    "deletable": true,
+    "is_deleted": false,
+    "organization_id": "0328eb84-0ce0-4efb-a03d-c22aa080c227",
+    "metadata": {
+      "limit_key": "forms_limit",
+      "limit_value": "10"
+    },
+    "visibility": "private",
+    "properties": {},
+    "visibility_configurable": true
+  },
+  {
+    "id": "e6ccd0d0-d353-457d-a752-5ce7315d087d",
+    "created_at": "2026-07-16T12:20:37.252844Z",
+    "modified_at": null,
+    "type": "feature_flag",
+    "description": "Limit: Pro Max File Size (25MB)",
+    "selectable": true,
+    "deletable": true,
+    "is_deleted": false,
+    "organization_id": "0328eb84-0ce0-4efb-a03d-c22aa080c227",
+    "metadata": {
+      "limit_key": "max_file_size_bytes",
+      "limit_value": "26214400"
+    },
+    "visibility": "private",
+    "properties": {},
+    "visibility_configurable": true
+  },
+  {
+    "id": "f0a3a138-2176-47ad-bcfe-522a36b8480b",
+    "created_at": "2026-07-16T12:20:36.906679Z",
+    "modified_at": null,
+    "type": "feature_flag",
+    "description": "Limit: Starter Max File Size (5MB)",
+    "selectable": true,
+    "deletable": true,
+    "is_deleted": false,
+    "organization_id": "0328eb84-0ce0-4efb-a03d-c22aa080c227",
+    "metadata": {
+      "limit_key": "max_file_size_bytes",
+      "limit_value": "5242880"
+    },
+    "visibility": "private",
+    "properties": {},
+    "visibility_configurable": true
+  },
+  {
+    "id": "74bb06ae-4afb-4898-bb99-7bc4850f40d0",
+    "created_at": "2026-07-16T12:20:36.534670Z",
+    "modified_at": null,
+    "type": "feature_flag",
+    "description": "Limit: Pro Rate Limit (90 RPM)",
+    "selectable": true,
+    "deletable": true,
+    "is_deleted": false,
+    "organization_id": "0328eb84-0ce0-4efb-a03d-c22aa080c227",
+    "metadata": {
+      "limit_key": "max_rate_limit_rpm",
+      "limit_value": "90"
+    },
+    "visibility": "private",
+    "properties": {},
+    "visibility_configurable": true
+  },
+  {
+    "id": "c8b33637-c16b-46a4-b638-b3731248d61e",
+    "created_at": "2026-07-16T12:20:36.191809Z",
+    "modified_at": null,
+    "type": "feature_flag",
+    "description": "Limit: Starter Rate Limit (30 RPM)",
+    "selectable": true,
+    "deletable": true,
+    "is_deleted": false,
+    "organization_id": "0328eb84-0ce0-4efb-a03d-c22aa080c227",
+    "metadata": {
+      "limit_key": "max_rate_limit_rpm",
+      "limit_value": "30"
+    },
+    "visibility": "private",
+    "properties": {},
+    "visibility_configurable": true
+  },
+  {
+    "id": "fedfa30d-93d7-492d-8d33-f0420e0a4be0",
+    "created_at": "2026-07-16T12:20:35.875561Z",
+    "modified_at": null,
+    "type": "feature_flag",
+    "description": "Feature: ALTCHA Protection",
+    "selectable": true,
+    "deletable": true,
+    "is_deleted": false,
+    "organization_id": "0328eb84-0ce0-4efb-a03d-c22aa080c227",
+    "metadata": {
+      "feature_key": "altcha_allowed"
+    },
+    "visibility": "private",
+    "properties": {},
+    "visibility_configurable": true
+  },
+  {
+    "id": "fed78542-5545-4e0f-8595-cfde4ef8257d",
+    "created_at": "2026-07-16T12:20:35.533819Z",
+    "modified_at": null,
+    "type": "feature_flag",
+    "description": "Feature: Email Digests",
+    "selectable": true,
+    "deletable": true,
+    "is_deleted": false,
+    "organization_id": "0328eb84-0ce0-4efb-a03d-c22aa080c227",
+    "metadata": {
+      "feature_key": "email_digests_allowed"
+    },
+    "visibility": "private",
+    "properties": {},
+    "visibility_configurable": true
+  },
+  {
+    "id": "f9792190-1914-49e1-98b0-1d07f79bf079",
+    "created_at": "2026-07-16T12:20:35.210929Z",
+    "modified_at": null,
+    "type": "feature_flag",
+    "description": "Feature: CSV Exports",
+    "selectable": true,
+    "deletable": true,
+    "is_deleted": false,
+    "organization_id": "0328eb84-0ce0-4efb-a03d-c22aa080c227",
+    "metadata": {
+      "feature_key": "csv_exports_allowed"
+    },
+    "visibility": "private",
+    "properties": {},
+    "visibility_configurable": true
+  },
+  {
+    "id": "3fcc8d6f-4c71-43c2-bccb-b40816aa9403",
+    "created_at": "2026-07-16T12:20:34.873318Z",
+    "modified_at": null,
+    "type": "feature_flag",
+    "description": "Feature: Custom Webhooks",
+    "selectable": true,
+    "deletable": true,
+    "is_deleted": false,
+    "organization_id": "0328eb84-0ce0-4efb-a03d-c22aa080c227",
+    "metadata": {
+      "feature_key": "custom_webhooks_allowed"
+    },
+    "visibility": "private",
+    "properties": {},
+    "visibility_configurable": true
+  },
+  {
+    "id": "66d91c27-9d6c-46e7-9d4e-4db40616fe4e",
+    "created_at": "2026-07-16T12:20:34.520055Z",
+    "modified_at": null,
+    "type": "feature_flag",
+    "description": "Feature: Telegram Notifications",
+    "selectable": true,
+    "deletable": true,
+    "is_deleted": false,
+    "organization_id": "0328eb84-0ce0-4efb-a03d-c22aa080c227",
+    "metadata": {
+      "feature_key": "telegram_notifs_allowed"
+    },
+    "visibility": "private",
+    "properties": {},
+    "visibility_configurable": true
+  },
+  {
+    "id": "1e2e1123-9ee8-48a4-b91d-e8d86d623518",
+    "created_at": "2026-07-16T12:20:34.166979Z",
+    "modified_at": null,
+    "type": "feature_flag",
+    "description": "Feature: Slack Notifications",
+    "selectable": true,
+    "deletable": true,
+    "is_deleted": false,
+    "organization_id": "0328eb84-0ce0-4efb-a03d-c22aa080c227",
+    "metadata": {
+      "feature_key": "slack_notifs_allowed"
+    },
+    "visibility": "private",
+    "properties": {},
+    "visibility_configurable": true
+  },
+  {
+    "id": "ea015c27-0e90-4128-8f20-e542499b5b18",
+    "created_at": "2026-07-16T12:20:33.815638Z",
+    "modified_at": null,
+    "type": "feature_flag",
+    "description": "Feature: Field Validations",
+    "selectable": true,
+    "deletable": true,
+    "is_deleted": false,
+    "organization_id": "0328eb84-0ce0-4efb-a03d-c22aa080c227",
+    "metadata": {
+      "feature_key": "field_validations_allowed"
+    },
+    "visibility": "private",
+    "properties": {},
+    "visibility_configurable": true
+  },
+  {
+    "id": "074ff023-b9e9-4b5f-90d1-3444cc4137be",
+    "created_at": "2026-07-16T12:20:33.469651Z",
+    "modified_at": null,
+    "type": "feature_flag",
+    "description": "Feature: File Uploads",
+    "selectable": true,
+    "deletable": true,
+    "is_deleted": false,
+    "organization_id": "0328eb84-0ce0-4efb-a03d-c22aa080c227",
+    "metadata": {
+      "feature_key": "file_uploads_allowed"
+    },
+    "visibility": "private",
+    "properties": {},
+    "visibility_configurable": true
+  },
+  {
+    "id": "98730e7b-73dc-491c-a974-5b2cd3caf9bf",
+    "created_at": "2026-07-16T12:20:33.115619Z",
+    "modified_at": null,
+    "type": "feature_flag",
+    "description": "Feature: JSON Form Submissions",
+    "selectable": true,
+    "deletable": true,
+    "is_deleted": false,
+    "organization_id": "0328eb84-0ce0-4efb-a03d-c22aa080c227",
+    "metadata": {
+      "feature_key": "json_forms_allowed"
+    },
+    "visibility": "private",
+    "properties": {},
+    "visibility_configurable": true
+  },
+  {
+    "id": "6d6a7f32-fd33-4b23-9cdc-b412fea40501",
+    "created_at": "2026-07-16T12:20:32.779291Z",
+    "modified_at": null,
+    "type": "feature_flag",
+    "description": "Feature: Custom Redirect URLs",
+    "selectable": true,
+    "deletable": true,
+    "is_deleted": false,
+    "organization_id": "0328eb84-0ce0-4efb-a03d-c22aa080c227",
+    "metadata": {
+      "feature_key": "redirect_urls_allowed"
+    },
+    "visibility": "private",
+    "properties": {},
+    "visibility_configurable": true
+  },
+  {
+    "id": "8260c3ec-ad00-41f3-afd1-6ba570473947",
+    "created_at": "2026-07-16T12:20:32.447276Z",
+    "modified_at": null,
+    "type": "feature_flag",
+    "description": "Feature: Turnstile Protection",
+    "selectable": true,
+    "deletable": true,
+    "is_deleted": false,
+    "organization_id": "0328eb84-0ce0-4efb-a03d-c22aa080c227",
+    "metadata": {
+      "feature_key": "turnstile_allowed"
+    },
+    "visibility": "private",
+    "properties": {},
+    "visibility_configurable": true
+  },
+  {
+    "id": "6f91ef0e-08d2-4836-a1b4-800021ab3c2e",
+    "created_at": "2026-07-16T12:20:32.074984Z",
+    "modified_at": null,
+    "type": "feature_flag",
+    "description": "Feature: Discord Notifications",
+    "selectable": true,
+    "deletable": true,
+    "is_deleted": false,
+    "organization_id": "0328eb84-0ce0-4efb-a03d-c22aa080c227",
+    "metadata": {
+      "feature_key": "discord_notifs_allowed"
+    },
+    "visibility": "private",
+    "properties": {},
+    "visibility_configurable": true
+  },
+  {
+    "id": "386d8b6c-61b3-4296-8a81-7600234c930f",
+    "created_at": "2026-07-16T12:20:31.717523Z",
+    "modified_at": null,
+    "type": "meter_credit",
+    "description": "Pro Submissions Credits",
+    "selectable": true,
+    "deletable": true,
+    "is_deleted": false,
+    "organization_id": "0328eb84-0ce0-4efb-a03d-c22aa080c227",
+    "metadata": {},
+    "visibility": "public",
+    "properties": {
+      "units": 50000,
+      "rollover": false,
+      "meter_id": "5224d01c-a47c-4fbb-823e-58123275bd66"
+    },
+    "visibility_configurable": true
+  },
+  {
+    "id": "502b7ad6-def3-49bc-8d27-18bc368edca3",
+    "created_at": "2026-07-16T12:20:31.274838Z",
+    "modified_at": null,
+    "type": "meter_credit",
+    "description": "Starter Submissions Credits",
+    "selectable": true,
+    "deletable": true,
+    "is_deleted": false,
+    "organization_id": "0328eb84-0ce0-4efb-a03d-c22aa080c227",
+    "metadata": {},
+    "visibility": "public",
+    "properties": {
+      "units": 1000,
+      "rollover": false,
+      "meter_id": "5224d01c-a47c-4fbb-823e-58123275bd66"
+    },
+    "visibility_configurable": true
+  },
+  {
+    "id": "174074e2-10a6-4481-89b4-39cb41b6d321",
+    "created_at": "2026-07-16T12:20:30.895807Z",
+    "modified_at": null,
+    "type": "feature_flag",
+    "description": "Pro Tier Identity",
+    "selectable": true,
+    "deletable": true,
+    "is_deleted": false,
+    "organization_id": "0328eb84-0ce0-4efb-a03d-c22aa080c227",
+    "metadata": {
+      "tier_name": "pro-v1",
+      "tier_priority": "200"
+    },
+    "visibility": "private",
+    "properties": {},
+    "visibility_configurable": true
+  },
+  {
+    "id": "8f4f7635-26c6-47c2-b6ac-5fd035ebcb1d",
+    "created_at": "2026-07-16T12:20:30.535098Z",
+    "modified_at": null,
+    "type": "feature_flag",
+    "description": "Starter Tier Identity",
+    "selectable": true,
+    "deletable": true,
+    "is_deleted": false,
+    "organization_id": "0328eb84-0ce0-4efb-a03d-c22aa080c227",
+    "metadata": {
+      "tier_name": "starter-v1",
+      "tier_priority": "100"
+    },
+    "visibility": "private",
+    "properties": {},
+    "visibility_configurable": true
+  }
+]

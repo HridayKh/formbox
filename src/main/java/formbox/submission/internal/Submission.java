@@ -20,11 +20,12 @@ import java.util.UUID;
 @NoArgsConstructor
 class Submission {
 
-	public Submission(UUID formId, UUID tenantId, Map<String, String> payload, Boolean isSpam) {
+	public Submission(UUID formId, UUID tenantId, Map<String, String> payload, Boolean isSpam, long storageBytes) {
 		this.formId = formId;
 		this.tenantId = tenantId;
 		this.payload = payload;
 		this.isSpam = isSpam;
+		this.storageBytes = storageBytes;
 	}
 
 	@Id
@@ -53,6 +54,10 @@ class Submission {
 	@Setter
 	@Column(name = "email_autoresponse_request_id")
 	private String emailAutoresponseRequestId;
+
+	@Column(name = "storage_bytes", nullable = false)
+	@ColumnDefault("0")
+	private long storageBytes = 0;
 
 	@Setter
 	@JdbcTypeCode(SqlTypes.NAMED_ENUM)

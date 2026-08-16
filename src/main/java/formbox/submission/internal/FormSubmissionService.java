@@ -60,25 +60,28 @@ class FormSubmissionService {
 	@WithSpan
 	@Transactional
 	public Submission saveSubmission(UUID formId, UUID tenantId, Map<String, String> payload, boolean isSpam, HttpServletRequest request) {
-		Map<String, String> newPayload = isSpam ? payload : uploadFiles(request, payload);
-		var savedSubmission = submissionRepository.save(new Submission(formId, tenantId, newPayload, isSpam));
+		UploadResult uploadResult = isSpam ? new UploadResult(payload, 0L) : uploadFiles(request, payload);
+		var savedSubmission = submissionRepository.save(new Submission(formId, tenantId, uploadResult.payload(), isSpam, uploadResult.totalBytes()));
 		submissionApi.updateFormSubmissionsCache(formId, savedSubmission.toSubmissionItem());
 		Sentry.configureScope(scope -> scope.setTag("submissionId", savedSubmission.getId().toString()));
 		return savedSubmission;
 	}
 
-	private Map<String, String> uploadFiles(HttpServletRequest request, Map<String, String> payload) {
+	private record UploadResult(Map<String, String> payload, long totalBytes) {}
+
+	private UploadResult uploadFiles(HttpServletRequest request, Map<String, String> payload) {
 		ISpan span = null;
+		long totalBytes = 0;
 		try {
 			if (Sentry.getSpan() != null)
 				span = Sentry.getSpan().startChild("SubmissionFileService.uploadFiles");
 			if (request.getContentType() == null || !request.getContentType().startsWith("multipart/")) {
 				log.debug("Skipping file upload for non multipart submission.");
-				return payload;
+				return new UploadResult(payload, 0L);
 			}
 			Collection<Part> parts = request.getParts();
 			if (parts == null || parts.isEmpty()) {
-				return payload;
+				return new UploadResult(payload, 0L);
 			}
 			for (Part part : parts) {
 				if (part.getSubmittedFileName() == null || part.getSubmittedFileName().isBlank())
@@ -87,15 +90,16 @@ class FormSubmissionService {
 				if (contentType == null || contentType.isBlank()) continue;
 				payload.put(part.getName(), part.getSubmittedFileName());
 				payload.put(part.getName() + "__url", uploadService.uploadFile(part.getInputStream(), part.getSubmittedFileName(), part.getSize(), part.getContentType()));
+				totalBytes += part.getSize();
 				Sentry.metrics().distribution("submissions.stats.fileSizeBytes", part.getSize() * 1.0, "byte");
 			}
-			return payload;
+			return new UploadResult(payload, totalBytes);
 		} catch (IOException | ServletException e) {
 			log.error("Failed to parse file parts from HttpServletRequest", e);
 		} finally {
 			if (span != null) span.finish();
 		}
-		return payload;
+		return new UploadResult(payload, totalBytes);
 	}
 
 	@WithSpan
