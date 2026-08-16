@@ -25,6 +25,7 @@ public class PolarWebhookService {
 	private final ObjectMapper objectMapper;
 	private final EntitlementsApi entitlementsApi;
 	private final TenantApi tenantApi;
+	private final formbox.shared.RedisCache redisCache;
 
 	/**
 	 * Access-granting subscription statuses.
@@ -61,6 +62,8 @@ public class PolarWebhookService {
 
 		tenantApi.updateTenantEntitlementsInDb(tenantId, entitlements);
 		entitlementsApi.updateEntitlementsCache(tenantId, entitlements);
+		redisCache.delete(formbox.shared.CacheNames.METER_BALANCE, tenantId.toString());
+		
 		log.info("Entitlements updated for tenant {} (tier: {}, status: {})", tenantId, entitlements.tierName(), entitlements.subscriptionStatus());
 	}
 

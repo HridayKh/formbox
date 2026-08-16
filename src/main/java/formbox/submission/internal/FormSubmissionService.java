@@ -45,6 +45,7 @@ class FormSubmissionService {
 	private final UploadService uploadService;
 	private final DiscordNotif discordNotif;
 	private final SubmissionEmailsService submissionEmailsService;
+	private final formbox.billing.StorageApi storageApi;
 
 	@WithSpan
 	public boolean rateLimitPassed(UUID formId, Integer rpm) {
@@ -103,7 +104,7 @@ class FormSubmissionService {
 	}
 
 	@WithSpan
-	public boolean validateFiles(HttpServletRequest request, Entitlements entitlements) {
+	public boolean validateFiles(HttpServletRequest request, Entitlements entitlements, UUID tenantId) {
 		if (request.getContentType() == null || !request.getContentType().startsWith("multipart/")) {
 			log.debug("Request is not a multipart form submission; skipping file validation.");
 			return true;
@@ -115,6 +116,7 @@ class FormSubmissionService {
 				return true;
 			}
 			contentTypes = new ArrayList<>(parts.size());
+			long totalUploadSize = 0;
 			for (Part part : parts) {
 				if (part.getSubmittedFileName() == null || part.getSubmittedFileName().isBlank())
 					continue;
@@ -127,6 +129,14 @@ class FormSubmissionService {
 				contentTypes.add(contentType.trim().toLowerCase());
 				if (!ALLOWED_MIME_TYPES.contains(contentType.trim().toLowerCase())) {
 					log.debug("Invalid MIME type detected: {} for file field: {}", contentType, part.getName());
+					return false;
+				}
+				totalUploadSize += part.getSize();
+			}
+			if (totalUploadSize > 0) {
+				long consumed = storageApi.getStorageBytesConsumed(tenantId);
+				if (consumed + totalUploadSize > entitlements.storageLimitBytes()) {
+					log.debug("Storage limit exceeded for tenant {}. Max: {}, Attempted: {}", tenantId, entitlements.storageLimitBytes(), consumed + totalUploadSize);
 					return false;
 				}
 			}

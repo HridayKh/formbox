@@ -28,7 +28,7 @@ public record Entitlements(
 	@JsonProperty("subscription_status") String subscriptionStatus,
 	@JsonProperty("subscription_id") String subscriptionId,
 	@JsonProperty("product_id") String productId,
-	@JsonProperty("cancel_at_period_end") boolean cancelAtPeriodEnd,
+	@JsonProperty("cancel_at_period_end") Boolean cancelAtPeriodEnd,
 	@JsonProperty("current_period_end") Instant currentPeriodEnd,
 
 	// Tier identity

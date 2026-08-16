@@ -122,8 +122,8 @@ class SubmissionController {
 
 		var entitlements = entitlementsApi.getEntitlements(form.tenantId());
 
-		if (!submissionService.validateFiles(request, entitlements)) {
-			Sentry.addBreadcrumb("Invalid MIME type in files for form " + formId);
+		if (!submissionService.validateFiles(request, entitlements, form.tenantId())) {
+			Sentry.addBreadcrumb("Invalid MIME type or storage limit exceeded in files for form " + formId);
 			Sentry.metrics().count(SubmissionMetrics.Failed.INVALID_MIME_TYPES);
 			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 			return "submit/files-not-allowed";

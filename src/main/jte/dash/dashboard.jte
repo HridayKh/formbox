@@ -9,6 +9,8 @@
 @param String msg
 @param List<FolderFormDTO> folderForms
 @param boolean allowRedirUrl
+@param Long storageUsed = null
+@param Long storageLimit = null
 
 <!DOCTYPE html>
 <html lang="en">
@@ -29,7 +31,7 @@
 <body>
 
 <header class="container">
-    @template.dash.navbar(pageName="Dashboard", balanceLeft=balanceLeft, showManageSubscription=showManageSubscription, email=email)
+    @template.dash.navbar(pageName="Dashboard", balanceLeft=balanceLeft, showManageSubscription=showManageSubscription, email=email, storageUsed=storageUsed, storageLimit=storageLimit)
     @if(msg != null && !msg.isBlank())
         <div class="container">
             <mark>${msg}</mark>

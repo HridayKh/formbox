@@ -43,6 +43,7 @@ class DashboardController {
 	private final HmacSignerService hmacSignerService;
 	private final VerifiedEmailsService verifiedEmailsService;
 	private final UploadService uploadService;
+	private final formbox.billing.StorageApi storageApi;
 
 	@GetMapping("/dashboard")
 	@WithSpan
@@ -66,6 +67,8 @@ class DashboardController {
 			folderForms.add(new FolderFormDTO(folder, forms.stream().filter(form -> form.folderId().equals(folder.id())).toList()));
 
 		model.addAttribute("balanceLeft", polarSubmissionApi.getCachedSubmissionBalance(tenantId));
+		model.addAttribute("storageUsed", storageApi.getStorageBytesConsumed(tenantId));
+		model.addAttribute("storageLimit", entitlements.storageLimitBytes());
 		model.addAttribute("showManageSubscription", !entitlements.isFree());
 		model.addAttribute("email", userMetadata.getEmail());
 		model.addAttribute("msg", msg);

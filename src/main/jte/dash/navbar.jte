@@ -2,6 +2,8 @@
 @param long balanceLeft
 @param boolean showManageSubscription
 @param String email
+@param Long storageUsed = null
+@param Long storageLimit = null
 
 <nav>
     <ul>
@@ -17,6 +19,9 @@
                 <ul dir="rtl">
                     <li><strong>${email}</strong></li>
                     <li><small>${balanceLeft} Submissions Left</small></li>
+                    @if(storageUsed != null && storageLimit != null)
+                        <li><small>Storage: ${String.format("%.2f", storageUsed / 1048576.0)} MB / ${String.format("%.2f", storageLimit / 1048576.0)} MB</small></li>
+                    @endif
                     <li><hr/></li>
                     @if(showManageSubscription)
                         <li><a href="/billing/portal">Manage Subscription</a></li>
