@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Hugo Contact Forms | FormBox</title>
+<meta content="Add a powerful, serverless contact form to your Hugo site in minutes with FormBox." name="description"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="../../styles.css" rel="stylesheet"/>
+<meta content="Hugo Contact Forms | FormBox" property="og:title"/><meta content="Add a powerful, serverless contact form to your Hugo site in minutes with FormBox." property="og:description"/><meta content="website" property="og:type"/><meta content="summary_large_image" name="twitter:card"/><meta content="Hugo Contact Forms | FormBox" name="twitter:title"/><meta content="Add a powerful, serverless contact form to your Hugo site in minutes with FormBox." name="twitter:description"/></head>
+<body>
+<nav class="navbar" id="navbar">
+<div class="container-wide navbar-inner">
+<!-- Logo -->
+<a class="navbar-logo" href="../../index.html">
+<span class="logo-icon">F</span>
+            Formbox
+        </a>
+<!-- Desktop Nav Links -->
+<ul class="navbar-links">
+<!-- Product -->
+<li class="nav-item">
+<a class="nav-link" href="">Product <span class="caret">▾</span></a>
+<div class="nav-dropdown dropdown-lg">
+<div class="dropdown-group">
+<div class="dropdown-group-title">Features</div>
+<a class="dropdown-link" href="../../pages/product/spam-protection.html"><span class="link-icon">🛡</span> Spam Protection</a>
+<a class="dropdown-link" href="../../pages/product/delivery-monitoring.html"><span class="link-icon">📬</span> Delivery Monitoring</a>
+<a class="dropdown-link" href="../../pages/product/file-uploads.html"><span class="link-icon">📎</span> File Uploads</a>
+<a class="dropdown-link" href="../../pages/product/webhooks-notifications.html"><span class="link-icon">🔔</span> Webhooks &amp; Notifications</a>
+<a class="dropdown-link" href="../../pages/product/client-views.html"><span class="link-icon">👁</span> Client Views</a>
+</div>
+<div class="dropdown-group">
+<div class="dropdown-group-title">Integrations</div>
+<a class="dropdown-link" href="../../pages/product/discord.html"><span class="link-icon">💬</span> Discord</a>
+<a class="dropdown-link" href="../../pages/product/slack.html"><span class="link-icon">📢</span> Slack</a>
+<a class="dropdown-link" href="../../pages/product/telegram.html"><span class="link-icon">✈️</span> Telegram</a>
+<a class="dropdown-link" href="../../pages/product/custom-webhooks.html"><span class="link-icon">🔗</span> Custom Webhooks</a>
+</div>
+<div class="dropdown-group">
+<div class="dropdown-group-title">Security</div>
+<a class="dropdown-link" href="../../pages/product/honeypot.html"><span class="link-icon">🍯</span> Honeypot</a>
+<a class="dropdown-link" href="../../pages/product/turnstile.html"><span class="link-icon">☁️</span> Turnstile</a>
+<a class="dropdown-link" href="../../pages/product/altcha.html"><span class="link-icon">🔐</span> Altcha</a>
+<a class="dropdown-link" href="../../pages/product/rate-limiting.html"><span class="link-icon">⏱</span> Rate Limiting</a>
+</div>
+</div>
+</li>
+<!-- Solutions -->
+<li class="nav-item">
+<a class="nav-link" href="">Solutions <span class="caret">▾</span></a>
+<div class="nav-dropdown">
+<div class="dropdown-group">
+<div class="dropdown-group-title">Use Cases</div>
+<a class="dropdown-link" href="../../pages/solutions/for-agencies.html"><span class="link-icon">🏢</span> For Agencies</a>
+<a class="dropdown-link" href="../../pages/solutions/for-freelancers.html"><span class="link-icon">💼</span> For Freelancers</a>
+<a class="dropdown-link" href="../../pages/solutions/for-saas.html"><span class="link-icon">🚀</span> For SaaS</a>
+</div>
+<div class="dropdown-group">
+<div class="dropdown-group-title">By Framework</div>
+<a class="dropdown-link" href="../../pages/solutions/nextjs.html"><span class="link-icon">⚛️</span> Next.js</a>
+<a class="dropdown-link" href="../../pages/solutions/astro.html"><span class="link-icon">🚀</span> Astro</a>
+<a class="dropdown-link" href="../../pages/solutions/hugo.html"><span class="link-icon">📝</span> Hugo</a>
+<a class="dropdown-link" href="../../pages/solutions/webflow.html"><span class="link-icon">🎨</span> Webflow</a>
+<a class="dropdown-link" href="../../pages/solutions/eleventy.html"><span class="link-icon">🏔</span> Eleventy</a>
+<a class="dropdown-link" href="../../pages/solutions/static-html.html"><span class="link-icon">📄</span> Static HTML</a>
+</div>
+</div>
+</li>
+<!-- Compare -->
+<li class="nav-item">
+<a class="nav-link" href="">Compare <span class="caret">▾</span></a>
+<div class="nav-dropdown" style="min-width: 280px; grid-template-columns: 1fr;">
+<div class="dropdown-group">
+<div class="dropdown-group-title">Alternatives</div>
+<a class="dropdown-link" href="../../pages/compare/vs-formspree.html"><span class="link-icon">⚔️</span> vs Formspree</a>
+<a class="dropdown-link" href="../../pages/compare/vs-basin.html"><span class="link-icon">⚔️</span> vs Basin</a>
+<a class="dropdown-link" href="../../pages/compare/vs-getform.html"><span class="link-icon">⚔️</span> vs Getform</a>
+<a class="dropdown-link" href="../../pages/compare/vs-formsubmit.html"><span class="link-icon">⚔️</span> vs FormSubmit</a>
+<a class="dropdown-link" href="../../pages/compare/vs-netlify-forms.html"><span class="link-icon">⚔️</span> vs Netlify Forms</a>
+</div>
+</div>
+</li>
+<!-- Developers -->
+<li class="nav-item">
+<a class="nav-link" href="">Developers <span class="caret">▾</span></a>
+<div class="nav-dropdown dropdown-lg">
+<div class="dropdown-group">
+<div class="dropdown-group-title">Get Started</div>
+<a class="dropdown-link" href="../../pages/developers/quickstart.html"><span class="link-icon">⚡</span> Quickstart</a>
+<a class="dropdown-link" href="../../pages/developers/api-reference.html"><span class="link-icon">📖</span> API Reference</a>
+<a class="dropdown-link" href="../../pages/developers/changelog.html"><span class="link-icon">📋</span> Changelog</a>
+</div>
+<div class="dropdown-group">
+<div class="dropdown-group-title">Guides</div>
+<a class="dropdown-link" href="../../pages/developers/html-forms.html"><span class="link-icon">📄</span> HTML Forms</a>
+<a class="dropdown-link" href="../../pages/developers/nextjs.html"><span class="link-icon">⚛️</span> Next.js</a>
+<a class="dropdown-link" href="../../pages/developers/astro.html"><span class="link-icon">🚀</span> Astro</a>
+<a class="dropdown-link" href="../../pages/developers/hugo.html"><span class="link-icon">📝</span> Hugo</a>
+<a class="dropdown-link" href="../../pages/developers/webflow.html"><span class="link-icon">🎨</span> Webflow</a>
+<a class="dropdown-link" href="../../pages/developers/eleventy.html"><span class="link-icon">🏔</span> Eleventy</a>
+</div>
+<div class="dropdown-group">
+<div class="dropdown-group-title">Templates</div>
+<a class="dropdown-link" href="../../pages/developers/contact-form.html"><span class="link-icon">📩</span> Contact Form</a>
+<a class="dropdown-link" href="../../pages/developers/feedback-form.html"><span class="link-icon">💬</span> Feedback Form</a>
+<a class="dropdown-link" href="../../pages/developers/newsletter-signup.html"><span class="link-icon">📧</span> Newsletter Signup</a>
+<a class="dropdown-link" href="../../pages/developers/file-upload-form.html"><span class="link-icon">📎</span> File Upload Form</a>
+</div>
+</div>
+</li>
+<!-- Pricing (no dropdown) -->
+<li class="nav-item">
+<a class="nav-link" href="../../index.html#pricing">Pricing</a>
+</li>
+</ul>
+<!-- Actions -->
+<div class="navbar-actions">
+<a class="btn btn-primary btn-sm" href="../../index.html#waitlist">Join Waitlist →</a>
+</div>
+<!-- Mobile toggle -->
+<button aria-label="Open menu" class="mobile-toggle" id="mobileToggle">
+<span></span><span></span><span></span>
+</button>
+</div>
+</nav>
+<div class="mobile-nav" id="mobileNav">
+<div class="mobile-nav-group">
+<div class="mobile-nav-group-title">Product</div>
+<a class="mobile-nav-link" href="../../pages/product/spam-protection.html">Spam Protection</a>
+<a class="mobile-nav-link" href="../../pages/product/delivery-monitoring.html">Delivery Monitoring</a>
+<a class="mobile-nav-link" href="../../pages/product/file-uploads.html">File Uploads</a>
+<a class="mobile-nav-link" href="../../pages/product/webhooks-notifications.html">Webhooks &amp; Notifications</a>
+<a class="mobile-nav-link" href="../../pages/product/client-views.html">Client Views</a>
+</div>
+<div class="mobile-nav-group">
+<div class="mobile-nav-group-title">Integrations</div>
+<a class="mobile-nav-link" href="../../pages/integrations/discord.html">Discord</a>
+<a class="mobile-nav-link" href="../../pages/integrations/slack.html">Slack</a>
+<a class="mobile-nav-link" href="../../pages/integrations/telegram.html">Telegram</a>
+<a class="mobile-nav-link" href="../../pages/integrations/custom-webhooks.html">Custom Webhooks</a>
+</div>
+<div class="mobile-nav-group">
+<div class="mobile-nav-group-title">Solutions</div>
+<a class="mobile-nav-link" href="../../pages/solutions/for-agencies.html">For Agencies</a>
+<a class="mobile-nav-link" href="../../pages/solutions/for-freelancers.html">For Freelancers</a>
+<a class="mobile-nav-link" href="../../pages/solutions/for-saas.html">For SaaS</a>
+</div>
+<div class="mobile-nav-group">
+<div class="mobile-nav-group-title">Compare</div>
+<a class="mobile-nav-link" href="../../pages/compare/vs-formspree.html">vs Formspree</a>
+<a class="mobile-nav-link" href="../../pages/compare/vs-basin.html">vs Basin</a>
+<a class="mobile-nav-link" href="../../pages/compare/vs-getform.html">vs Getform</a>
+<a class="mobile-nav-link" href="../../pages/compare/vs-formsubmit.html">vs FormSubmit</a>
+<a class="mobile-nav-link" href="../../pages/compare/vs-netlify-forms.html">vs Netlify Forms</a>
+</div>
+<div class="mobile-nav-group">
+<div class="mobile-nav-group-title">Developers</div>
+<a class="mobile-nav-link" href="../../pages/developers/quickstart.html">Quickstart</a>
+<a class="mobile-nav-link" href="../../pages/developers/api-reference.html">API Reference</a>
+<a class="mobile-nav-link" href="../../pages/developers/guides.html">Guides</a>
+<a class="mobile-nav-link" href="../../pages/developers/templates.html">Templates</a>
+<a class="mobile-nav-link" href="../../pages/developers/changelog.html">Changelog</a>
+</div>
+<div class="mobile-nav-group">
+<a class="mobile-nav-link" href="../../index.html#pricing" style="font-weight:600;color:var(--text);">Pricing</a>
+</div>
+<div style="padding-top:16px;">
+<a class="btn btn-primary" href="../../index.html#waitlist" style="width:100%;justify-content:center;">Join Waitlist →</a>
+</div>
+</div>
+<main style="min-height: 80vh; display: flex; align-items: center;">
+<section class="hero" id="hero" style="padding-top: 120px; padding-bottom: 40px; text-align: center;">
+<div class="container">
+<div class="hero-content fade-up" style="margin: 0 auto; max-width: 800px;">
+<h1 style="font-size: 3.5rem; margin-bottom: 24px;">Hugo <span class="highlight">Forms</span></h1>
+<p class="hero-subtitle" style="font-size: 1.25rem; margin-bottom: 40px;">
+                        The easiest way to collect submissions on your Hugo site. No backend code required.
+                    </p>
+<div class="hero-actions" style="justify-content: center;">
+<a class="btn btn-primary" href="../index.html#waitlist">Join the Waitlist →</a>
+<a class="btn btn-ghost" href="../index.html">Back to Home</a>
+</div>
+</div>
+</div>
+</section>
+<section style="padding: 40px 0 80px 0;">
+<div class="container">
+<div style="text-align: left; max-width: 800px; margin: 40px auto; font-size: 1.1rem; line-height: 1.6; color: var(--text-muted);">
+<h3>Seamless Integration</h3>
+<p>FormBox works flawlessly with Hugo. Because FormBox is completely headless, you have full control over your form's HTML and CSS.</p>
+<div style="background: var(--bg-alt); padding: 20px; border-radius: 8px; margin: 20px 0; font-family: monospace; font-size: 0.9rem;">
+                &lt;form action="https://api.formbox.com/submit/YOUR_FORM_ID" method="POST"&gt;<br/>
+                  &lt;input type="email" name="email" required /&gt;<br/>
+                  &lt;button type="submit"&gt;Send&lt;/button&gt;<br/>
+                &lt;/form&gt;
+            </div>
+<ul style="margin-top: 20px; list-style-type: none; padding-left: 0;">
+<li style="margin-bottom: 12px;">⚡ <strong>Plain HTML Support</strong> - Standard POST requests work out of the box.</li>
+<li style="margin-bottom: 12px;">⚡ <strong>JSON Replies</strong> - Perfect for headless frontends making AJAX/Fetch requests.</li>
+<li style="margin-bottom: 12px;">⚡ <strong>Redirects</strong> - Easily redirect users to a custom success page after submission.</li>
+</ul>
+</div>
+</div>
+</section>
+</main>
+<footer class="footer">
+<div class="container">
+<div class="footer-grid">
+<!-- Brand -->
+<div class="footer-brand">
+<a class="navbar-logo" href="../../index.html">
+<span class="logo-icon">F</span>
+                    Formbox
+                </a>
+<p>The form backend for static sites. Spam protection, delivery monitoring, and webhooks — no server
+                    required.
+                </p>
+</div>
+<!-- Product -->
+<div>
+<div class="footer-col-title">Product</div>
+<ul class="footer-links">
+<li><a href="../../pages/product/spam.html">Spam Protection</a></li>
+<li><a href="../../index.html#">Delivery Monitoring</a></li>
+<li><a href="../../index.html#">File Uploads</a></li>
+<li><a href="../../index.html#">Webhooks &amp; Notifs</a></li>
+<li><a href="../../index.html#">Client Views</a></li>
+<li><a href="../../index.html#pricing">Pricing</a></li>
+</ul>
+<div class="footer-col-title" style="margin-top:24px;">Security</div>
+<ul class="footer-links">
+<li><a href="../../index.html#">Honeypot</a></li>
+<li><a href="../../index.html#">Turnstile</a></li>
+<li><a href="../../index.html#">Altcha</a></li>
+<li><a href="../../index.html#">Rate Limiting</a></li>
+</ul>
+</div>
+<!-- Integrations -->
+<div>
+<div class="footer-col-title">Integrations</div>
+<ul class="footer-links">
+<li><a href="../../index.html#">Discord</a></li>
+<li><a href="../../index.html#">Slack</a></li>
+<li><a href="../../index.html#">Telegram</a></li>
+<li><a href="../../index.html#">Custom Webhooks</a></li>
+<li><a href="../../index.html#">CSV Export</a></li>
+<li><a href="../../index.html#">Email Notifications</a></li>
+</ul>
+</div>
+<!-- Developers -->
+<div>
+<div class="footer-col-title">Developers</div>
+<ul class="footer-links">
+<li><a href="../../index.html#">Quickstart</a></li>
+<li><a href="../../index.html#">API Reference</a></li>
+<li><a href="../../index.html#">Changelog</a></li>
+<li><a href="../../index.html#">HTML Forms Guide</a></li>
+<li><a href="../../index.html#">Next.js Guide</a></li>
+<li><a href="../../index.html#">Astro Guide</a></li>
+<li><a href="../../index.html#">Hugo Guide</a></li>
+<li><a href="../../index.html#">Webflow Guide</a></li>
+<li><a href="../../index.html#">Eleventy Guide</a></li>
+</ul>
+</div>
+<!-- Compare -->
+<div>
+<div class="footer-col-title">Compare</div>
+<ul class="footer-links">
+<li><a href="../../index.html#">vs Formspree</a></li>
+<li><a href="../../index.html#">vs Basin</a></li>
+<li><a href="../../index.html#">vs Getform</a></li>
+<li><a href="../../index.html#">vs FormSubmit</a></li>
+<li><a href="../../index.html#">vs Netlify Forms</a></li>
+</ul>
+<div class="footer-col-title" style="margin-top:24px;">Templates</div>
+<ul class="footer-links">
+<li><a href="../../index.html#">Contact Form</a></li>
+<li><a href="../../index.html#">Feedback Form</a></li>
+<li><a href="../../index.html#">Newsletter Signup</a></li>
+<li><a href="../../index.html#">File Upload Form</a></li>
+</ul>
+</div>
+<!-- Solutions -->
+<div>
+<div class="footer-col-title">Solutions</div>
+<ul class="footer-links">
+<li><a href="../../index.html#">For Agencies</a></li>
+<li><a href="../../index.html#">For Freelancers</a></li>
+<li><a href="../../index.html#">For SaaS</a></li>
+<li><a href="../../index.html#">Next.js</a></li>
+<li><a href="../../index.html#">Astro</a></li>
+<li><a href="../../index.html#">Hugo</a></li>
+<li><a href="../../index.html#">Webflow</a></li>
+<li><a href="../../index.html#">Eleventy</a></li>
+<li><a href="../../index.html#">Static HTML</a></li>
+</ul>
+</div>
+<!-- Company + Legal -->
+<div>
+<div class="footer-col-title">Company</div>
+<ul class="footer-links">
+<li><a href="../../index.html#">About</a></li>
+<li><a href="../../index.html#">Blog</a></li>
+<li><a href="../../index.html#">Status Page</a></li>
+</ul>
+<div class="footer-col-title" style="margin-top:24px;">Legal</div>
+<ul class="footer-links">
+<li><a href="../../index.html#">Privacy Policy</a></li>
+<li><a href="../../index.html#">Terms of Service</a></li>
+<li><a href="../../index.html#">Cookie Policy</a></li>
+</ul>
+</div>
+</div>
+<!-- Bottom bar -->
+<div class="footer-bottom">
+<p>© 2026 Formbox. All rights reserved.</p>
+<div class="footer-bottom-links">
+<a href="../../index.html#">Privacy</a>
+<a href="../../index.html#">Terms</a>
+<a href="../../index.html#">Status</a>
+</div>
+</div>
+</div>
+</footer>
+<script src="../../script.js"></script>
+</body>
+</html>
