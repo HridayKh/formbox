@@ -206,12 +206,12 @@ jobs:
         run: |
           scp -i ~/.ssh/deploy_key \
             ./dist/app.jar \
-            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.SSH_REMOTE_PATH }}/app.jar"
+            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/home/opc/formbox/new/app.jar"
 
       - name: Run remote deploy script
         run: |
           ssh -i ~/.ssh/deploy_key "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
-            "bash ${{ secrets.SSH_DEPLOY_SCRIPT }} ${{ needs.build.outputs.version }}"
+            "bash /home/opc/formbox/deploy.sh ${{ needs.build.outputs.version }}"
 
       - name: Notify Sentry of deploy
         if: needs.build.outputs.bump != 'none'
