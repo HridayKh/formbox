@@ -4,11 +4,11 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Spam Protection - Advanced Spam Protection | FormBox</title>
-<meta content="Keep your inbox clean with Spam Protection. Built-in multi-layered spam protection from FormBox." name="description"/>
+<title>Advanced Spam Protection for HTML Forms | FormBox</title>
+<meta content="Stop bots without annoying your users. Discover FormBox's multi-layered spam defense including Honeypot, Turnstile, Altcha, and Rate Limiting." name="description"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
 <link href="../../styles.css" rel="stylesheet"/>
-<meta content="Spam Protection - Advanced Spam Protection | FormBox" property="og:title"/><meta content="Keep your inbox clean with Spam Protection. Built-in multi-layered spam protection from FormBox." property="og:description"/><meta content="website" property="og:type"/><meta content="summary_large_image" name="twitter:card"/><meta content="Spam Protection - Advanced Spam Protection | FormBox" name="twitter:title"/><meta content="Keep your inbox clean with Spam Protection. Built-in multi-layered spam protection from FormBox." name="twitter:description"/></head>
+<meta content="Advanced Spam Protection for HTML Forms | FormBox" property="og:title"/><meta content="Stop bots without annoying your users. Discover FormBox's multi-layered spam defense including Honeypot, Turnstile, Altcha, and Rate Limiting." property="og:description"/><meta content="website" property="og:type"/><meta content="summary_large_image" name="twitter:card"/><meta content="Advanced Spam Protection for HTML Forms | FormBox" name="twitter:title"/><meta content="Stop bots without annoying your users. Discover FormBox's multi-layered spam defense including Honeypot, Turnstile, Altcha, and Rate Limiting." name="twitter:description"/></head>
 <body>
 <nav class="navbar" id="navbar">
 <div class="container-wide navbar-inner">
@@ -170,34 +170,36 @@
 <a class="btn btn-primary" href="../../index.html#waitlist" style="width:100%;justify-content:center;">Join Waitlist →</a>
 </div>
 </div>
-<main style="min-height: 80vh; display: flex; align-items: center;">
-<section class="hero" id="hero" style="padding-top: 120px; padding-bottom: 40px; text-align: center;">
+<main style="min-height: 80vh; display: block;">
+<section class="hero" id="hero" style="padding-top: 100px; padding-bottom: 60px; text-align: center;">
 <div class="container">
 <div class="hero-content fade-up" style="margin: 0 auto; max-width: 800px;">
-<h1 style="font-size: 3.5rem; margin-bottom: 24px;"><span class="highlight">Spam Protection</span></h1>
-<p class="hero-subtitle" style="font-size: 1.25rem; margin-bottom: 40px;">
-                        Block bots, not customers. Our multi-layered spam defense keeps your submissions pristine.
+<h1 style="font-size: 3.5rem; margin-bottom: 24px;">Advanced <span class="highlight">Spam Protection</span></h1>
+<p class="hero-subtitle" style="font-size: 1.25rem; margin-bottom: 40px; color: var(--text-muted);">
+                        Protect your inbox from bots without degrading the user experience.
                     </p>
 <div class="hero-actions" style="justify-content: center;">
 <a class="btn btn-primary" href="../index.html#waitlist">Join the Waitlist →</a>
-<a class="btn btn-ghost" href="../index.html">Back to Home</a>
 </div>
 </div>
 </div>
 </section>
-<section style="padding: 40px 0 80px 0;">
-<div class="container">
-<div style="text-align: left; max-width: 800px; margin: 40px auto; font-size: 1.1rem; line-height: 1.6; color: var(--text-muted);">
-<h3>Multi-Layered Spam Defense</h3>
-<p>We take spam seriously so you don't have to. Every FormBox endpoint includes:</p>
-<ul style="margin-top: 20px; list-style-type: none; padding-left: 0;">
-<li style="margin-bottom: 12px;">🛡️ <strong>Honeypot Fields</strong> - Invisible fields that trap automated bots instantly.</li>
-<li style="margin-bottom: 12px;">🛡️ <strong>Rate Limiting</strong> - Prevent abuse and brute-force submissions at the endpoint level.</li>
-<li style="margin-bottom: 12px;">🛡️ <strong>Cloudflare Turnstile (BYOK)</strong> - Bring your own Turnstile key for seamless, invisible CAPTCHA.</li>
-<li style="margin-bottom: 12px;">🛡️ <strong>Altcha</strong> - Privacy-first, no-cookie proof-of-work CAPTCHA built right in.</li>
-</ul>
-<p><em>Spam protection features are included in all plans, including the Free tier.</em></p>
-</div>
+<section style="padding: 60px 0; background: var(--bg);">
+<div class="container" style="max-width: 800px; margin: 0 auto; color: var(--text-muted); line-height: 1.7; font-size: 1.1rem; text-align: left;">
+<h2 style="color: var(--text); margin-bottom: 24px;">The Problem with Traditional CAPTCHAs</h2>
+<p>Nobody likes solving puzzles just to send a contact message. Traditional CAPTCHAs hurt conversion rates and frustrate users. FormBox takes a multi-layered, invisible approach to spam protection.</p>
+<h3 style="color: var(--text); margin-top: 40px; margin-bottom: 16px;">1. Invisible Honeypot Fields</h3>
+<p>Every FormBox endpoint automatically checks for honeypot fields. By simply adding a hidden input field to your form, you can trap automated bots that blindly fill out every field they see. If the honeypot is filled, the submission is silently dropped—no annoying errors for the user, and no spam in your inbox.</p>
+<div style="background: var(--surface); padding: 20px; border-radius: 8px; font-family: monospace; font-size: 0.95rem; margin-top: 16px; border: 1px solid var(--border); overflow-x: auto;">
+                    &lt;!-- Add a honeypot field --&gt;<br/>
+                    &lt;input type="text" name="_honeypot" style="display:none" tabindex="-1" autocomplete="off" /&gt;
+                </div>
+<h3 style="color: var(--text); margin-top: 40px; margin-bottom: 16px;">2. Privacy-First Altcha (Built-in)</h3>
+<p>We natively support <a href="../pages/product/altcha.html" style="color: var(--accent);">Altcha</a>, a brilliant cookie-less, proof-of-work CAPTCHA. It runs a quick cryptographic challenge in the user's browser in the background. It's completely GDPR compliant and requires zero interaction from your real human visitors.</p>
+<h3 style="color: var(--text); margin-top: 40px; margin-bottom: 16px;">3. Cloudflare Turnstile (BYOK)</h3>
+<p>If you prefer Cloudflare's Turnstile, FormBox lets you Bring Your Own Key (BYOK). Just enter your Turnstile secret key in the FormBox dashboard, add the Turnstile script to your frontend, and we'll automatically validate the tokens on our secure backend before accepting the submission.</p>
+<h3 style="color: var(--text); margin-top: 40px; margin-bottom: 16px;">4. Endpoint Rate Limiting</h3>
+<p>To prevent malicious brute-forcing or automated floods, every endpoint has aggressive, dynamic rate limiting applied. This protects your quota and ensures your endpoint remains available for legitimate users.</p>
 </div>
 </section>
 </main>
