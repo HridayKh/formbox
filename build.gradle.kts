@@ -100,7 +100,7 @@ dependencies {
 }
 
 group = "in.hridaykh"
-version = "0.11.2-dev+45"
+version = "0.11.3-dev+46"
 dependencyManagement {
 	imports {
 		mavenBom("org.springframework.modulith:spring-modulith-bom:$springModulithVersion")
