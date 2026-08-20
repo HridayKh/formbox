@@ -15,8 +15,6 @@ import sh.polar.spring.PolarAutoConfiguration;
 @EnableAsync
 @EnableScheduling
 @Import(PolarAutoConfiguration.class)
-// TODO: Make sure to pull before you push and run Modulith tests
-// TODO: These 2 todos make IntelliJ stop the commit and point here for reminders
 public class FormboxApplication {
 	static void main(String[] args) {
 		SpringApplication.run(FormboxApplication.class, args);
