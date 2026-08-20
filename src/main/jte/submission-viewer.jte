@@ -5,6 +5,7 @@
 
 @param List<SubmissionItem> submissions
 @param String name = "Form Submissions!"
+@param boolean showEmail = true
 
 !{if (submissions == null) submissions = List.of();}
 
@@ -20,8 +21,10 @@
             <thead>
             <tr>
                 <th scope="col">Timestamp</th>
+                @if(showEmail)
                 <th scope="col">Autoresponse Email</th>
                 <th scope="col">Notification Email</th>
+                @endif
                 <th scope="col">Preview</th>
                 <th scope="col"></th>
             </tr>
@@ -35,6 +38,7 @@
                 !{ String shortPreview = preview.length() > 50 ? preview.substring(0, 50) + "…" : preview; }
                 <tr>
                     <td>${s.createdAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}</td>
+                    @if(showEmail)
                     <td>
                         @if(s.emailAutoresponseEmailStatus() == null)
                             <small style="color: var(--pico-muted-color);">DISABLED</small>
@@ -65,6 +69,7 @@
                             <mark style="background-color: #6f42c1; color: #ffffff;">SPAM</mark>
                         @endif
                     </td>
+                    @endif
                     <td>${shortPreview}</td>
                     <td>
                         <details>
