@@ -39,13 +39,6 @@ class IpRateLimitFilterService {
 	@WithSpan
 	protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
 		List<String> activeProfiles = Arrays.asList(environment.getActiveProfiles());
-		if (activeProfiles.contains("dev")) {
-			filterChain.doFilter(request, response);
-			return;
-		} else if (!pathMatcher.match("/", request.getRequestURI())) {
-			response.sendRedirect("/");
-			return;
-		}
 
 		String clientIp = getClientIp(request);
 		if (clientIp == null) {

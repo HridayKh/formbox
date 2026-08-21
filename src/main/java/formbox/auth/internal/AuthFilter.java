@@ -27,11 +27,17 @@ class AuthFilter extends OncePerRequestFilter {
 	private final AntPathMatcher pathMatcher = new AntPathMatcher();
 	private final AuthFilterService authFilterService;
 
-	private static final List<String> EXCLUDED_PATHS = List.of("/f/**", "/favicon.ico", "/assets/**", "/pages/**","/c/**", "/error", "/webhooks/**");
+	private static final List<String> EXCLUDED_PATHS = List.of("/f/**", "/favicon.ico", "/assets/**", "/pages/**", "/c/**", "/error", "/webhooks/**");
 
 	@Override
 	protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
-		return EXCLUDED_PATHS.stream().anyMatch(pattern -> pathMatcher.match(pattern, request.getRequestURI()));
+		String path = request.getRequestURI();
+
+		if (path.startsWith("/assets/") || path.startsWith("/f/") || path.startsWith("/pages/") || path.startsWith("/c/") || path.startsWith("/webhooks/")) {
+			return true;
+		}
+
+		return EXCLUDED_PATHS.stream().anyMatch(pattern -> pathMatcher.match(pattern, path));
 	}
 
 	@Override
