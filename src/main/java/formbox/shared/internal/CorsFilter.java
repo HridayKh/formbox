@@ -23,7 +23,6 @@ class CorsFilter extends OncePerRequestFilter {
 		String uri = request.getRequestURI();
 
 		if (uri.startsWith("/f/")) {
-			log.info("Applying CORS headers for path matching /f/*");
 			response.addHeader("Access-Control-Allow-Origin", "*");
 			response.addHeader("Access-Control-Allow-Methods", "POST");
 			response.addHeader("Access-Control-Allow-Headers", "Content-Type, Accept, Origin, Access-Control-Request-Method, Access-Control-Request-Headers");
