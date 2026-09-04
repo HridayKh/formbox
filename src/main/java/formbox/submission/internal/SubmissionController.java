@@ -8,11 +8,13 @@ import formbox.form.FormDto;
 import formbox.shared.TurnstileVerifierUtil;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.sentry.Sentry;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.Part;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.tomcat.util.http.fileupload.impl.InvalidContentTypeException;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -112,6 +114,8 @@ class SubmissionController {
 					Sentry.metrics().count(SubmissionMetrics.Failed.FILES_NOT_ALLOWED);
 					return "submit/files-not-allowed";
 				}
+			} catch (InvalidContentTypeException | ServletException e) {
+				// thrown when no files
 			} catch (Exception e) {
 				log.warn("Failed to read request parts for form {}: {}", formId, e.getMessage(), e);
 				Sentry.addBreadcrumb("Error reading request parts for form " + formId);
