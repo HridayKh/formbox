@@ -35,6 +35,13 @@ public class ZeptomailService {
 	@WithSpan
 	public ZeptoMailSuccessResponse sendEmail(String to, List<String> cc, List<String> bcc, List<String> replyTo, String subject, String htmlBody, String fromName, String fromAddress) {
 
+		if (cc == null)
+			cc = List.of();
+		if (bcc == null)
+			bcc = List.of();
+		if (replyTo == null)
+			replyTo = List.of();
+
 		cc = cc.stream().filter(e -> !e.isBlank()).toList();
 		bcc = bcc.stream().filter(e -> !e.isBlank()).toList();
 		replyTo = replyTo.stream().filter(e -> !e.isBlank()).toList();
