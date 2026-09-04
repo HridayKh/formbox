@@ -8,8 +8,3 @@ class InvalidCredentialsException extends GenericAuthException {
 	}
 }
 
-class TurnstileAuthException extends Exception {
-	public TurnstileAuthException(String message) {
-		super(message);
-	}
-}

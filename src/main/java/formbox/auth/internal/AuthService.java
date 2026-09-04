@@ -2,20 +2,16 @@ package formbox.auth.internal;
 
 import formbox.auth.TenantApi;
 import formbox.shared.PathRegistry;
-import formbox.shared.TurnstileVerifierUtil;
+import formbox.shared.TurnstileAuthException;
 import io.github.jan.supabase.SupabaseClient;
-import io.github.jan.supabase.auth.exception.AuthWeakPasswordException;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import tools.jackson.databind.ObjectMapper;
 
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -25,39 +21,15 @@ import java.util.UUID;
 class AuthService {
 
 	private final AuthServiceKt authServiceKt;
-	private final ObjectMapper objectMapper;
-	private final AuthConfig authConfig;
 	private final TenantApi tenantApi;
 
 	@WithSpan
-	public void processLoginPage(String msg, HttpServletResponse response) {
-		log.trace("Processing login page evaluation. Provided message trigger parameter: [{}]", msg);
-
-		if (msg != null && !msg.isBlank()) {
-			log.debug("Purging client session cookies context due to explicit path trigger code: '{}'", msg);
-			clearAuthCookies(response);
-		}
-	}
-
-	@WithSpan
-	public void registerUser(SupabaseClient supabaseClient, SignUpRequest request, String turnstileResponse) throws AuthWeakPasswordException, TurnstileAuthException {
-		log.debug("Initiating user registration");
-
-		verifyTurnstile(turnstileResponse);
-		authServiceKt.signUp(supabaseClient, request);
-
-		log.info("Registration request completed");
-	}
-
-	@WithSpan
-	public void loginUser(SupabaseClient supabaseClient, LoginRequest request, String turnstileResponse, HttpServletResponse response) throws TurnstileAuthException {
+	public void loginUser(SupabaseClient supabaseClient, LoginRequest request, HttpServletResponse response) throws TurnstileAuthException {
 		log.debug("Initiating login for user");
 
-		verifyTurnstile(turnstileResponse);
 		AuthResponse auth = authServiceKt.login(supabaseClient, request);
 
-		setAuthCookie(response, "sb_token", auth.getAccessToken(), 3600);
-		setAuthCookie(response, "sb_refresh", auth.getRefreshToken(), 604800);
+		setAuthCookies(response, auth.getRefreshToken(), auth.getAccessToken());
 
 		log.info("Login successful. Assigned secure cookie contexts for verified UID payload reference: {}", auth.getUserId());
 	}
@@ -81,22 +53,10 @@ class AuthService {
 	}
 
 	@WithSpan
-	public void resendVerification(SupabaseClient supabaseClient, String email, String turnstileResponse) throws TurnstileAuthException {
-		log.debug("Dispatching confirmation autoresponder resend request for address: {}", email);
+	public void handleOAuthCallback(SupabaseClient supabaseClient, String accessToken, String refreshToken, HttpServletResponse response) {
+		log.debug("Processing incoming OAuth callback payload. Setting local session cookies with expiration");
 
-		verifyTurnstile(turnstileResponse);
-
-		authServiceKt.resendConfirmation(supabaseClient, email);
-
-		log.info("Verification autoresponder resend workflow dispatched successfully for: {}", email);
-	}
-
-	@WithSpan
-	public void handleOAuthCallback(SupabaseClient supabaseClient, String accessToken, String refreshToken, int expiresInSeconds, HttpServletResponse response) {
-		log.debug("Processing incoming OAuth callback payload. Setting local session cookies with expiration: {}s", expiresInSeconds);
-
-		setAuthCookie(response, "sb_token", accessToken, expiresInSeconds);
-		setAuthCookie(response, "sb_refresh", refreshToken, (int) Duration.ofDays(7).toSeconds());
+		setAuthCookies(response, refreshToken, accessToken);
 
 		var userMetadata = authServiceKt.getUserMetadata(supabaseClient, accessToken);
 		assert userMetadata != null;
@@ -110,16 +70,18 @@ class AuthService {
 	}
 
 	@WithSpan
-	public void clearAuthCookies(HttpServletResponse response) {
-		log.trace("Executing blanket wipe of local auth session tracking cookies.");
-		setAuthCookie(response, "sb_token", "", 0);
-		setAuthCookie(response, "sb_refresh", "", 0);
+	public void setAuthCookies(HttpServletResponse response, String refreshToken, String accessToken) {
+		setAuthCookie(response, "sb_refresh", refreshToken, (int) Duration.ofDays(7).toSeconds());
+		setAuthCookie(response, "sb_token", accessToken, (int) Duration.ofHours(1).toSeconds());
 	}
 
 	@WithSpan
-	public void setAuthCookie(HttpServletResponse response, String name, String value, int maxAge) {
-		log.trace("Injecting secure cookie response header attribute -> Name: [{}], MaxAge: [{}]", name, maxAge);
+	public void clearAuthCookies(HttpServletResponse response) {
+		setAuthCookie(response, "sb_refresh", "", 0);
+		setAuthCookie(response, "sb_token", "", 0);
+	}
 
+	private void setAuthCookie(HttpServletResponse response, String name, String value, int maxAge) {
 		Cookie cookie = new Cookie(name, value == null ? "" : value);
 		cookie.setHttpOnly(true);
 		cookie.setSecure(true);
@@ -128,28 +90,5 @@ class AuthService {
 		response.addCookie(cookie);
 	}
 
-	private void verifyTurnstile(String turnstileResponse) throws TurnstileAuthException {
-		if (turnstileResponse == null || turnstileResponse.isBlank())
-			throw new TurnstileAuthException("Security verification is missing. Please try again.");
-
-		Map<String, String> payload = new HashMap<>();
-		payload.put("cf-turnstile-response", turnstileResponse);
-
-		if (TurnstileVerifierUtil.turnstileFailed(payload, authConfig.getTurnstileSecretKey(), objectMapper)) {
-			log.warn("Cloudflare Turnstile verification failed.");
-			throw new TurnstileAuthException("Security verification failed. Please try again.");
-		}
-	}
-
-	@WithSpan
-	public void sendLoginUserMagicLink(SupabaseClient supabaseClient, String email, String turnstileResponse) throws TurnstileAuthException {
-		log.debug("Initiating magic link login for user");
-
-		verifyTurnstile(turnstileResponse);
-		authServiceKt.sendLoginMagicLink(supabaseClient, email);
-
-		log.info("Send magic link to user!");
-
-	}
 
 }

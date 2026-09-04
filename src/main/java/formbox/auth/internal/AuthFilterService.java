@@ -17,7 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.AntPathMatcher;
 
 import java.io.IOException;
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 
@@ -82,8 +81,7 @@ public class AuthFilterService {
 			String newAccessToken = newSession.getAccessToken();
 			String newRefreshToken = newSession.getRefreshToken();
 
-			authService.setAuthCookie(response, "sb_token", newAccessToken, (int) newSession.getExpiresIn());
-			authService.setAuthCookie(response, "sb_refresh", newRefreshToken, (int) Duration.ofDays(7).toSeconds());
+			authService.setAuthCookies(response, newRefreshToken, newAccessToken);
 
 			HttpServletRequest wrappedRequest = new RequestWrapper(request, newAccessToken, newRefreshToken);
 			wrappedRequest.setAttribute("userMetadata", authServiceKt.getUserMetadata(supabaseClient, newAccessToken));

@@ -9,7 +9,7 @@ public interface PathRegistry {
 		String LOGIN = "/login";
 		String SIGNUP = "/signup";
 		String LOGOUT = "/logout";
-		String RESEND_CONFIRMATION = "/resend-confirmation";
+		String RESEND_CONFIRMATION = "/resendConfirmationEmail-confirmation";
 		String SESSION_CALLBACK = "/session-callback";
 		String CALLBACK = "/callback";
 

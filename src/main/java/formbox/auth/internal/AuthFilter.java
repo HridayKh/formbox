@@ -31,13 +31,7 @@ class AuthFilter extends OncePerRequestFilter {
 
 	@Override
 	protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
-		String path = request.getRequestURI();
-
-		if (path.startsWith("/assets/") || path.startsWith("/f/") || path.startsWith("/pages/") || path.startsWith("/c/") || path.startsWith("/webhooks/")) {
-			return true;
-		}
-
-		return EXCLUDED_PATHS.stream().anyMatch(pattern -> pathMatcher.match(pattern, path));
+		return EXCLUDED_PATHS.stream().anyMatch(pattern -> pathMatcher.match(pattern, request.getRequestURI()));
 	}
 
 	@Override

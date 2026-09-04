@@ -1,6 +1,8 @@
 package formbox.auth.internal;
 
 import formbox.shared.PathRegistry;
+import formbox.shared.TurnstileAuthException;
+import formbox.shared.TurnstileVerifierUtil;
 import io.github.jan.supabase.SupabaseClient;
 import io.github.jan.supabase.auth.exception.AuthWeakPasswordException;
 import io.github.jan.supabase.auth.jwt.JwtPayload;
@@ -20,6 +22,9 @@ import jakarta.servlet.http.HttpServletResponse;
 class AuthController {
 
 	private final AuthService authService;
+	private final AuthServiceKt authServiceKt;
+	private final TurnstileVerifierUtil turnstileVerifierUtil;
+	private final AuthConfig authConfig;
 
 	@GetMapping(PathRegistry.Auth.LOGIN)
 	@WithSpan
@@ -28,7 +33,10 @@ class AuthController {
 			log.debug("Active user session detected during login page evaluation. Rerouting to dashboard.");
 			return "redirect:" + PathRegistry.DASHBOARD;
 		}
-		authService.processLoginPage(msg, response);
+		if (msg != null && !msg.isBlank()) {
+			log.debug("Purging client session cookies context due to explicit path trigger code: '{}'", msg);
+			authService.clearAuthCookies(response);
+		}
 		model.addAttribute("msg", msg);
 		return "auth/login";
 	}
@@ -47,9 +55,11 @@ class AuthController {
 	@PostMapping(PathRegistry.Auth.SIGNUP)
 	@WithSpan
 	public String handleSignup(@RequestParam String email, @RequestParam String password, @RequestParam("cf-turnstile-response") String turnstileResponse, @RequestAttribute SupabaseClient supabaseClient, HttpServletResponse response, Model model) {
-		log.debug("Processing HTTP POST registration payload submission for autoresponder: {}", email);
+		log.debug("Signing up a new user hell yeah");
 		try {
-			authService.registerUser(supabaseClient, new SignUpRequest(email, password), turnstileResponse);
+			turnstileVerifierUtil.verufyTurnstileWithException(turnstileResponse, authConfig.getTurnstileSecretKey());
+			authServiceKt.signUp(supabaseClient, new SignUpRequest(email, password));
+
 			model.addAttribute("message", "Check your autoresponder for confirmation link!");
 			response.setHeader("HX-Redirect", PathRegistry.Auth.LoginRedirs.LOGIN_CHECK_EMAIL);
 			return "empty";
@@ -57,11 +67,11 @@ class AuthController {
 			model.addAttribute("error", e.getMessage());
 			return "auth/error-alert";
 		} catch (AuthWeakPasswordException e) {
-			log.warn("Registration rejected. Security constraints failed due to weak password for autoresponder: {}", email);
+			log.warn("Registration rejected due to weak password");
 			model.addAttribute("error", "Password must be at least 8 characters long and contain uppercase, lowercase, digits, and symbols");
 			return "auth/error-alert";
 		} catch (Exception e) {
-			log.error("Critical infrastructure handling exception during registration process for autoresponder: {}", email, e);
+			log.error("critical random ahh error during signup", e);
 			model.addAttribute("error", "An internal processing error occurred. " + e.getClass().getName());
 			return "auth/error-alert";
 		}
@@ -78,18 +88,21 @@ class AuthController {
 		HttpServletResponse response,
 		Model model) {
 
-		log.debug("Processing HTTP POST auth payload submission for email: {}, action: {}", email, action);
+		log.debug("logging in user with action: {}", action);
 
 		try {
 			if ("magic_link".equalsIgnoreCase(action)) {
-				authService.sendLoginUserMagicLink(supabaseClient, email, turnstileResponse);
+				turnstileVerifierUtil.verufyTurnstileWithException(turnstileResponse, authConfig.getTurnstileSecretKey());
+				authServiceKt.sendLoginMagicLink(supabaseClient, email);
+
 				model.addAttribute("message", "Magic link sent! Please check your email inbox.");
 			} else {
 				if (password == null || password.isBlank()) {
 					model.addAttribute("error", "Password is required for password login.");
 					return "auth/error-alert";
 				}
-				authService.loginUser(supabaseClient, new LoginRequest(email, password), turnstileResponse, response);
+				turnstileVerifierUtil.verufyTurnstileWithException(turnstileResponse, authConfig.getTurnstileSecretKey());
+				authService.loginUser(supabaseClient, new LoginRequest(email, password), response);
 				response.setHeader("HX-Redirect", PathRegistry.DASHBOARD);
 				model.addAttribute("message", "Login Successfully!");
 			}
@@ -118,10 +131,11 @@ class AuthController {
 
 	@PostMapping(PathRegistry.Auth.RESEND_CONFIRMATION)
 	@WithSpan
-	public String resend(@RequestParam String email, @RequestParam("cf-turnstile-response") String turnstileResponse, Model model, @RequestAttribute SupabaseClient supabaseClient) {
-		log.debug("Processing HTTP POST request for verification autoresponder resend pipeline targeting: {}", email);
+	public String resendConfirmationEmail(@RequestParam String email, @RequestParam("cf-turnstile-response") String turnstileResponse, Model model, @RequestAttribute SupabaseClient supabaseClient) {
+		log.debug("re-sending confirmation email");
 		try {
-			authService.resendVerification(supabaseClient, email, turnstileResponse);
+			turnstileVerifierUtil.verufyTurnstileWithException(turnstileResponse, authConfig.getTurnstileSecretKey());
+			authServiceKt.resendConfirmationEmail(supabaseClient, email);
 			model.addAttribute("message", "Confirmation validation token successfully transmitted!");
 			return "auth/success-alert";
 		} catch (TurnstileAuthException e) {
@@ -138,10 +152,10 @@ class AuthController {
 	@PostMapping(PathRegistry.Auth.SESSION_CALLBACK)
 	@ResponseBody
 	@WithSpan
-	public void handleSessionCallback(@RequestParam("access_token") String accessToken, @RequestParam("refresh_token") String refreshToken, @RequestParam("expires_in") int expiresInSeconds, @RequestAttribute SupabaseClient supabaseClient, HttpServletResponse response) {
-		log.debug("Processing HTTP POST OAuth session callback hook. Evaluated expiration lifecycle limit: {}s", expiresInSeconds);
+	public void handleSessionCallback(@RequestParam("access_token") String accessToken, @RequestParam("refresh_token") String refreshToken, @RequestAttribute SupabaseClient supabaseClient, HttpServletResponse response) {
+		log.debug("auth session callback - creating signed in sessions for refresh token {}", refreshToken);
 		try {
-			authService.handleOAuthCallback(supabaseClient, accessToken, refreshToken, expiresInSeconds, response);
+			authService.handleOAuthCallback(supabaseClient, accessToken, refreshToken, response);
 		} catch (Exception e) {
 			log.error("Critical token initialization breakdown running security payload validation callback.", e);
 			response.setHeader("HX-Redirect", PathRegistry.Auth.LOGIN + "?error=callback_failed");
@@ -151,7 +165,7 @@ class AuthController {
 	@GetMapping(PathRegistry.Auth.CALLBACK)
 	@WithSpan
 	public String sessionCallback() {
-		log.trace("Processing HTTP GET for standard OAuth redirect UI interceptor view rendering.");
+		log.trace("GET /auth/callback.");
 		return "auth/callback";
 	}
 }

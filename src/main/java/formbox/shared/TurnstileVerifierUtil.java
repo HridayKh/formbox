@@ -1,8 +1,10 @@
 package formbox.shared;
 
 import io.opentelemetry.instrumentation.annotations.WithSpan;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
+import org.springframework.stereotype.Service;
 import tools.jackson.databind.ObjectMapper;
 
 import java.net.URI;
@@ -11,16 +13,21 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.Map;
 
 @Slf4j
+@Service
+@RequiredArgsConstructor
 public class TurnstileVerifierUtil {
 
 	private static final HttpClient httpClient = HttpClient.newBuilder().build();
 	private static final String CLOUDFLARE_VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 
+	private final ObjectMapper objectMapper;
+
 	@WithSpan
-	public static boolean turnstileFailed(Map<String, String> payload, String turnstileSecretKey, ObjectMapper objectMapper) {
+	public boolean turnstileFailed(Map<String, String> payload, String turnstileSecretKey) {
 		String turnstileCode = payload.getOrDefault("cf-turnstile-response", "");
 		payload.remove("cf-turnstile-response");
 
@@ -55,6 +62,20 @@ public class TurnstileVerifierUtil {
 		}
 
 		return false;
+	}
+
+	@WithSpan
+	public void verufyTurnstileWithException(String turnstileResponse, String turnstileSecretKey) throws formbox.shared.TurnstileAuthException {
+		if (turnstileResponse == null || turnstileResponse.isBlank())
+			throw new TurnstileAuthException("Security verification is missing. Please try again.");
+
+		Map<String, String> payload = new HashMap<>();
+		payload.put("cf-turnstile-response", turnstileResponse);
+
+		if (turnstileFailed(payload, turnstileSecretKey)) {
+			log.warn("Cloudflare Turnstile verification failed.");
+			throw new TurnstileAuthException("Security verification failed. Please try again.");
+		}
 	}
 
 }

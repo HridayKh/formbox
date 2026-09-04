@@ -50,6 +50,7 @@ internal class AuthServiceKt(private val supabaseProps: AuthConfig) {
 	}
 
 	@WithSpan
+	@Throws(AuthWeakPasswordException::class, GenericAuthException::class)
 	fun signUp(client: SupabaseClient, request: SignUpRequest): Unit = runBlocking {
 		try {
 			val user: UserInfo? = client.auth.signUpWith(Email) {
@@ -74,14 +75,14 @@ internal class AuthServiceKt(private val supabaseProps: AuthConfig) {
 	}
 
 	@WithSpan
-	fun resendConfirmation(client: SupabaseClient, email: String) = runBlocking {
+	fun resendConfirmationEmail(client: SupabaseClient, email: String) = runBlocking {
 		try {
 			client.auth.resendEmail(OtpType.Email.SIGNUP, email)
 		} catch (e: AuthRestException) {
-			log.warn("[KT] Failed to resend confirmation [code={}]: {}", e.errorCode, e.errorDescription, e)
+			log.warn("[KT] Failed to resendConfirmationEmail confirmation [code={}]: {}", e.errorCode, e.errorDescription, e)
 			throw GenericAuthException("Verification server error: ${e.errorDescription}")
 		} catch (e: Exception) {
-			log.error("[KT] Failed to resend confirmation", e)
+			log.error("[KT] Failed to resendConfirmationEmail confirmation", e)
 			throw GenericAuthException("Failed to reissue validation autoresponder.", e)
 		}
 	}

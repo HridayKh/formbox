@@ -17,7 +17,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -31,9 +30,9 @@ class SubmissionController {
 
 	private final FormSubmissionService submissionService;
 	private final FormApi formApi;
-	private final ObjectMapper objectMapper;
 	private final PolarSubmissionApi polarSubmissionApi;
 	private final EntitlementsApi entitlementsApi;
+	private final TurnstileVerifierUtil turnstileVerifierUtil;
 
 
 	@PostMapping("/f/{formId}")
@@ -97,7 +96,7 @@ class SubmissionController {
 			return "submit/thanks";
 		}
 
-		if (TurnstileVerifierUtil.turnstileFailed(payload, form.turnstileSecretKey(), objectMapper)) {
+		if (turnstileVerifierUtil.turnstileFailed(payload, form.turnstileSecretKey())) {
 			Sentry.addBreadcrumb("Turnstile verification failed for form " + formId);
 			submissionService.saveSubmission(form.id(), form.tenantId(), payload, true, request);
 			Sentry.metrics().count(SubmissionMetrics.Failed.TURNSTILE);
