@@ -99,7 +99,7 @@ public class SubmissionEmailsService {
 				"<a href=\"" + dashUrl + "\">" + dashUrl + "</a>\n" +
 				"\n" +
 				"--\n" +
-				"Formbox - Headless Form Backend";
+				"<a href=\"https://formbox.hridaykh.in\">Formbox</a> - Headless Form Backend";
 
 			var resp = zeptomailService.sendEmail(formNotifs.emailNotifTo(), formNotifs.emailNotifCc(),
 				formNotifs.emailNotifBcc(), null, subject, body.replace("\n", "<br/>"), "Formbox Email Notification", "no-reply");
