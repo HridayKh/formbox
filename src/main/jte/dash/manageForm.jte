@@ -185,6 +185,7 @@
             <summary role="button" class="outline">CSV Export History (${csvExports != null ? csvExports.size() : 0})
             </summary>
             <div style="padding-inline: 2em">
+                <p style="margin-bottom: 1rem;"><small style="color: var(--pico-muted-color);">ℹ️ Note: Deleting individual submissions removes submission records and uploaded files from Formbox, but does not retroactively remove data from previously generated CSV export files. Delete CSV exports below if you wish to remove historical export files.</small></p>
                 @if(csvExports == null || csvExports.isEmpty())
                     <p><small>No CSV exports generated for this form yet. Click 'Export Submissions CSV' above to start
                             one.</small></p>
@@ -194,7 +195,7 @@
                         <tr>
                             <th>File Name</th>
                             <th>Generated At</th>
-                            <th>Action</th>
+                            <th>Actions</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -203,10 +204,18 @@
                                 <td><code>${exp.fileName()}</code></td>
                                 <td>${exp.createdAt() != null ? exp.createdAt().toString() : ""}</td>
                                 <td>
-                                    <a href="${exp.downloadUrl()}" role="button" class="outline small" target="_blank"
-                                       download style="margin: 0;">
-                                        ⬇ Download CSV
-                                    </a>
+                                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                        <a href="${exp.downloadUrl()}" role="button" class="outline small" target="_blank"
+                                           download style="margin: 0;">
+                                            ⬇ Download CSV
+                                        </a>
+                                        <form action="/forms/${form.folderId().toString()}/${form.id().toString()}/exports/delete" method="post" style="margin: 0;" onsubmit="return confirm('Are you sure you want to delete this CSV export file?');">
+                                            <input type="hidden" name="fileName" value="${exp.fileName()}"/>
+                                            <button type="submit" class="contrast outline small" style="margin: 0; padding: 0.25rem 0.6rem;">
+                                                🗑️ Delete
+                                            </button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                         @endfor

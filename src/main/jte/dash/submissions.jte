@@ -9,6 +9,7 @@
 @param String folderName
 @param List<SubmissionItem> validSubmissions
 @param List<SubmissionItem> spamSubmissions
+@param String msg = null
 
 <!DOCTYPE html>
 <html lang="en">
@@ -23,7 +24,12 @@
 
 <header class="container">
     @template.dash.navbar(pageName=folderName + " → " + form.name(), balanceLeft=balanceLeft, showManageSubscription=showManageSubscription, email=email)
-    <div style="display: flex; justify-content: space-between; align-items: center;">
+    @if(msg != null && !msg.isBlank())
+        <div class="container" style="margin-top: 1rem;">
+            <mark>${msg}</mark>
+        </div>
+    @endif
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
         <a href="/forms/${form.folderId().toString()}/${form.id().toString()}">&larr; Back to Form</a>
         <form action="/forms/${form.folderId().toString()}/${form.id().toString()}/export-csv" method="post" style="margin: 0;">
             <button type="submit" class="secondary outline small" style="margin: 0;">
@@ -32,6 +38,7 @@
         </form>
     </div>
     <h1>Submissions for '${form.name()}'</h1>
+    <p style="margin-top: 0.5rem; margin-bottom: 1.5rem;"><small style="color: var(--pico-muted-color);">ℹ️ Note: Deleting a submission removes its data and attached files from Formbox, but does not retroactively remove data from previously generated CSV export files. Delete CSV export files under Form Settings if you wish to remove historical export files.</small></p>
 </header>
 
 <main class="container">

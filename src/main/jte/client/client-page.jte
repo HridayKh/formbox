@@ -31,9 +31,9 @@
 
 <main class="container">
 
-    @template.submission-viewer(submissions = validSubmissions, name = "Valid Submissions", showEmail = true)
+    @template.submission-viewer(submissions = validSubmissions, name = "Valid Submissions", showEmail = true, allowDelete = false)
 
-    @template.submission-viewer(submissions = spamSubmissions, name = "Spam Submissions", showEmail = false)
+    @template.submission-viewer(submissions = spamSubmissions, name = "Spam Submissions", showEmail = false, allowDelete = false)
 
 </main>
 

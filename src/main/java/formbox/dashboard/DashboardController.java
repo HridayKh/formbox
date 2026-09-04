@@ -119,7 +119,7 @@ class DashboardController {
 	}
 	@GetMapping("/forms/{}/{formId}/view-submissions")
 	@WithSpan
-	public String viewSubmissions(@RequestAttribute JwtPayload userMetadata, @PathVariable UUID formId, Model model) {
+	public String viewSubmissions(@RequestAttribute JwtPayload userMetadata, @PathVariable UUID formId, @RequestParam(required = false) String msg, Model model) {
 		log.debug("Viewing submissions for form: {}", formId);
 
 		UUID tenantId = UUID.fromString(Objects.requireNonNull(userMetadata.getSub()));
@@ -143,6 +143,45 @@ class DashboardController {
 		model.addAttribute("folderName", folder.toList().getFirst().name());
 		model.addAttribute("validSubmissions", submissions.submissions());
 		model.addAttribute("spamSubmissions", submissions.spam());
+		model.addAttribute("msg", msg);
 		return "dash/submissions";
+	}
+
+	@PostMapping("/submissions/{submissionId}/delete")
+	@WithSpan
+	public String deleteSubmission(@RequestAttribute JwtPayload userMetadata,
+								   @PathVariable UUID submissionId,
+								   jakarta.servlet.http.HttpServletRequest request,
+								   jakarta.servlet.http.HttpServletResponse response) {
+		String userId = userMetadata != null ? userMetadata.getSub() : null;
+		if (userId == null) {
+			if (request.getHeader("HX-Request") != null) {
+				response.setHeader("HX-Redirect", PathRegistry.Auth.LoginRedirs.LOGIN_UNAUTHORIZED);
+			}
+			return "redirect:" + PathRegistry.Auth.LoginRedirs.LOGIN_UNAUTHORIZED;
+		}
+
+		UUID tenantId = UUID.fromString(userId);
+		try {
+			submissionApi.deleteSubmission(tenantId, submissionId);
+			log.info("Successfully deleted submission ID {} for tenant {}", submissionId, tenantId);
+		} catch (Exception e) {
+			log.error("Error deleting submission ID {} for tenant {}", submissionId, tenantId, e);
+		}
+
+		String referer = request.getHeader("Referer");
+		String redirectTarget = (referer != null && !referer.isBlank()) ? referer : PathRegistry.DASHBOARD;
+		if (redirectTarget.contains("msg=")) {
+			redirectTarget = redirectTarget.replaceAll("msg=[^&]*", "msg=" + java.net.URLEncoder.encode("Submission deleted successfully", java.nio.charset.StandardCharsets.UTF_8));
+		} else if (redirectTarget.contains("?")) {
+			redirectTarget += "&msg=" + java.net.URLEncoder.encode("Submission deleted successfully", java.nio.charset.StandardCharsets.UTF_8);
+		} else {
+			redirectTarget += "?msg=" + java.net.URLEncoder.encode("Submission deleted successfully", java.nio.charset.StandardCharsets.UTF_8);
+		}
+
+		if (request.getHeader("HX-Request") != null) {
+			response.setHeader("HX-Redirect", redirectTarget);
+		}
+		return "redirect:" + redirectTarget;
 	}
 }

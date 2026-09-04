@@ -12,4 +12,7 @@ public interface SubmissionApi {
 	@WithSpan
 	void updateFormSubmissionsCache(UUID formId, SubmissionItem newSubmission);
 
+	@WithSpan
+	void deleteSubmission(UUID tenantId, UUID submissionId);
 }
+

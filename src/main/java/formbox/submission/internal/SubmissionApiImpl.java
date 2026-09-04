@@ -10,8 +10,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import formbox.notifs.UploadService;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -22,6 +26,7 @@ import java.util.stream.Collectors;
 public class SubmissionApiImpl implements SubmissionApi {
 	private final SubmissionRepository submissionRepository;
 	private final RedisCache redisCache;
+	private final UploadService uploadService;
 
 	@WithSpan
 	@Override
@@ -77,6 +82,45 @@ public class SubmissionApiImpl implements SubmissionApi {
 			}
 		}
 		redisCache.set(CacheNames.FORM_SUBMISSIONS, formId.toString(), new FormSubmissionsResponse(response.submissions(), response.spam()));
+	}
+
+	@WithSpan
+	@Transactional
+	@Override
+	public void deleteSubmission(UUID tenantId, UUID submissionId) {
+		Optional<Submission> subOpt = submissionRepository.findById(submissionId);
+		if (subOpt.isEmpty()) {
+			log.warn("Submission deletion requested for non-existent ID: {}", submissionId);
+			return;
+		}
+		Submission sub = subOpt.get();
+
+		if (!tenantId.equals(sub.getTenantId())) {
+			log.warn("Unauthorized submission deletion attempt by tenant {} for submission {}", tenantId, submissionId);
+			throw new IllegalArgumentException("Unauthorized deletion attempt.");
+		}
+
+		Map<String, String> payload = sub.getPayload();
+		if (payload != null && !payload.isEmpty()) {
+			for (Map.Entry<String, String> entry : payload.entrySet()) {
+				if (entry.getKey() != null && entry.getKey().endsWith("__url")) {
+					String fileUrl = entry.getValue();
+					if (fileUrl != null && !fileUrl.isBlank()) {
+						try {
+							uploadService.deleteFileByUrl(fileUrl.strip());
+						} catch (Exception e) {
+							log.error("Failed to delete attachment S3 object for URL: {}", fileUrl, e);
+						}
+					}
+				}
+			}
+		}
+
+		UUID formId = sub.getFormId();
+		submissionRepository.delete(sub);
+		log.info("Successfully deleted submission ID: {} for tenant ID: {}", submissionId, tenantId);
+
+		redisCache.delete(CacheNames.FORM_SUBMISSIONS, formId.toString());
 	}
 
 }

@@ -24,6 +24,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.UUID;
 
+import formbox.notifs.UploadService;
+import jakarta.servlet.http.HttpServletRequest;
+
 @Controller
 @RequiredArgsConstructor
 @Slf4j
@@ -34,6 +37,7 @@ class NewControllers {
 	private final VerifiedEmailsService verifiedEmailsService;
 	private final FormApi formApi;
 	private final CsvExportApi csvExportApi;
+	private final UploadService uploadService;
 
 	@GetMapping("/dashboard/support")
 	@WithSpan
@@ -134,6 +138,40 @@ class NewControllers {
 		csvExportApi.generateAndUploadCsvExport(tenantId, userMetadata.getEmail(), formId);
 
 		return "redirect:/forms/" + folderId + "/" + formId + "?msg=CSV export job started! Check your email for the download link.";
+	}
+
+	@PostMapping("/forms/{folderId}/{formId}/exports/delete")
+	@WithSpan
+	public String deleteCsvExport(@RequestAttribute JwtPayload userMetadata,
+								  @PathVariable UUID folderId,
+								  @PathVariable UUID formId,
+								  @RequestParam("fileName") String fileName,
+								  HttpServletRequest request) {
+		if (userMetadata == null || userMetadata.getSub() == null) {
+			return "redirect:" + PathRegistry.Auth.LoginRedirs.LOGIN_UNAUTHORIZED;
+		}
+
+		UUID tenantId = UUID.fromString(userMetadata.getSub());
+		FormDto form = formApi.getFormDto(formId);
+
+		if (form == null || !form.tenantId().equals(tenantId)) {
+			return "redirect:/dashboard?msg=Invalid form";
+		}
+
+		uploadService.deleteCsvExport(formId, fileName);
+		log.info("Deleted CSV export file: {} for form ID: {}", fileName, formId);
+
+		String referer = request.getHeader("Referer");
+		String target = (referer != null && !referer.isBlank()) ? referer : "/forms/" + folderId + "/" + formId;
+		if (target.contains("msg=")) {
+			target = target.replaceAll("msg=[^&]*", "msg=" + java.net.URLEncoder.encode("CSV export deleted successfully", java.nio.charset.StandardCharsets.UTF_8));
+		} else if (target.contains("?")) {
+			target += "&msg=" + java.net.URLEncoder.encode("CSV export deleted successfully", java.nio.charset.StandardCharsets.UTF_8);
+		} else {
+			target += "?msg=" + java.net.URLEncoder.encode("CSV export deleted successfully", java.nio.charset.StandardCharsets.UTF_8);
+		}
+
+		return "redirect:" + target;
 	}
 
 	private void populateNavbarModel(UUID tenantId, String email, Model model) {

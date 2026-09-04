@@ -69,6 +69,25 @@ public class UploadService {
 
 	public record CsvExportItem(String fileName, String downloadUrl, java.time.Instant createdAt) {}
 
+	public void deleteCsvExport(UUID formId, String fileName) {
+		if (formId == null || fileName == null || fileName.isBlank()) return;
+		try {
+			String bucket = s3Props.attachmentsBucket();
+			String s3Key = "exports/" + formId + "/" + fileName;
+
+			software.amazon.awssdk.services.s3.model.DeleteObjectRequest deleteObjectRequest =
+				software.amazon.awssdk.services.s3.model.DeleteObjectRequest.builder()
+					.bucket(bucket)
+					.key(s3Key)
+					.build();
+
+			s3Client.deleteObject(deleteObjectRequest);
+			log.info("Deleted CSV export file: {} for form ID: {}", s3Key, formId);
+		} catch (Exception e) {
+			log.error("Failed to delete CSV export file: {} for form ID: {}", fileName, formId, e);
+		}
+	}
+
 	public String uploadExportCsv(UUID formId, byte[] csvBytes, String fileName) {
 		String s3Key = "exports/" + formId + "/" + fileName;
 

@@ -6,6 +6,7 @@
 @param List<SubmissionItem> submissions
 @param String name = "Form Submissions!"
 @param boolean showEmail = true
+@param boolean allowDelete = true
 
 !{if (submissions == null) submissions = List.of();}
 
@@ -72,7 +73,7 @@
                     @endif
                     <td>${shortPreview}</td>
                     <td>
-                        <details>
+                        <details style="margin-bottom: 0.25rem;">
                             <summary role="button" class="secondary small outline">Details</summary>
                             <dl>
                                 @for(String key : s.payload().keySet())
@@ -88,6 +89,13 @@
                                 @endfor
                             </dl>
                         </details>
+                        @if(allowDelete)
+                            <form method="post" action="/submissions/${s.id().toString()}/delete" style="margin: 0;" onsubmit="return confirm('Are you sure you want to delete this submission?');">
+                                <button type="submit" class="contrast small outline" style="margin: 0; padding: 0.15rem 0.4rem; font-size: 0.75rem; width: 100%;">
+                                    🗑️ Delete
+                                </button>
+                            </form>
+                        @endif
                     </td>
                 </tr>
             @endfor
