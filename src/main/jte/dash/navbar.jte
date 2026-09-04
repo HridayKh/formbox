@@ -24,8 +24,9 @@
                     @endif
                     <li><hr/></li>
                     @if(showManageSubscription)
-                        <li><a href="/billing/portal">Manage Subscription</a></li>
+                        <li><a href="/billing/manage">Manage Subscription</a></li>
                     @endif
+                    <li><a href="/billing/portal">Plans & Pricing</a></li>
                     <li><a href="/docs/">Docs</a></li>
                     <li><a href="/dashboard/emails">Allowed Emails</a></li>
                     <li><a href="/dashboard/support">Support</a></li>
