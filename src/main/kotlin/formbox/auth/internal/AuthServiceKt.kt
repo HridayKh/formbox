@@ -63,7 +63,7 @@ internal class AuthServiceKt(private val supabaseProps: AuthConfig) {
 			}
 			log.info("[KT] New user signed up: {}", user.id)
 		} catch (e: AuthWeakPasswordException) {
-			log.warn("[KT] Sign-up rejected: password too weak", e)
+			log.debug("[KT] Sign-up rejected: password too weak", e)
 			throw e
 		} catch (e: AuthRestException) {
 			log.warn("[KT] Sign-up failed [code={}]: {}", e.errorCode, e.errorDescription, e)
