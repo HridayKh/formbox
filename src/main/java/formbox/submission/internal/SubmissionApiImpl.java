@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -41,8 +42,40 @@ public class SubmissionApiImpl implements SubmissionApi {
 			return;
 		}
 		FormSubmissionsResponse response = cachedResponseOpt.get();
-		if (newSubmission.isSpam()) response.spam().addFirst(newSubmission);
-		else response.submissions().addFirst(newSubmission);
+
+		if (newSubmission.isSpam()) {
+			List<SubmissionItem> subs = response.spam();
+			boolean replaced = false;
+
+			for (ListIterator<SubmissionItem> it = subs.listIterator(); it.hasNext(); ) {
+				SubmissionItem s = it.next();
+				if (s.id().equals(newSubmission.id())) {
+					it.set(newSubmission);
+					replaced = true;
+					break;
+				}
+			}
+
+			if (!replaced) {
+				subs.addFirst(newSubmission);
+			}
+		} else {
+			List<SubmissionItem> subs = response.submissions();
+			boolean replaced = false;
+
+			for (ListIterator<SubmissionItem> it = subs.listIterator(); it.hasNext(); ) {
+				SubmissionItem s = it.next();
+				if (s.id().equals(newSubmission.id())) {
+					it.set(newSubmission);
+					replaced = true;
+					break;
+				}
+			}
+
+			if (!replaced) {
+				subs.addFirst(newSubmission);
+			}
+		}
 		redisCache.set(CacheNames.FORM_SUBMISSIONS, formId.toString(), new FormSubmissionsResponse(response.submissions(), response.spam()));
 	}
 
