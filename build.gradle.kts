@@ -55,7 +55,6 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.postgresql:postgresql")
 	implementation("gg.jte:jte-spring-boot-starter-4:3.2.4")
-	developmentOnly("org.springframework.boot:spring-boot-devtools")
 
 	// modulith
 	runtimeOnly("org.springframework.modulith:spring-modulith-actuator")
