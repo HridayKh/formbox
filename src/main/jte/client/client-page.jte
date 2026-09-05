@@ -1,6 +1,4 @@
-@import formbox.notifs.EmailStatus
 @import formbox.submission.SubmissionItem
-@import java.time.format.DateTimeFormatter
 @import java.util.List
 
 @param List<SubmissionItem> validSubmissions

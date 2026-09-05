@@ -52,8 +52,8 @@ class ClientPageController {
 		}
 
 		FormSubmissionsResponse submissions = submissionApi.getFormSubmissionsGrouped(formId);
-		model.addAttribute("validSubmissions", submissions.submissions().reversed());
-		model.addAttribute("spamSubmissions", submissions.spam().reversed());
+		model.addAttribute("validSubmissions", submissions.submissions());
+		model.addAttribute("spamSubmissions", submissions.spam());
 		return "client/client-page";
 	}
 }

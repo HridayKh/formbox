@@ -15,7 +15,7 @@ interface FormRepository extends JpaRepository<Form, UUID> {
 	@Modifying
 	@Transactional
 	@Query(value = "DELETE FROM forms WHERE id = :formId", nativeQuery = true)
-	void hardDeleteForm(@Param("id") UUID formId);
+	void hardDeleteForm(@Param("formId") UUID formId);
 
 	@Query(value = "SELECT id FROM forms WHERE is_deleted = true LIMIT :limit", nativeQuery = true)
 	List<UUID> findSoftDeletedFormIds(@Param("limit") int limit);

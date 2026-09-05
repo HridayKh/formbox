@@ -144,12 +144,12 @@
                 <small style="color: var(--pico-muted-color);">Perfect for testing and personal projects</small>
                 
                 <ul class="feature-list">
-                    <li><span class="feature-check">✓</span> 1 Active Form</li>
+                    <li><span class="feature-check">✓</span> 3 Active Forms</li>
                     <li><span class="feature-check">✓</span> 100 Submissions / month</li>
-                    <li><span class="feature-check">✓</span> 50 MB Storage limit</li>
-                    <li><span class="feature-check">✓</span> 14 Days Retention</li>
+                    <li><span class="feature-check">✓</span> 7 Days Retention</li>
                     <li><span class="feature-check">✓</span> Honeypot Spam Filter</li>
-                    <li><span class="feature-check">✓</span> Discord Webhooks</li>
+                    <li><span class="feature-check">✓</span> Origin Locking</li>
+                    <li><span class="feature-check">✓</span> Client Read-only View</li>
                 </ul>
             </div>
 
@@ -173,11 +173,14 @@
                 <ul class="feature-list">
                     <li><span class="feature-check">✓</span> 10 Active Forms</li>
                     <li><span class="feature-check">✓</span> 1,000 Submissions / month</li>
-                    <li><span class="feature-check">✓</span> 100 MB File Storage</li>
+                    <li><span class="feature-check">✓</span> 100 MB File Storage (5 MB max/file)</li>
                     <li><span class="feature-check">✓</span> 30 Days Retention</li>
+                    <li><span class="feature-check">✓</span> Email Notifications (up to 5 recipients)</li>
+                    <li><span class="feature-check">✓</span> Custom Redirect URLs</li>
                     <li><span class="feature-check">✓</span> Cloudflare Turnstile CAPTCHA</li>
-                    <li><span class="feature-check">✓</span> Custom Webhooks &amp; CSV Export</li>
-                    <li><span class="feature-check">✓</span> Redirect URLs &amp; Email Notifications</li>
+                    <li><span class="feature-check">✓</span> Discord Webhook</li>
+                    <li><span class="feature-check">✓</span> CSV Export</li>
+                    <li><span class="feature-check">✓</span> Field Validation Rules <em style="color: var(--pico-muted-color); font-size: 0.85em;">(coming soon...)</em></li>
                 </ul>
             </div>
 
@@ -203,11 +206,18 @@
                 <ul class="feature-list">
                     <li><span class="feature-check">✓</span> 25 Active Forms</li>
                     <li><span class="feature-check">✓</span> 10,000 Submissions / month</li>
-                    <li><span class="feature-check">✓</span> 1 GB File Storage</li>
+                    <li><span class="feature-check">✓</span> 1 GB File Storage (10 MB max/file)</li>
                     <li><span class="feature-check">✓</span> 90 Days Retention</li>
-                    <li><span class="feature-check">✓</span> Slack, Discord &amp; Telegram</li>
-                    <li><span class="feature-check">✓</span> Custom Webhooks &amp; JSON Forms</li>
-                    <li><span class="feature-check">✓</span> Altcha CAPTCHA &amp; Email Digests</li>
+                    <li><span class="feature-check">✓</span> Email Notifications (up to 10 recipients)</li>
+                    <li><span class="feature-check">✓</span> Advanced Rate Limits (60 RPM)</li>
+                    <li><span class="feature-check">✓</span> Custom Webhooks</li>
+                    <li><span class="feature-check">✓</span> Field Validation Rules <em style="color: var(--pico-muted-color); font-size: 0.85em;">(coming soon...)</em></li>
+                    <li><span class="feature-check">✓</span> JSON Payload Submissions <em style="color: var(--pico-muted-color); font-size: 0.85em;">(coming soon...)</em></li>
+                    <li><span class="feature-check">✓</span> Slack Webhook Notifications <em style="color: var(--pico-muted-color); font-size: 0.85em;">(coming soon...)</em></li>
+                    <li><span class="feature-check">✓</span> Telegram Notifications <em style="color: var(--pico-muted-color); font-size: 0.85em;">(coming soon...)</em></li>
+                    <li><span class="feature-check">✓</span> Email Digests <em style="color: var(--pico-muted-color); font-size: 0.85em;">(coming soon...)</em></li>
+                    <li><span class="feature-check">✓</span> Altcha Privacy CAPTCHA <em style="color: var(--pico-muted-color); font-size: 0.85em;">(coming soon...)</em></li>
+                    <li><span class="feature-check">✓</span> HTMX Integration <em style="color: var(--pico-muted-color); font-size: 0.85em;">(coming soon...)</em></li>
                 </ul>
             </div>
 

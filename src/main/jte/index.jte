@@ -612,14 +612,13 @@
 <div class="pricing-annual">Free forever</div>
 </div>
 <div class="pricing-features">
-<div class="pricing-feature"><span class="pricing-check">✓</span> 1 form</div>
+<div class="pricing-feature"><span class="pricing-check">✓</span> 3 active forms</div>
 <div class="pricing-feature"><span class="pricing-check">✓</span> 100 submissions / month</div>
-<div class="pricing-feature"><span class="pricing-check">✓</span> 2 week data retention</div>
-<div class="pricing-feature"><span class="pricing-check">✓</span> 50 MB file storage</div>
+<div class="pricing-feature"><span class="pricing-check">✓</span> 7 days data retention</div>
 <div class="pricing-feature"><span class="pricing-check">✓</span> Honeypot spam filter</div>
 <div class="pricing-feature"><span class="pricing-check">✓</span> Origin locking</div>
-<div class="pricing-feature"><span class="pricing-check">✓</span> Discord webhook</div>
 <div class="pricing-feature"><span class="pricing-check">✓</span> Client read-only view</div>
+<div class="pricing-feature"><span class="pricing-cross">✗</span> File uploads &amp; storage</div>
 <div class="pricing-feature"><span class="pricing-cross">✗</span> Email notifications</div>
 <div class="pricing-feature"><span class="pricing-cross">✗</span> CSV export</div>
 </div>
@@ -637,23 +636,22 @@
 <div class="pricing-header">
 <div class="pricing-tier">Starter</div>
 <div class="pricing-amount">
-<span class="pricing-dollar">$14</span>
+<span class="pricing-dollar">$10</span>
 <span class="pricing-period">/ month</span>
 </div>
-<div class="pricing-annual">$140 / year — 2 months free</div>
+<div class="pricing-annual">$100 / year — 2 months free</div>
 </div>
 <div class="pricing-features">
-<div class="pricing-feature"><span class="pricing-check">✓</span> Unlimited forms</div>
-<div class="pricing-feature"><span class="pricing-check">✓</span> 2,500 submissions / month</div>
-<div class="pricing-feature"><span class="pricing-check">✓</span> 2 month data retention</div>
-<div class="pricing-feature"><span class="pricing-check">✓</span> 1 GB file storage</div>
-<div class="pricing-feature"><span class="pricing-check">✓</span> Email notifications</div>
+<div class="pricing-feature"><span class="pricing-check">✓</span> 10 active forms</div>
+<div class="pricing-feature"><span class="pricing-check">✓</span> 1,000 submissions / month</div>
+<div class="pricing-feature"><span class="pricing-check">✓</span> 30 days data retention</div>
+<div class="pricing-feature"><span class="pricing-check">✓</span> 100 MB file storage (5 MB max/file)</div>
+<div class="pricing-feature"><span class="pricing-check">✓</span> Email notifications (up to 5 recipients)</div>
+<div class="pricing-feature"><span class="pricing-check">✓</span> Custom redirect URLs</div>
 <div class="pricing-feature"><span class="pricing-check">✓</span> Cloudflare Turnstile</div>
-<div class="pricing-feature"><span class="pricing-check">✓</span> Slack, Discord &amp; Telegram
-                    </div>
-<div class="pricing-feature"><span class="pricing-check">✓</span> Custom webhooks</div>
+<div class="pricing-feature"><span class="pricing-check">✓</span> Discord webhook</div>
 <div class="pricing-feature"><span class="pricing-check">✓</span> CSV export</div>
-<div class="pricing-feature"><span class="pricing-check">✓</span> Custom meta fields</div>
+<div class="pricing-feature"><span class="pricing-check">✓</span> Field Validation Rules <em>(coming soon...)</em></div>
 </div>
                 @if(loggedIn)
                     <a class="btn btn-primary" href="/dashboard">Choose Starter →</a>
@@ -666,22 +664,26 @@
 <div class="pricing-header">
 <div class="pricing-tier">Pro</div>
 <div class="pricing-amount">
-<span class="pricing-dollar">$28</span>
+<span class="pricing-dollar">$30</span>
 <span class="pricing-period">/ month</span>
 </div>
 <div class="pricing-annual">$280 / year — 2 months free</div>
 </div>
 <div class="pricing-features">
-<div class="pricing-feature"><span class="pricing-check">✓</span> Unlimited forms</div>
-<div class="pricing-feature"><span class="pricing-check">✓</span> 25,000 submissions / month</div>
-<div class="pricing-feature"><span class="pricing-check">✓</span> 6 month data retention</div>
-<div class="pricing-feature"><span class="pricing-check">✓</span> 10 GB file storage</div>
-<div class="pricing-feature"><span class="pricing-check">✓</span> Email delivery status</div>
-<div class="pricing-feature"><span class="pricing-check">✓</span> Autoresponders</div>
-<div class="pricing-feature"><span class="pricing-check">✓</span> Altcha (privacy CAPTCHA)</div>
-<div class="pricing-feature"><span class="pricing-check">✓</span> Multi-variable sort</div>
-<div class="pricing-feature"><span class="pricing-check">✓</span> Pre-sorted CSV export</div>
-<div class="pricing-feature"><span class="pricing-check">✓</span> Overdue/stale indicators</div>
+<div class="pricing-feature"><span class="pricing-check">✓</span> 25 active forms</div>
+<div class="pricing-feature"><span class="pricing-check">✓</span> 10,000 submissions / month</div>
+<div class="pricing-feature"><span class="pricing-check">✓</span> 90 days data retention</div>
+<div class="pricing-feature"><span class="pricing-check">✓</span> 1 GB file storage (10 MB max/file)</div>
+<div class="pricing-feature"><span class="pricing-check">✓</span> Email notifications (up to 10 recipients)</div>
+<div class="pricing-feature"><span class="pricing-check">✓</span> Advanced rate limits (60 RPM)</div>
+<div class="pricing-feature"><span class="pricing-check">✓</span> Custom webhooks</div>
+<div class="pricing-feature"><span class="pricing-check">✓</span> Field Validation Rules <em>(coming soon...)</em></div>
+<div class="pricing-feature"><span class="pricing-check">✓</span> JSON Payload Submissions <em>(coming soon...)</em></div>
+<div class="pricing-feature"><span class="pricing-check">✓</span> Slack Webhook Notifications <em>(coming soon...)</em></div>
+<div class="pricing-feature"><span class="pricing-check">✓</span> Telegram Notifications <em>(coming soon...)</em></div>
+<div class="pricing-feature"><span class="pricing-check">✓</span> Email Digests <em>(coming soon...)</em></div>
+<div class="pricing-feature"><span class="pricing-check">✓</span> Altcha Privacy CAPTCHA <em>(coming soon...)</em></div>
+<div class="pricing-feature"><span class="pricing-check">✓</span> HTMX Integration <em>(coming soon...)</em></div>
 </div>
                 @if(loggedIn)
                     <a class="btn btn-ghost" href="/dashboard">Choose Pro</a>
