@@ -15,10 +15,12 @@ plugins {
 	id("io.sentry.jvm.gradle") version "6.14.0"
 	id("gg.jte.gradle") version "3.2.4"
 }
+apply(plugin = "org.springframework.boot.aot")
+
 tasks.named("generateSentryBundleIdJava") {
 	dependsOn("generateJte")
-//	mustRunAfter("generateJte")
 }
+
 tasks.matching { it.name == "sentryCollectSourcesJava" }.configureEach {
 	dependsOn(tasks.named("generateJte"))
 }

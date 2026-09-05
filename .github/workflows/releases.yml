@@ -122,36 +122,36 @@ jobs:
           echo "Computed versiondev: $VERSIONDEV"
 
 
-      - name: Build and test
-        env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
-          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
-        run: ./gradlew build --build-cache -Pversion="${{ steps.version.outputs.version }}" --scan
+#      - name: Build and test
+#        env:
+#          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+#          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+#          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+#        run: ./gradlew build --build-cache -Pversion="${{ steps.version.outputs.version }}" --scan
+#
+#      - name: Sync version into build.gradle.kts
+#        run: |
+#          VERSIONDEV="${{ steps.version.outputs.versiondev }}"
+#          sed -i "s/^version = \".*\"/version = \"$VERSIONDEV\"/" build.gradle.kts
+#
+#          git config user.name "github-actions[bot]"
+#          git config user.email "github-actions[bot]@users.noreply.github.com"
+#
+#          if ! git diff --quiet build.gradle.kts; then
+#            git add build.gradle.kts
+#            git commit -m "chore: sync version to $VERSION [skip ci]"
+#            git push origin HEAD:main
+#          else
+#            echo "No version change to commit"
+#          fi
 
-      - name: Sync version into build.gradle.kts
-        run: |
-          VERSIONDEV="${{ steps.version.outputs.versiondev }}"
-          sed -i "s/^version = \".*\"/version = \"$VERSIONDEV\"/" build.gradle.kts
-
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          if ! git diff --quiet build.gradle.kts; then
-            git add build.gradle.kts
-            git commit -m "chore: sync version to $VERSION [skip ci]"
-            git push origin HEAD:main
-          else
-            echo "No version change to commit"
-          fi
-
-      - name: Upload JAR artifact
-        if: steps.parse.outputs.deploy == 'true'
-        uses: actions/upload-artifact@v7
-        with:
-          name: app-jar
-          path: build/libs/*.jar
-          retention-days: 1
+#      - name: Upload JAR artifact
+#        if: steps.parse.outputs.deploy == 'true'
+#        uses: actions/upload-artifact@v7
+#        with:
+#          name: app-jar
+#          path: build/libs/*.jar
+#          retention-days: 1
 
       - name: Create and push tag
         if: steps.parse.outputs.bump != 'none'
@@ -162,64 +162,64 @@ jobs:
           git tag -a "$TAG" -m "Release $TAG (build ${{ github.run_number }})"
           git push origin "$TAG"
 
-      - name: Create Sentry release
-        if: steps.parse.outputs.bump != 'none'
-        uses: getsentry/action-release@v1
-        env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
-          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
-        with:
-          version: ${{ steps.version.outputs.version }}
-          set_commits: auto
+#      - name: Create Sentry release
+#        if: steps.parse.outputs.bump != 'none'
+#        uses: getsentry/action-release@v1
+#        env:
+#          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+#          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+#          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+#        with:
+#          version: ${{ steps.version.outputs.version }}
+#          set_commits: auto
 
-  deploy:
-    needs: build
-    if: needs.build.outputs.deploy == 'true'
-    runs-on: ubuntu-latest
-    environment: actions
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-
-      - name: Download JAR artifact
-        uses: actions/download-artifact@v8
-        with:
-          name: app-jar
-          path: ./dist
-
-      - name: Set up SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
-
-      - name: Rename JAR to a predictable filename
-        run: |
-          JAR_FILE=$(ls ./dist/*.jar | grep -v -- '-plain' | head -n 1)
-          cp "$JAR_FILE" ./dist/app.jar
-
-      - name: SCP JAR to server
-        run: |
-          scp -i ~/.ssh/deploy_key \
-            ./dist/app.jar \
-            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/home/opc/formbox/new/app.jar"
-
-      - name: Run remote deploy script
-        run: |
-          ssh -i ~/.ssh/deploy_key "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
-            "bash /home/opc/formbox/deploy.sh ${{ needs.build.outputs.version }}"
-
-      - name: Notify Sentry of deploy
-        if: needs.build.outputs.bump != 'none'
-        uses: getsentry/action-release@v1
-        env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
-          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
-        with:
-          version: ${{ needs.build.outputs.version }}
-          environment: prod
+#  deploy:
+#    needs: build
+#    if: needs.build.outputs.deploy == 'true'
+#    runs-on: ubuntu-latest
+#    environment: actions
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v7
+#        with:
+#          fetch-depth: 0
+#
+#      - name: Download JAR artifact
+#        uses: actions/download-artifact@v8
+#        with:
+#          name: app-jar
+#          path: ./dist
+#
+#      - name: Set up SSH
+#        run: |
+#          mkdir -p ~/.ssh
+#          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+#          chmod 600 ~/.ssh/deploy_key
+#          ssh-keyscan -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+#
+#      - name: Rename JAR to a predictable filename
+#        run: |
+#          JAR_FILE=$(ls ./dist/*.jar | grep -v -- '-plain' | head -n 1)
+#          cp "$JAR_FILE" ./dist/app.jar
+#
+#      - name: SCP JAR to server
+#        run: |
+#          scp -i ~/.ssh/deploy_key \
+#            ./dist/app.jar \
+#            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/home/opc/formbox/new/app.jar"
+#
+#      - name: Run remote deploy script
+#        run: |
+#          ssh -i ~/.ssh/deploy_key "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
+#            "bash /home/opc/formbox/deploy.sh ${{ needs.build.outputs.version }}"
+#
+#      - name: Notify Sentry of deploy
+#        if: needs.build.outputs.bump != 'none'
+#        uses: getsentry/action-release@v1
+#        env:
+#          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+#          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+#          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+#        with:
+#          version: ${{ needs.build.outputs.version }}
+#          environment: prod
