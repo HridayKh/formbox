@@ -21,7 +21,7 @@
                 </label>
                 <label style="margin-top: 0.5rem; font-size: 0.875rem;">
                     <input type="checkbox" name="termsConsent" value="true" required />
-                    I agree to the Privacy Policy and Terms of Service
+                    I agree to the <a href="/pages/legal/privacy-policy.html" target="_blank">Privacy Policy</a> and <a href="/pages/legal/terms-of-service.html" target="_blank">Terms of Service</a>
                 </label>
             </fieldset>
             <div class="cf-turnstile" data-sitekey="0x4AAAAAAD1xEDYqYOi7tGNB" style="margin-top: 1rem;"></div>

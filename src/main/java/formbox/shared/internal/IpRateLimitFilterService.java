@@ -22,8 +22,8 @@ import org.springframework.beans.factory.annotation.Value;
 @Slf4j
 @Component
 class IpRateLimitFilterService {
-	private static final CaffeineRateLimiter strictRateLimiter = new CaffeineRateLimiter(4, 0.1);
-	private static final CaffeineRateLimiter normalRateLimiter = new CaffeineRateLimiter(10, 1);
+	private static final CaffeineRateLimiter strictRateLimiter = new CaffeineRateLimiter(8, 0.1);
+	private static final CaffeineRateLimiter normalRateLimiter = new CaffeineRateLimiter(20, 5);
 
 	@Value("${ip.rate-limit.secret-salt:default-salt-key}")
 	private String secretSalt;
