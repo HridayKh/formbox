@@ -57,17 +57,6 @@
     </div>
 </header>
 
-<%--
-1. [x] Move folders
-2. [x] Form settings (delete is here btw)
-3. [x] Intergrations and Routing
-4. [x] View submissions (Seperate Template to Render Submissions so Submission Info THere)
-5. [ ] Client Creds (Single pregenerated cred that dont need db, coz they signed using form id)
-6. [x] Export Submissions to csv
-7. [x] Copy button for endpoint
-8. [ ] Links to templates, maybe even a template generator
---%>
-
 <main class="container">
     <section id="form-top">
         <article>

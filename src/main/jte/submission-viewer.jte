@@ -23,8 +23,8 @@
             <tr>
                 <th scope="col">Timestamp</th>
                 @if(showEmail)
-                <th scope="col">Autoresponse Email</th>
-                <th scope="col">Notification Email</th>
+                <th scope="col">Autoresponse</th>
+                <th scope="col">Notification</th>
                 @endif
                 <th scope="col">Preview</th>
                 <th scope="col"></th>

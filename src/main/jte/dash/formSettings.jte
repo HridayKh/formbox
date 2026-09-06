@@ -1,6 +1,6 @@
 @param formbox.form.FormDto form
 
-<form action="/forms/${form.id().toString()}/update" method="post">
+<form action="/forms/${form.folderId().toString()}/${form.id().toString()}/update" method="post">
 
     <input type="hidden" name="id" value="${form.id().toString()}">
 

@@ -35,12 +35,14 @@ class PolarSubmissionApiImpl implements PolarSubmissionApi {
 	@Cacheable(value = CacheNames.METER_BALANCE, key = "#tenantId.toString()")
 	public long getCachedSubmissionBalance(UUID tenantId) {
 		ensureEntitlementsRefresh(tenantId);
+		log.debug("in app-mem miss for meter balance");
 		return redisCache.getOrCompute(CacheNames.METER_BALANCE, tenantId.toString(), Long.class, () -> getLiveSubmissionBalance(tenantId));
 	}
 
 	private long getLiveSubmissionBalance(UUID tenantId) {
 		Entitlements entitlements = entitlementsApi.getEntitlements(tenantId);
 		if (entitlements.isFree()) {
+			log.info("broky boi hahahhahh");
 			Instant cycleStart = entitlements.refreshAt() != null ? entitlements.refreshAt().minus(30, ChronoUnit.DAYS) : Instant.now().minus(30, ChronoUnit.DAYS);
 			OffsetDateTime since = OffsetDateTime.ofInstant(cycleStart, ZoneOffset.UTC);
 			long consumed = dbSubmissionCounter.countSubmissionsAfter(tenantId, since);

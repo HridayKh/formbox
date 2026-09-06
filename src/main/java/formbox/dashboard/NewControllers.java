@@ -41,13 +41,14 @@ class NewControllers {
 
 	@GetMapping("/dashboard/support")
 	@WithSpan
-	public String supportPage(@RequestAttribute JwtPayload userMetadata, Model model) {
-		if (userMetadata == null || userMetadata.getSub() == null) {
+	public String supportPage(@RequestAttribute JwtPayload userMetadata, Model model, @RequestParam(required = false, defaultValue = "") String msg) {
+		if (userMetadata == null || userMetadata.getSub() == null)
 			return "redirect:" + PathRegistry.Auth.LoginRedirs.LOGIN_UNAUTHORIZED;
-		}
 
 		UUID tenantId = UUID.fromString(userMetadata.getSub());
 		populateNavbarModel(tenantId, userMetadata.getEmail(), model);
+
+		model.addAttribute("msg", msg);
 
 		return "dash/support";
 	}
@@ -143,10 +144,10 @@ class NewControllers {
 	@PostMapping("/forms/{folderId}/{formId}/exports/delete")
 	@WithSpan
 	public String deleteCsvExport(@RequestAttribute JwtPayload userMetadata,
-								  @PathVariable UUID folderId,
-								  @PathVariable UUID formId,
-								  @RequestParam("fileName") String fileName,
-								  HttpServletRequest request) {
+	                              @PathVariable UUID folderId,
+	                              @PathVariable UUID formId,
+	                              @RequestParam("fileName") String fileName,
+	                              HttpServletRequest request) {
 		if (userMetadata == null || userMetadata.getSub() == null) {
 			return "redirect:" + PathRegistry.Auth.LoginRedirs.LOGIN_UNAUTHORIZED;
 		}
