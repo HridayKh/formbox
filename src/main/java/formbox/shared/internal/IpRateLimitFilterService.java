@@ -17,11 +17,32 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
+
 @Slf4j
 @Component
 class IpRateLimitFilterService {
 	private static final CaffeineRateLimiter strictRateLimiter = new CaffeineRateLimiter(4, 0.1);
 	private static final CaffeineRateLimiter normalRateLimiter = new CaffeineRateLimiter(10, 1);
+
+	@Value("${ip.rate-limit.secret-salt:default-salt-key}")
+	private String secretSalt;
+
+	private String hashIp(String ip) {
+		if (ip == null) return null;
+		try {
+			java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+			byte[] digest = md.digest((secretSalt + ":" + ip).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+			StringBuilder sb = new StringBuilder();
+			for (byte b : digest) {
+				sb.append(String.format("%02x", b));
+			}
+			return sb.toString();
+		} catch (Exception e) {
+			log.error("Failed to hash IP", e);
+			return ip;
+		}
+	}
 
 	@WithSpan
 	protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
@@ -31,16 +52,18 @@ class IpRateLimitFilterService {
 			return;
 		}
 
+		String hashedIp = hashIp(clientIp);
+
 		String path = request.getRequestURI();
 		boolean allowed = true;
 		try {
 			if (path.startsWith("/f/") || path.startsWith("/auth/")) {
-				allowed = strictRateLimiter.tryConsume(clientIp);
+				allowed = strictRateLimiter.tryConsume(hashedIp);
 			} else {
-				allowed = normalRateLimiter.tryConsume(clientIp);
+				allowed = normalRateLimiter.tryConsume(hashedIp);
 			}
 		} catch (Exception e) {
-			log.error("Rate limiter failed for IP: {}. Allowing request due to fallback.", clientIp, e);
+			log.error("Rate limiter failed for hashed IP: {}. Allowing request due to fallback.", hashedIp, e);
 		}
 
 		if (allowed) {
@@ -48,7 +71,7 @@ class IpRateLimitFilterService {
 			return;
 		}
 
-		log.warn("IP Rate Limit exceeded for IP: {}", clientIp);
+		log.warn("IP Rate Limit exceeded for hashed IP: {}", hashedIp);
 
 		String contentType = request.getContentType();
 		String acceptHeader = request.getHeader("Accept");
