@@ -5,8 +5,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.jspecify.annotations.NonNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -16,7 +14,7 @@ import java.io.IOException;
 
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @Component
-class CorsFilter extends OncePerRequestFilter {
+class HeaderFilter extends OncePerRequestFilter {
 
 	@Override
 	protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
@@ -29,7 +27,11 @@ class CorsFilter extends OncePerRequestFilter {
 			response.addHeader("Access-Control-Allow-Credentials", "false");
 			response.addHeader("Access-Control-Max-Age", "3600");
 			response.addHeader("Access-Control-Expose-Headers", "Content-Type");
+		} else if (uri.startsWith("/assets/")) {
+			response.addHeader("Cache-Control", "public, max-age=31536000, immutable");
+		} else if (uri.startsWith("/pages/")) {
+			response.addHeader("Cache-Control", "public, max-age=3600, s-maxage=86400, must-revalidate");
 		}
-			filterChain.doFilter(request, response);
+		filterChain.doFilter(request, response);
 	}
 }

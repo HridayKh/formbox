@@ -129,21 +129,21 @@ jobs:
 #          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
 #        run: ./gradlew build --build-cache -Pversion="${{ steps.version.outputs.version }}" --scan
 #
-#      - name: Sync version into build.gradle.kts
-#        run: |
-#          VERSIONDEV="${{ steps.version.outputs.versiondev }}"
-#          sed -i "s/^version = \".*\"/version = \"$VERSIONDEV\"/" build.gradle.kts
-#
-#          git config user.name "github-actions[bot]"
-#          git config user.email "github-actions[bot]@users.noreply.github.com"
-#
-#          if ! git diff --quiet build.gradle.kts; then
-#            git add build.gradle.kts
-#            git commit -m "chore: sync version to $VERSION [skip ci]"
-#            git push origin HEAD:main
-#          else
-#            echo "No version change to commit"
-#          fi
+      - name: Sync version into build.gradle.kts
+        run: |
+          VERSIONDEV="${{ steps.version.outputs.versiondev }}"
+          sed -i "s/^version = \".*\"/version = \"$VERSIONDEV\"/" build.gradle.kts
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if ! git diff --quiet build.gradle.kts; then
+            git add build.gradle.kts
+            git commit -m "chore: sync version to $VERSION [skip ci]"
+            git push origin HEAD:main
+          else
+            echo "No version change to commit"
+          fi
 
 #      - name: Upload JAR artifact
 #        if: steps.parse.outputs.deploy == 'true'

@@ -1,73 +1,49 @@
 package formbox.shared.internal;
 
-import formbox.shared.CacheNames;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
-import org.springframework.core.env.Environment;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
-import org.springframework.util.AntPathMatcher;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 @Slf4j
-@RequiredArgsConstructor
 @Component
 class IpRateLimitFilterService {
-	private final StringRedisTemplate stringRedisTemplate;
-	private final RedisScript<Long> rateLimiterScript = RedisScript.of(new ClassPathResource("scripts/rate_limiter.lua"), Long.class);
-	private final Environment environment;
-	private static final AntPathMatcher pathMatcher = new AntPathMatcher();
+	private static final CaffeineRateLimiter strictRateLimiter = new CaffeineRateLimiter(4, 0.1);
+	private static final CaffeineRateLimiter normalRateLimiter = new CaffeineRateLimiter(10, 1);
 
 	@WithSpan
 	protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
-		List<String> activeProfiles = Arrays.asList(environment.getActiveProfiles());
-
 		String clientIp = getClientIp(request);
 		if (clientIp == null) {
 			filterChain.doFilter(request, response);
 			return;
 		}
 
-		String scope = "a";
-		String capacity = "10";
-		String refillRate = "1";
-
 		String path = request.getRequestURI();
-		if (path.startsWith("/f/") || path.startsWith("/auth/")) {
-			scope = "b";
-			capacity = "4";
-			refillRate = "0.1";
-		}
-
-		List<String> keys = Collections.singletonList(String.format("f:%s:%s:%s", CacheNames.IP_RATE_LIMIT, clientIp, scope));
-		Object[] args = new Object[]{capacity, refillRate, String.valueOf(Instant.now().getEpochSecond()), "1"};
-
-		Long result = 1L;
+		boolean allowed = true;
 		try {
-			result = stringRedisTemplate.execute(rateLimiterScript, keys, args);
+			if (path.startsWith("/f/") || path.startsWith("/auth/")) {
+				allowed = strictRateLimiter.tryConsume(clientIp);
+			} else {
+				allowed = normalRateLimiter.tryConsume(clientIp);
+			}
 		} catch (Exception e) {
-			log.error("Redis rate limiter failed for IP: {}. Allowing request due to fallback.", clientIp, e);
+			log.error("Rate limiter failed for IP: {}. Allowing request due to fallback.", clientIp, e);
 		}
 
-		if (result != null && result == 1) {
+		if (allowed) {
 			filterChain.doFilter(request, response);
 			return;
 		}
@@ -80,7 +56,6 @@ class IpRateLimitFilterService {
 		boolean isJson = (contentType != null && contentType.contains(MediaType.APPLICATION_JSON_VALUE)) || (acceptHeader != null && acceptHeader.contains(MediaType.APPLICATION_JSON_VALUE));
 
 		handleRateLimitViolation(isJson, response);
-
 	}
 
 	@WithSpan

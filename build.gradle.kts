@@ -1,3 +1,6 @@
+import org.springframework.boot.gradle.tasks.aot.ProcessAot
+import org.springframework.boot.gradle.tasks.aot.ProcessTestAot
+
 buildscript {
 	repositories {
 		mavenCentral()
@@ -9,6 +12,7 @@ plugins {
 	id("org.springframework.boot") version "4.1.0"
 	id("io.spring.dependency-management") version "1.1.7"
 	id("org.graalvm.buildtools.native") version "1.1.11"
+	id("org.springframework.boot.aot") version "4.1.0"
 
 	id("org.jetbrains.kotlin.jvm") version "2.3.21"
 	id("org.jetbrains.kotlin.plugin.spring") version "2.3.21"
@@ -17,20 +21,24 @@ plugins {
 	id("gg.jte.gradle") version "3.2.4"
 }
 
-apply(plugin = "org.springframework.boot.aot")
-
-sourceSets {
-	main {
-		runtimeClasspath += sourceSets.getByName("aot").output
-		output.dir("${layout.buildDirectory.get()}/generated/aotClasses")
-	}
-}
 tasks.named("generateSentryBundleIdJava") {
 	dependsOn("generateJte")
 }
-
+tasks.named<ProcessAot>("processAot") {
+	val activeProfile = project.findProperty("spring.profiles.active") as String? ?: "prod"
+	args("--spring.profiles.active=$activeProfile")
+}
+tasks.named<ProcessTestAot>("processTestAot") {
+	val activeProfile = project.findProperty("spring.profiles.active") as String? ?: "prod"
+	args("--spring.profiles.active=$activeProfile")
+}
 tasks.matching { it.name == "sentryCollectSourcesJava" }.configureEach {
 	dependsOn(tasks.named("generateJte"))
+	dependsOn(tasks.named("processAot"))
+	dependsOn(tasks.named("processTestAot"))
+}
+tasks.named("compileTestJava") {
+	dependsOn(tasks.named("processAot"))
 }
 jte {
 	generate()
@@ -86,7 +94,7 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-cache")
 	implementation("com.github.ben-manes.caffeine:caffeine")
 	implementation("org.springframework.boot:spring-boot-starter-data-redis")
-	implementation("org.springframework.boot:spring-boot-starter-actuator")
+	implementation("org.apache.commons:commons-pool2")
 
 	// lombok
 	compileOnly("org.projectlombok:lombok:1.18.46")
@@ -126,10 +134,4 @@ tasks.named<JavaCompile>("compileAotJava") {
 }
 tasks.withType<Test> {
 	useJUnitPlatform()
-}
-tasks.named<JavaExec>("processAot") {
-	val profile = providers.gradleProperty("aotProfile")
-	if (profile.isPresent) {
-		args("--spring.profiles.active=${profile.get()}")
-	}
 }
