@@ -35,7 +35,7 @@ public class PolarUtil {
 		reqBody.put("email", email);
 
 		Map<String, Object> billingAddress = new HashMap<>();
-		billingAddress.put("country", "IN");
+		billingAddress.put("country", "US");
 		reqBody.put("billing_address", billingAddress);
 
 		try {
