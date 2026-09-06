@@ -19,6 +19,10 @@
                     Password
                     <input type="password" name="password" required autocomplete="current-password"/>
                 </label>
+                <label style="margin-top: 0.5rem; font-size: 0.875rem;">
+                    <input type="checkbox" name="termsConsent" value="true" required />
+                    I agree to the Privacy Policy and Terms of Service
+                </label>
             </fieldset>
             <div class="cf-turnstile" data-sitekey="0x4AAAAAAD1xEDYqYOi7tGNB" style="margin-top: 1rem;"></div>
             <button type="submit" aria-busy="false">Sign Up</button>

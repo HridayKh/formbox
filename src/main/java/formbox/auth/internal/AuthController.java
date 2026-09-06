@@ -54,9 +54,13 @@ class AuthController {
 
 	@PostMapping(PathRegistry.Auth.SIGNUP)
 	@WithSpan
-	public String handleSignup(@RequestParam String email, @RequestParam String password, @RequestParam("cf-turnstile-response") String turnstileResponse, @RequestAttribute SupabaseClient supabaseClient, HttpServletResponse response, Model model) {
+	public String handleSignup(@RequestParam String email, @RequestParam String password, @RequestParam(value = "termsConsent", defaultValue = "false") boolean termsConsent, @RequestParam("cf-turnstile-response") String turnstileResponse, @RequestAttribute SupabaseClient supabaseClient, HttpServletResponse response, Model model) {
 		log.debug("Signing up a new user hell yeah");
 		try {
+			if (!termsConsent) {
+				model.addAttribute("error", "You must agree to the Privacy Policy and Terms of Service to register.");
+				return "auth/error-alert";
+			}
 			turnstileVerifierUtil.verufyTurnstileWithException(turnstileResponse, authConfig.getTurnstileSecretKey());
 			authServiceKt.signUp(supabaseClient, new SignUpRequest(email, password));
 
