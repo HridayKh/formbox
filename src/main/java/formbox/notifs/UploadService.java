@@ -88,6 +88,31 @@ public class UploadService {
 		}
 	}
 
+	public void deleteAllCsvExports(UUID formId) {
+		if (formId == null) return;
+		try {
+			String bucket = s3Props.attachmentsBucket();
+			String prefix = "exports/" + formId + "/";
+
+			software.amazon.awssdk.services.s3.model.ListObjectsV2Request listReq =
+				software.amazon.awssdk.services.s3.model.ListObjectsV2Request.builder()
+					.bucket(bucket)
+					.prefix(prefix)
+					.build();
+
+			software.amazon.awssdk.services.s3.model.ListObjectsV2Response listRes = s3Client.listObjectsV2(listReq);
+			for (software.amazon.awssdk.services.s3.model.S3Object s3Object : listRes.contents()) {
+				s3Client.deleteObject(software.amazon.awssdk.services.s3.model.DeleteObjectRequest.builder()
+					.bucket(bucket)
+					.key(s3Object.key())
+					.build());
+			}
+			log.info("Successfully deleted all S3 CSV exports for form ID: {}", formId);
+		} catch (Exception e) {
+			log.error("Failed to delete S3 CSV exports for form ID: {}", formId, e);
+		}
+	}
+
 	public String uploadExportCsv(UUID formId, byte[] csvBytes, String fileName) {
 		String s3Key = "exports/" + formId + "/" + fileName;
 

@@ -111,11 +111,11 @@ class AuthController {
 			model.addAttribute("error", e.getMessage());
 			return "auth/error-alert";
 		} catch (InvalidCredentialsException e) {
-			log.warn("Authentication failed for user: {}", email);
+			log.warn("Authentication failed");
 			model.addAttribute("error", e.getMessage());
 			return "auth/error-alert";
 		} catch (Exception e) {
-			log.error("Internal orchestration failure detected inside security pipeline for email: {}", email, e);
+			log.error("Internal orchestration failure detected inside security pipeline", e);
 			model.addAttribute("error", "Authentication engine service currently unavailable.");
 			return "auth/error-alert";
 		}
@@ -139,11 +139,11 @@ class AuthController {
 			model.addAttribute("message", "Confirmation validation token successfully transmitted!");
 			return "auth/success-alert";
 		} catch (TurnstileAuthException e) {
-			log.warn("Resend confirmation blocked. Cloudflare Turnstile validation failed for autoresponder: {}", email);
+			log.warn("Resend confirmation blocked. Cloudflare Turnstile validation failed for autoresponder");
 			model.addAttribute("error", e.getMessage());
 			return "auth/error-alert";
 		} catch (Exception e) {
-			log.error("Unable to execute validation token re-issuance routine to target: {}", email, e);
+			log.error("Unable to execute validation token re-issuance routine to target", e);
 			model.addAttribute("error", "Failed to dispatch confirmation link. Please check parameters.");
 			return "auth/error-alert";
 		}
@@ -153,7 +153,7 @@ class AuthController {
 	@ResponseBody
 	@WithSpan
 	public void handleSessionCallback(@RequestParam("access_token") String accessToken, @RequestParam("refresh_token") String refreshToken, @RequestAttribute SupabaseClient supabaseClient, HttpServletResponse response) {
-		log.debug("auth session callback - creating signed in sessions for refresh token {}", refreshToken);
+		log.debug("auth session callback - creating signed in session");
 		try {
 			authService.handleOAuthCallback(supabaseClient, accessToken, refreshToken, response);
 		} catch (Exception e) {

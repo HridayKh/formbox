@@ -131,15 +131,14 @@ jobs:
 #
       - name: Sync version into build.gradle.kts
         run: |
-          VERSIONDEV="${{ steps.version.outputs.versiondev }}"
-          sed -i "s/^version = \".*\"/version = \"$VERSIONDEV\"/" build.gradle.kts
+          sed -i "s/^version = \".*\"/version = \"${{ steps.version.outputs.versiondev }}\"/" build.gradle.kts
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           if ! git diff --quiet build.gradle.kts; then
             git add build.gradle.kts
-            git commit -m "chore: sync version to $VERSION [skip ci]"
+            git commit -m "chore: sync version to ${{ steps.version.outputs.version }} [skip ci]"
             git push origin HEAD:main
           else
             echo "No version change to commit"
