@@ -27,6 +27,28 @@ class FormSubmissionCleanupListener {
 		long totalDeleted = 0;
 		try {
 			do {
+				var batch = submissionRepository.findTop500ByFormId(event.formId());
+				if (batch.isEmpty()) {
+					break;
+				}
+				for (Submission sub : batch) {
+					var payload = sub.getPayload();
+					if (payload != null && !payload.isEmpty()) {
+						for (var entry : payload.entrySet()) {
+							if (entry.getKey() != null && entry.getKey().endsWith("__url")) {
+								String fileUrl = entry.getValue();
+								if (fileUrl != null && !fileUrl.isBlank()) {
+									try {
+										uploadService.deleteFileByUrl(fileUrl.strip());
+									} catch (Exception e) {
+										log.error("Failed to delete S3 attachment {} during form cleanup", fileUrl, e);
+									}
+								}
+							}
+						}
+					}
+				}
+
 				deletedCount = submissionRepository.deleteSubmissionsInBatch(event.formId(), BATCH_SIZE);
 				totalDeleted += deletedCount;
 				if (deletedCount > 0)

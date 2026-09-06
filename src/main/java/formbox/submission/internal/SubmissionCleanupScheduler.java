@@ -76,5 +76,11 @@ class SubmissionCleanupScheduler {
 
 		log.info("Completed submission retention cleanup: deleted {} expired submissions and {} S3 attachments.",
 			deletedSubmissionsCount, deletedFilesCount);
+
+		try {
+			uploadService.cleanupExpiredCsvExports(7);
+		} catch (Exception e) {
+			log.error("Failed to run CSV export cleanup in scheduler", e);
+		}
 	}
 }
