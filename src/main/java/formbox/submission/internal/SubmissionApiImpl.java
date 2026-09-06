@@ -28,14 +28,32 @@ public class SubmissionApiImpl implements SubmissionApi {
 	private final RedisCache redisCache;
 	private final UploadService uploadService;
 
+	private SubmissionItem attachPresignedUrls(SubmissionItem item) {
+		if (item == null || item.payload() == null || item.payload().isEmpty()) return item;
+		java.util.Map<String, String> updatedPayload = new java.util.HashMap<>(item.payload());
+		boolean modified = false;
+		for (java.util.Map.Entry<String, String> entry : item.payload().entrySet()) {
+			if (entry.getKey() != null && entry.getKey().endsWith("__url") && entry.getValue() != null && !entry.getValue().isBlank()) {
+				updatedPayload.put(entry.getKey(), uploadService.generatePresignedUrl(entry.getValue()));
+				modified = true;
+			}
+		}
+		if (!modified) return item;
+		return new SubmissionItem(item.id(), updatedPayload, item.createdAt(), item.isSpam(), item.emailAutoresponseEmailStatus(), item.emailNotifStatus());
+	}
+
 	@WithSpan
 	@Override
 	public FormSubmissionsResponse getFormSubmissionsGrouped(UUID formId) {
-		return redisCache.getOrCompute(CacheNames.FORM_SUBMISSIONS, formId.toString(), FormSubmissionsResponse.class, () -> {
+		FormSubmissionsResponse cached = redisCache.getOrCompute(CacheNames.FORM_SUBMISSIONS, formId.toString(), FormSubmissionsResponse.class, () -> {
 			var partitioned = submissionRepository.findAllByFormIdOrderByCreatedAtDesc(formId).stream()
 				.collect(Collectors.partitioningBy(SubmissionItem::isSpam));
 			return new FormSubmissionsResponse(partitioned.getOrDefault(false, List.of()), partitioned.getOrDefault(true, List.of()));
 		});
+
+		List<SubmissionItem> validWithPresigned = cached.submissions().stream().map(this::attachPresignedUrls).toList();
+		List<SubmissionItem> spamWithPresigned = cached.spam().stream().map(this::attachPresignedUrls).toList();
+		return new FormSubmissionsResponse(validWithPresigned, spamWithPresigned);
 	}
 
 	@WithSpan

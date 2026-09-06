@@ -12,6 +12,8 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import java.io.InputStream;
 import java.util.UUID;
 
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -19,6 +21,7 @@ public class UploadService {
 
 	private final S3Properties s3Props;
 	private final S3Client s3Client;
+	private final S3Presigner s3Presigner;
 
 	public String uploadFile(InputStream is, String fileName, long size, String contentType) {
 		String s3Key = "uploads/" + UUID.randomUUID() + "/" + fileName;
@@ -34,7 +37,48 @@ public class UploadService {
 
 		return s3Client.utilities()
 			.getUrl(GetUrlRequest.builder().bucket(s3Props.attachmentsBucket()).key(s3Key).build())
-			.toString().replace("s3.hridaykh.in", "web-s3.hridaykh.in");
+			.toString();
+	}
+
+	public String generatePresignedUrl(String fileUrlOrKey) {
+		if (fileUrlOrKey == null || fileUrlOrKey.isBlank()) return fileUrlOrKey;
+		try {
+			String bucket = s3Props.attachmentsBucket();
+			String bucketToken = "/" + bucket + "/";
+			String s3Key;
+			if (fileUrlOrKey.contains(bucketToken)) {
+				s3Key = fileUrlOrKey.substring(fileUrlOrKey.indexOf(bucketToken) + bucketToken.length());
+			} else if (fileUrlOrKey.contains("uploads/")) {
+				s3Key = fileUrlOrKey.substring(fileUrlOrKey.indexOf("uploads/"));
+			} else if (fileUrlOrKey.contains("attachments/")) {
+				s3Key = fileUrlOrKey.substring(fileUrlOrKey.indexOf("attachments/"));
+			} else if (fileUrlOrKey.contains("exports/")) {
+				s3Key = fileUrlOrKey.substring(fileUrlOrKey.indexOf("exports/"));
+			} else {
+				s3Key = fileUrlOrKey;
+			}
+
+			if (s3Key.contains("?")) {
+				s3Key = s3Key.substring(0, s3Key.indexOf("?"));
+			}
+
+			software.amazon.awssdk.services.s3.model.GetObjectRequest getObjectRequest =
+				software.amazon.awssdk.services.s3.model.GetObjectRequest.builder()
+					.bucket(bucket)
+					.key(s3Key)
+					.build();
+
+			software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest presignRequest =
+				software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest.builder()
+					.signatureDuration(java.time.Duration.ofHours(1))
+					.getObjectRequest(getObjectRequest)
+					.build();
+
+			return s3Presigner.presignGetObject(presignRequest).url().toString();
+		} catch (Exception e) {
+			log.error("Failed to generate presigned URL for file: {}", fileUrlOrKey, e);
+			return fileUrlOrKey;
+		}
 	}
 
 	public void deleteFileByUrl(String fileUrl) {
@@ -125,9 +169,7 @@ public class UploadService {
 
 		s3Client.putObject(putObjectRequest, RequestBody.fromBytes(csvBytes));
 
-		return s3Client.utilities()
-			.getUrl(GetUrlRequest.builder().bucket(s3Props.attachmentsBucket()).key(s3Key).build())
-			.toString().replace("s3.hridaykh.in", "web-s3.hridaykh.in");
+		return generatePresignedUrl(s3Key);
 	}
 
 	public java.util.List<CsvExportItem> listCsvExports(UUID formId) {
@@ -148,9 +190,7 @@ public class UploadService {
 			for (software.amazon.awssdk.services.s3.model.S3Object s3Object : response.contents()) {
 				String key = s3Object.key();
 				String fileName = key.substring(key.lastIndexOf('/') + 1);
-				String url = s3Client.utilities()
-					.getUrl(GetUrlRequest.builder().bucket(bucket).key(key).build())
-					.toString().replace("s3.hridaykh.in", "web-s3.hridaykh.in");
+				String url = generatePresignedUrl(key);
 
 				items.add(new CsvExportItem(fileName, url, s3Object.lastModified()));
 			}
@@ -160,6 +200,43 @@ public class UploadService {
 		} catch (Exception e) {
 			log.error("Failed to list CSV exports for form ID: {}", formId, e);
 			return java.util.List.of();
+		}
+	}
+
+	public void cleanupExpiredCsvExports(int maxAgeDays) {
+		try {
+			String bucket = s3Props.attachmentsBucket();
+			String prefix = "exports/";
+
+			software.amazon.awssdk.services.s3.model.ListObjectsV2Request listReq =
+				software.amazon.awssdk.services.s3.model.ListObjectsV2Request.builder()
+					.bucket(bucket)
+					.prefix(prefix)
+					.build();
+
+			software.amazon.awssdk.services.s3.model.ListObjectsV2Response listRes;
+			java.time.Instant cutoff = java.time.Instant.now().minus(java.time.Duration.ofDays(maxAgeDays));
+			int deletedCount = 0;
+
+			do {
+				listRes = s3Client.listObjectsV2(listReq);
+				for (software.amazon.awssdk.services.s3.model.S3Object s3Object : listRes.contents()) {
+					if (s3Object.lastModified() != null && s3Object.lastModified().isBefore(cutoff)) {
+						s3Client.deleteObject(software.amazon.awssdk.services.s3.model.DeleteObjectRequest.builder()
+							.bucket(bucket)
+							.key(s3Object.key())
+							.build());
+						deletedCount++;
+					}
+				}
+				if (listRes.nextContinuationToken() != null) {
+					listReq = listReq.toBuilder().continuationToken(listRes.nextContinuationToken()).build();
+				}
+			} while (Boolean.TRUE.equals(listRes.isTruncated()));
+
+			log.info("Cleaned up {} expired CSV export files older than {} days", deletedCount, maxAgeDays);
+		} catch (Exception e) {
+			log.error("Failed to clean up expired CSV exports from S3", e);
 		}
 	}
 }

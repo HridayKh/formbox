@@ -9,6 +9,8 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3Configuration;
 
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+
 import java.net.URI;
 
 @Configuration
@@ -23,6 +25,21 @@ public class NotifBeans {
 		);
 
 		return S3Client.builder()
+			.credentialsProvider(StaticCredentialsProvider.create(credentials))
+			.region(Region.of(s3Properties.regionName()))
+			.endpointOverride(URI.create(s3Properties.endpointUrl()))
+			.serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build())
+			.build();
+	}
+
+	@Bean
+	public S3Presigner getS3Presigner(S3Properties s3Properties) {
+		AwsBasicCredentials credentials = AwsBasicCredentials.create(
+			s3Properties.accessKeyId(),
+			s3Properties.accessKeySecret()
+		);
+
+		return S3Presigner.builder()
 			.credentialsProvider(StaticCredentialsProvider.create(credentials))
 			.region(Region.of(s3Properties.regionName()))
 			.endpointOverride(URI.create(s3Properties.endpointUrl()))
